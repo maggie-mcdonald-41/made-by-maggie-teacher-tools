@@ -58,10 +58,10 @@
   <script>
     function verifyCode() {
       const code = document.getElementById('access-code').value.trim();
-      const validCodes = ['TEACH2025', 'MCTEACH', 'MAGGIE2025']; // Add your own
+      const validCodes = ['WRITE2025', 'MCTEACH', 'MAGGIE2025']; // Add your own
 
       if (validCodes.includes(code)) {
-        window.location.href = "./organizer/index.html"; // Local folder
+        window.location.href = "./organizer/index.html";
       } else {
         document.getElementById('error-msg').style.display = 'block';
       }

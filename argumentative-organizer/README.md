@@ -21,13 +21,10 @@ An interactive, accessible, and colorful writing organizer to help students stru
 5. Save your work to Google Drive or as a local file.
 6. Export the final essay to Google Docs.
 
-## 🔐 Note
-
-Make sure your `config.js` file contains your private Google API credentials, but **do not upload this file to GitHub**. It's listed in `.gitignore` for safety.
 
 ## 📸 Preview
 
-![screenshot](preview.png) <!-- Optional, replace with a real screenshot later -->
+![screenshot](preview.png) 
 
 ## 📚 Built With
 
@@ -40,10 +37,10 @@ Make sure your `config.js` file contains your private Google API credentials, bu
 
 ## 🙋‍♀️ About the Creator
 
-This project was built by a former special education teacher turned front-end developer. Designed with middle and high school students in mind—especially those who need scaffolded writing support.
+This project was built by a special education teacher. Designed with middle and high school students in mind—especially those who need scaffolded writing support.
 
 ---
 
 ## 📄 License
 
-MIT License — feel free to remix with attribution!
+© 2025 Maggie McDonald | Built for teachers, by a teacher | All rights reserved. Licensed for individual teacher use only
