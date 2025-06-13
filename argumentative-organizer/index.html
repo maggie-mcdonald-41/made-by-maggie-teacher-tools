@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Argumentative Essay Organizer</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="stylesheet.css" />
+
+   <!-- ✅ Google API for Docs & Drive -->
+   <script src="js/config.js" defer></script>
+   <script src="https://apis.google.com/js/api.js" async defer></script>
+  <!-- Google Identity (safe in head) -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+
+<body>
+    <div class="progress-wrapper">
+        <div class="progress-bar" id="progress-bar"></div>
+        <div class="progress-message" id="progress-message"></div>
+    </div>
+
+    <h1>🫧 Welcome to the Ultimate Argumentative Essay Organizer! 🫧</h1>
+
+
+    <!-- === Utility Bar: Toggles + Save Options + Controls === -->
+    <div class="utility-bar">
+        <div class="toggles">
+            <label class="toggle-switch">
+                <input type="checkbox" id="darkToggle">
+                <span class="slider"></span>
+                <span class="toggle-label">Dark Mode 🌙</span>
+            </label>
+
+            <label class="toggle-switch">
+                <input type="checkbox" id="dyslexiaToggle">
+                <span class="slider"></span>
+                <span class="toggle-label">Dyslexia Font 🔤</span>
+            </label>
+
+            <!-- Evidence-First Mode Toggle -->
+            <label class="toggle-switch">
+                <input type="checkbox" id="evidenceFirstToggle">
+                <span class="slider"></span>
+                <span class="toggle-label">Evidence-First Mode 🔄</span>
+            </label>
+        </div>
+
+            <div class="paragraph-selector">
+            <label for="paragraphCount"><strong>Body Paragraphs:</strong></label>
+            <select id="paragraphCount">
+                <option value="1">1</option>
+                <option value="2" selected>2</option>
+                <option value="3">3</option>
+            </select>
+            <button class="small-btn" id="confirmParagraphCount">Confirm</button>
+        </div>
+
+        <div class="reader-selections">
+            <div class="utility-item">
+              <label for="voiceSelect"><strong>Voice:</strong></label>
+              <select id="voiceSelect"></select>
+            </div>
+          
+            <div class="utility-item">
+              <label for="directionLangSelect"><strong>Audio Language:</strong></label>
+              <select id="directionLangSelect">
+                <option value="en-US">English</option>
+                <option value="es-ES">Spanish</option>
+                <option value="fr-FR">French</option>
+                <option value="de-DE">German</option>
+                <option value="zh-CN">Chinese</option>
+                <!-- Add more as needed -->
+              </select>
+            </div>
+         
+          
+        </div>
+        <div class="save-options">
+            <button id="googleSignIn">
+                <img src="google-symbol.png" alt="Google Logo" class="google-icon">
+                <span class="hover-text">Sign in with Google</span>
+            </button>
+
+            <button id="googleSignOut">
+                <img src="signout.png" alt="Sign Out" class="google-signoutbtn">
+                <span class="hover-text"> Sign Out & Reset</span>
+            </button>
+
+            <div class="download_upload">
+                <button class="icon-btn" id="downloadBtn" title="Download your work">⬇️</button>
+                <button class="icon-btn" id="uploadBtn" title="Upload your saved file">⬆️</button>
+                <input type="file" id="uploadInput" style="display: none;">
+
+            </div>
+        </div>
+
+        <p class="warning hidden" id="paragraph-warning">⚠️ Changing this will reset any work in body paragraphs and
+            thesis!</p>
+    </div>
+</div>
+
+
+
+    <!-- Instructions -->
+    <div class="instructions" id="general-instructions">
+        <h2>📝 Instructions 📝</h2>
+        <button class="small-btn play-directions-btn" data-section-id="general-instructions">🔊 Play Directions</button>
+
+        <p>🎉 Get ready to build an awesome essay — step by step!</p>
+
+        <p>This organizer will guide you through each part of your writing. Whether you're starting with your thesis 💡
+            or beginning with your evidence 🔍, all you have to do is <strong>take it one section at a time</strong>.
+        </p>
+
+        <ul>
+            <li>👉 Read the prompt</li>
+            <li>👉 Follow the directions in each box</li>
+            <li>👉 Use the sentence starters and teacher tips for support</li>
+            <li>👉 And most importantly — <strong>you’ve got this!</strong> 💪✨</li>
+        </ul>
+
+        <p>Your job is to think clearly, explain your ideas, and stay focused on your topic. We’ll help you organize
+            your thoughts and put them all together into a powerful argument 🧠💬</p>
+
+        <p><strong>Let’s do this — one step at a time!</strong> 🚀</p>
+
+        <h2>🛠️ Quick Setup Tips</h2>
+        <p>Before you dive in, take a moment to explore the tools at the top of the page! They’re here to make writing
+            easier, smoother, and more fun 🎯</p>
+
+        <ul>
+            <li>🌙 <strong>Dark Mode</strong> — Toggle for a darker screen if it helps you focus.</li>
+            <li>🔤 <strong>Dyslexia Font</strong> — Switch to a font that’s easier to read if letters get tricky.</li>
+            <li>🔄 <strong>Evidence-First Mode</strong> — Prefer to start with quotes? Flip this on!</li>
+            <li>🧱 <strong>Body Paragraphs</strong> — Choose how many paragraphs your essay will have (1–3). Click
+                <em>Confirm</em> to lock it in.</li>
+            <li>🎤 <strong>Voice</strong> — Pick a voice for read-aloud support (your directions will talk!).</li>
+            <li>📢 <strong>Audio Language</strong> — Hear instructions in your preferred language.</li>
+            <li>🔊 <strong>Play Directions</strong> — Listen to helpful directions for each section.</li>
+            <li>🔐 <strong>Sign in with Google</strong> — Log in with Google to autosave your progress.</li>
+            <li>🚪 <strong>Sign Out & Reset</strong>  — Clears the screen for a new user. Your saved work will reload when you sign back in.</li>
+
+            
+            <li>⬇️⬆️ <strong>Download / Upload</strong> — Save your progress or load previous work anytime.</li>
+        </ul>
+
+        <h2>🔧 Helpful Support Tools</h2>
+        <ul>
+            <li>💡 <strong>Teacher Tip</strong> — Tap the lightbulb for extra guidance or reminders. These tips are
+                written just for you by your teacher!</li>
+            <li>👩‍🏫 <strong>Writing Coach</strong> — Stuck or unsure? Click the writing coach for a boost! You’ll get
+                feedback on what you have written to help improve your sentences or structure — not answers, just smart
+                support!</li>
+            <li>🔄 <strong>Refresh Button</strong> — Want to start that box over? Click refresh to bring back the
+                sentence starter or original hint. Don’t worry — we’ll ask before anything gets erased!</li>
+        </ul>
+        <p>These tools are here for YOU 💪 — mix and match them however you learn best! Let’s get started ✨</p>
+    </div>
+    </div>
+
+
+    <!-- Paragraph Settings -->
+    <div class="section-startup">
+        <div class="section">
+            <h3>🌳 Writing Prompt</h3>
+            <p>Paste your prompt here from your assignment so your organizer stays focused on the task.</p>
+            <div id="writing-prompt" class="drop-box" contenteditable="true"
+                data-placeholder="Type or paste the writing prompt here..."></div>
+        </div>
+        <div class="section topic-section">
+            <h3>🌱 Topic</h3>
+            <p>1–2 words only (e.g., <em>Homework</em>, <em>School uniforms</em>)</p>
+            <div id="essay-topic" class="drop-box" contenteditable="true" data-placeholder="e.g., Homework"></div>
+        </div>
+
+
+        <!-- Directory Normal Mode-->
+        <nav aria-label="Graphic Organizer Directory" id="directory">
+            <h3>📚 Graphic Organizer Directory</h3>
+            <ul>
+                <li><a href="#thesis">📌 Thesis Statement</a></li>
+                <li><a href="#evidence">🔍 Evidence Planner</a></li>
+                <li><a href="#intro">👋 Introduction</a></li>
+                <li><a href="#body1">🧠 Body Paragraph 1</a></li>
+                <li id="link-body2"><a href="#body2">🧠 Body Paragraph 2</a></li>
+                <li id="link-body3"><a href="#body3">🧠 Body Paragraph 3</a></li>
+                <li><a href="#conclusion">📣 Conclusion</a></li>
+                <li><a href="#final">✏️ Put It All Together</a></li>
+                <li><a href="#checklist">✅ Checklist</a></li>
+            </ul>
+        </nav>
+
+
+        <!-- Evidence-First Directory -->
+        <nav aria-label="Graphic Organizer Directory" id="directory-evidence-first" class="hidden">
+            <h3>📚 Graphic Organizer Directory (Evidence-First Mode)</h3>
+            <ul>
+                <li><a href="#evidence-first-setup">🎯 Claim First</a></li>
+                <li><a href="#evidence-first-section">🔍 Evidence & Reason Planner</a></li>
+                <li><a href="#thesis">📌 Thesis Statement</a></li>
+                <li><a href="#intro">👋 Introduction</a></li>
+                <li><a href="#body1">🧠 Body Paragraph 1</a></li>
+                <li id="ef-link-body2"><a href="#body2">🧠 Body Paragraph 2</a></li>
+                <li id="ef-link-body3"><a href="#body3">🧠 Body Paragraph 3</a></li>
+                <li><a href="#conclusion">📣 Conclusion</a></li>
+                <li><a href="#final">✏️ Put It All Together</a></li>
+                <li><a href="#checklist">✅ Checklist</a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <!-- Evidence-First: Claim Section -->
+    <div class="section-ef-claim hidden" id="evidence-first-setup">
+        <h2 class="page-title">
+            🎯 Claim 🎯</h2>
+            <div class="button-group">
+                <div class="button-row">
+                <button class="small-btn play-directions-btn" data-section-id="evidence-first-setup">🔊 Play Directions</button>
+                <button class="tip-btn" data-tip-id="teacher-tip-ef-claim">💡Teacher Tips</button>
+                </div>
+                <div id="teacher-tip-ef-claim" class="teacher-tip hidden">
+                    <strong>💡 Teacher Tip:</strong> This is your main opinion or stance — your guiding idea.
+                    <br><br><strong>Start with your point of view</strong> based on the prompt. Think about rewording the prompt
+                    to show your stance. Later, you’ll choose
+                    evidence and reasons that support it.
+                    <br><br><strong>Example:</strong><br>
+                    <em>Prompt: Should homework be required in schools?</em>
+                    <br><em>Claim: Homework should not be required in schools</em>
+                </div>
+            </div>
+        <div class="section" id="ef-claim">
+            <h3>🎯 Claim</h3>
+            <p class="h3-instruction">Make a clear statement that shows your position on the topic. This is not a full sentence.</p>
+            <div class="drop-box" contenteditable="true" id="ef-claim-box" data-placeholder="Take a stance on the prompt that shows your position on the topic."></div>
+        </div>
+    </div>
+
+    <!-- Evidence-First: Evidence for paragraphs -->
+    <div class="section-evidence hidden" id="evidence-first-section">
+        <h2 class="page-title">🔍 Find Your Evidence 🔎 </h2>
+        <div class="button-group">
+            <div class="button-row">
+                <button class="small-btn play-directions-btn" data-section-id="evidence-first-section">🔊 Play Directions</button>
+                <button class="tip-btn" data-tip-id="tip-ef-evidence-bp1">💡Teacher Tips</button>
+            </div>
+        <div id="tip-ef-evidence-bp1" class="teacher-tip hidden">
+            <strong>💡 Teacher Tip:</strong> This section is where you collect your best evidence — a direct
+            quote that supports each of your reasons. Your reasons are what your body paragraphs will be about.
+
+            <br><br><strong>What kind of evidence?</strong><br>
+            Just the quote itself! Copy a sentence (or two) directly from the article that connects to your
+            reason. No transition words yet — we’ll add those later.
+
+            <br><br><strong>Where does it come from?</strong><br>
+            If you’ve been given articles in class, use those. Choose a part of the text that proves your point
+            or supports your thinking. Your teacher will tell you if you are finding your own resources.
+
+            <br><br><strong>Remember:</strong><br>
+            - Use quotation marks <br>
+            - Keep it short and powerful <br>
+            - Stick with your claim
+            - You will create reasons from your quotes
+
+            <br><br><strong>Example:</strong><br>
+            <em>Quote: “Students who get too much homework are more likely to lose sleep and feel
+                overwhelmed.”</em>
+            <em>Reason: the work is overwhelming</em>
+        </div>
+        </div>
+        <!-- Evidence first: Evidence for Body Paragraph 1 -->
+        <div class="section" id="ef-evidence1">
+            <h3>📚 Evidence # 1 💬
+                <p class="h3-instruction">🔎 Choose a piece of evidence from the text that supports your claim.</p>
+            </h3>
+            <div class="coach-button-wrapper">
+                <button class="btn-coach writing-check-btn" data-target="ef-evidence-bp1">👩‍🏫 Writing
+                    Coach</button>
+            </div>
+            <div class="writing-tip-box hidden" id="writing-tip-ef-evidence-bp1"></div>
+            <div class="writing-preview-box hidden" id="writing-preview-ef-evidence-bp1"></div>
+            <div class="drop-box" contenteditable="true" id="ef-evidence-bp1"
+                data-placeholder="Paste or type your quote here..."></div>
+            <h3> ☝️ Reason #1
+                <p class="h3-instruction"> ✍️ What point does this prove? Use the evidence from the text to write your
+                    reason.</p>
+            </h3>
+            <div class="drop-box" contenteditable="true" id="ef-reason-bp1" data-placeholder="Type your reason here...">
+            </div>
+        </div>
+
+        <!-- Evidence first: Evidence for Body Paragraph 2 -->
+        <div class="section" id="ef-evidence2">
+            <h3>📚 Evidence # 2 💬
+                <p class="h3-instruction">🔎 Choose another piece of evidence from the text that supports your claim.
+                </p>
+            </h3>
+            <div class="coach-button-wrapper">
+                <button class="btn-coach writing-check-btn" data-target="ef-evidence-bp2">👩‍🏫 Writing
+                    Coach</button>
+            </div>
+            <div class="writing-tip-box hidden" id="writing-tip-ef-evidence-bp2"></div>
+            <div class="writing-preview-box hidden" id="writing-preview-ef-evidence-bp2"></div>
+
+            <div class="drop-box" contenteditable="true" id="ef-evidence-bp2"
+                data-placeholder="Paste or type your quote here..."></div>
+            <h3>☝️ Reason 2</h3>
+            <p class="h3-instruction">✍️ What point does this prove? Use the evidence from the text to write your
+                reason.</p>
+            <div class="drop-box" contenteditable="true" id="ef-reason-bp2" data-placeholder="Type your reason here...">
+            </div>
+        </div>
+
+        <!-- Evidence first: Evidence for Body Paragraph 3 -->
+        <div class="section" id="ef-evidence3">
+            <h3>📚 Evidence # 3 💬</h3>
+            <div class="button-group">
+            <div class="button-row">  
+            <button class="small-btn play-directions-btn" data-section-id="ef-evidence3">🔊 Play Directions</button>
+                <div id="ef-tip-bp3" class="teacher-tip">
+                    <strong>💡 Teacher Tip:</strong> In Body Paragraph 3, you can either give a third reason or
+                    include a counterclaim.
+
+                    <br><br><strong>What’s a counterclaim?</strong><br>
+                    A counterclaim is the other side of the argument — what someone who disagrees with you might
+                    say.
+
+                    <br><br><strong>Why use it?</strong><br>
+                    Addressing a counterclaim shows that you've thought carefully about both sides. It actually
+                    makes your argument stronger.
+
+                    <br><br><strong>Example:</strong><br>
+                    <em>Some people argue that homework teaches responsibility. However, students already learn
+                        responsibility through classwork, chores, and extracurriculars.</em>
+                </div>
+            </div>
+            </div>
+            <p class="h3-instruction">🔎 Choose a third piece of evidence from the text that supports your claim.</p>
+            <div class="coach-button-wrapper">
+                <button class="btn-coach writing-check-btn" data-target="ef-evidence-bp3">👩‍🏫 Writing
+                    Coach</button>
+            </div>
+            <div class="writing-tip-box hidden" id="writing-tip-ef-evidence-bp3"></div>
+            <div class="writing-preview-box hidden" id="writing-preview-ef-evidence-bp3"></div>
+
+            <div class="drop-box" contenteditable="true" id="ef-evidence-bp3"
+                data-placeholder="Paste or type your quote here..."></div>
+            <h3>☝️ Reason 3</h3>
+            <p class="h3-instruction">✍️ What point does this prove? Use the evidence from the text to write your
+                reason.</p>
+            <div class="drop-box" contenteditable="true" id="ef-reason-bp3" data-placeholder="Type your reason here...">
+            </div>
+
+            <!-- Next Section Button for Evidence-First -->
+            <button id="evidence-first-next-btn" class="next-section-btn">
+                <span>Next Section<br>➡️</span>
+            </button>
+            <div id="evidence-first-complete-message" class="completion-message hidden">
+                <h2>📚 Great Job!</h2>
+                <p>You’ve found powerful evidence and reasons to support your claim.</p>
+                <p>Next, you’ll put your ideas together into a thesis sentence!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Normal Mode Thesis Section Begins -->
+    <div class="section-thesis" id="thesis">
+        <h2 class="page-title">
+            📌 Thesis 📌 </h2>
+        <div class="button-group">
+            <div class="button-row">
+                <button class="small-btn play-directions-btn" data-section-id="thesis">🔊 Play Directions</button>
+                <button class="tip-btn" data-tip-id="tip-thesis">💡Teacher Tips</button>
+            </div>
+
+        <div id="tip-thesis" class="teacher-tip hidden">
+            <strong>💡 Teacher Tip:</strong> Your thesis is the most important sentence in your whole essay.
+
+            <br><br><strong>What is it?</strong><br>
+            It’s one clear sentence that includes your <em>claim</em> (your opinion or argument) based on the prompt
+            and your <em>reasons</em> (the points you'll use to support your claim).
+
+            <br><br><strong>Why does it matter?</strong><br>
+            Everything else in your essay will come back to your thesis. It’s like your essay’s roadmap!
+
+            <br><br><strong>Example:</strong><br>
+            <em>Thesis:Homework should not be required in schools because it increases student stress and reduces
+                time for family and hobbies.</em>
+            <br><em>Claim: Homework should not be required in schools </em>
+            <br><em>Reason 1: it increases student stress</em>
+            <br><em>Reason 2: reduces time for family and hobbies.</em>
+        </div>
+        </div>
+        <div class="section" id="thesis-claim">
+            <h3>🎯 Claim 🎯</h3>
+            <p class="h3-instruction"> This is your opinion or stance based on the prompt. Think about rewording the
+                prompt to show your stance. Make it clear and direct.</p>
+                <div id="claim-box" class="drop-box" contenteditable="true" data-placeholder="Type your claim here..." role="textbox"></div>
+            </div>
+        <div class="section" id="thesis-reason1-section">
+            <h3>☝️Reason 1</h3>
+            <p class="h3-instruction">✍️ Write one reason that supports your opinion. Each reason will be its own
+                body paragraph.</p>
+            <div id="reason1-box" class="drop-box green" contenteditable="true"
+                data-placeholder="Type your first reason here..."></div>
+        </div>
+        <div class="section" id="thesis-reason2-section">
+            <h3>☝️ Reason 2</h3>
+            <p class="h3-instruction">✍️ Write one reason that supports your opinion. Each reason will be its own
+                body paragraph.</p>
+            <div id="reason2-box" class="drop-box blue" contenteditable="true"
+                data-placeholder="Type your second reason here..."></div>
+        </div>
+        <!-- Reason 3 Section (only shown if 3 paragraphs selected) -->
+        <div class="section" id="thesis-reason3-section">
+            <h3>☝️ Reason 3</h3>
+            <p class="h3-instruction">✍️ Write one reason that supports your opinion. Each reason will be its own
+                body paragraph.</p>
+            <div id="reason3-box" class="drop-box purple" contenteditable="true"
+                data-placeholder="Type your third reason here..."></div>
+        </div>
+        <div class="section">
+            <h3>📌Thesis</h3>
+            <p class="h3-instruction">Your thesis is made of your claim plus your reasons.</p>
+
+            <div class="coach-button-wrapper">
+                <button class="btn-coach" onclick="showWritingCoach('thesis-box')">👩‍🏫 Writing Coach</button>
+                <div class="writing-tip-box hidden" id="writing-tip-thesis-box"></div>
+                <div class="writing-preview-box hidden" id="writing-preview-thesis-box"></div>
+            </div>
+            <div id="thesis-box" class="output-box" contenteditable="true"></div>
+            <button class="refresh-btn" data-target="thesis-box">🔄 Refresh</button>
+            
+            <!-- Sync Back Button -->
+            <button class="small-btn" id="sync-thesis" onclick="attemptThesisReverseSync()">🔄 Sync Thesis Edits Back</button>
+            
+            <!-- Error or preview message -->
+            <div id="sync-warning" class="sync-message hidden" style="color: red; font-weight: bold;"></div>
+            
+            <div id="sync-preview" class="sync-message hidden">
+              <p><strong>Claim Preview:</strong> <span id="preview-claim"></span></p>
+              <p><strong>Reasons Preview:</strong></p>
+              <ul id="preview-reasons"></ul>
+              <button class="small-btn" onclick="confirmReverseSync()">✅ Confirm & Apply</button>
+            </div>
+            
+        </div>
+        <!--Next section button-->
+        <button id="thesis-next-btn" class="next-section-btn"><span>Next Section<br>➡️</span></button>
+        <div id="thesis-complete-message" class="completion-message hidden">
+            <h2>✨ Great Job! ✨</h2>
+            <p>You just completed your thesis statement. This thesis directs your paper and tells you where to go
+                next.</p>
+            <p>Next, we will find evidence from the text to support the reasons you picked in your thesis. We will
+                do this by finding <strong>direct quotations</strong> from the text!</p>
+        </div>
+    </div>
+    <!-- Normal Mode Page 2: Evidence gathering section -->
+    <div class="section-evidence" id="evidence">
+        <h2 class="page-title">🔍 Evidence 🔎</h2>
+            <div class="button-group">
+                <div class="button-row">
+                    <button class="small-btn play-directions-btn" data-section-id="evidence">🔊 Play Directions</button>
+                    <button class="tip-btn" data-tip-id="tip-evidence">💡 Teacher Tip</button>
+                </div>
+        <div id="tip-evidence" class="teacher-tip hidden">
+            <strong>💡 Teacher Tip:</strong> This section is where you collect your best evidence — a direct quote
+            that supports each of your reasons.
+
+            <br><br><strong>What kind of evidence?</strong><br>
+            Just the quote itself! Copy a sentence (or two) directly from the article that connects to your reason.
+            No transition words yet — we’ll add those later.
+
+            <br><br><strong>Where does it come from?</strong><br>
+            If you’ve been given articles in class, use those. Choose a part of the text that proves your point or
+            supports your thinking. Your teacher will tell you if you are finding your own resources.
+
+            <br><br><strong>Remember:</strong><br>
+            - Use quotation marks <br>
+            - Keep it short and powerful <br>
+            - Make sure it clearly connects to your reason
+
+            <br><br><strong>Example:</strong><br>
+            <em>“Students who get too much homework are more likely to lose sleep and feel overwhelmed.”</em>
+        </div>
+        </div>
+        <!-- Evidence 1 Section -->
+        <div class="section" id="evidence1-section">
+            <h3>☝️ Reason 1</h3>
+            <p class="h3-instruction">🧾 This is the reason from your thesis. Use it to stay focused when choosing
+                your quote.</p>
+            <div id="reason1-evidence" class="drop-box green"></div>
+            <h3>🔎 Evidence 1</h3>
+            <p class="h3-instruction">🔍 Find a short quote from the text that supports the reason. Use quotation
+                marks!</p>
+            <div class="coach-button-wrapper">
+                <button class="btn-coach" onclick="showWritingCoach('evidence1-box')">👩‍🏫 Writing Coach</button>
+                <div class="writing-tip-box hidden" id="writing-tip-evidence1-box"></div>
+                <div class="writing-preview-box hidden" id="writing-preview-evidence1-box"></div>
+            </div>
+            <div id="evidence1-box" class="drop-box blue" contenteditable="true"
+                data-placeholder="Type your evidence for Reason 1..."></div>
+        </div>
+        <!-- Evidence 2 Section -->
+        <div class="section" id="evidence2-section">
+            <h3>☝️ Reason 2</h3>
+            <p class="h3-instruction">🧾 This is the reason from your thesis. Use it to stay focused when choosing
+                your quote.</p>
+            <div id="reason2-evidence" class="drop-box blue"></div>
+            <h3>🔎 Evidence 2</h3>
+            <p class="h3-instruction">🔍 Find a short quote from the text that supports the reason. Use quotation
+                marks!</p>
+            <div class="coach-button-wrapper">
+                <button class="btn-coach" onclick="showWritingCoach('evidence2-box')">👩‍🏫 Writing Coach</button>
+                <div class="writing-tip-box hidden" id="writing-tip-evidence2-box"></div>
+                <div class="writing-preview-box hidden" id="writing-preview-evidence2-box"></div>
+            </div>
+            <div id="evidence2-box" class="drop-box blue" contenteditable="true"
+                data-placeholder="Type your evidence for Reason 2..."></div>
+        </div>
+        <!-- Evidence 3 Section -->
+        <div class="section hidden" id="evidence3-section">
+            <h3>☝️ Reason 3</h3>
+            <p class="h3-instruction">🧾 This is the reason from your thesis. Use it to stay focused when choosing
+                your quote.</p>
+            <div id="reason3-evidence" class="drop-box purple"></div>
+            <h3>🔎 Evidence 3</h3>
+            <p class="h3-instruction">🔍 Find a short quote from the text that supports the reason. Use quotation
+                marks!</p>
+            <div class="coach-button-wrapper">
+                <button class="btn-coach" onclick="showWritingCoach('evidence3-box')">👩‍🏫 Writing Coach</button>
+                <div class="writing-tip-box hidden" id="writing-tip-evidence3-box"></div>
+                <div class="writing-preview-box hidden" id="writing-preview-evidence3-box"></div>
+            </div>
+            <div id="evidence3-box" class="drop-box purple" contenteditable="true"
+                data-placeholder="Type your evidence for Reason 3..."></div>
+
+        </div>
+
+        <!-- Next Section Button -->
+        <button id="evidence-next-btn" class="next-section-btn"><span>Next Section<br>➡️</span></button>
+        <div id="evidence-complete-message" class="completion-message hidden">
+            <h2>🔍 Evidence Gathered! 🔍</h2>
+            <p>You’ve found strong, direct quotations that support your reasons.</p>
+            <p>Next, we’ll put your ideas into an introduction that hooks your reader!</p>
+        </div>
+    </div>
+
+    <!-- Page 3: Introduction -->
+    <div class="section-intro" id="intro">
+        <h2 class="page-title">👋 Introduction 👋 </h2>
+            <div class="button-group">
+                    <div class="button-row">
+                    <button class="small-btn play-directions-btn" data-section-id="intro">🔊 Play Directions</button>
+                    <button class="tip-btn" data-tip-id="tip-intro">💡Teacher Tip</button>
+                    </div>
+                <div id="tip-intro" class="teacher-tip hidden">
+                    <strong>💡 Teacher Tip:</strong> Your introduction is your reader’s first impression — so you want to
+                    grab their attention and let them know what your paper is about.
+
+                    <br><br><strong>What goes in an intro?</strong><br>
+                    We use the **HIT strategy**: Hook, Issue, Thesis.
+                    <ul style="margin-top: 8px;">
+                        <li><strong>Hook:</strong> A creative or thoughtful opening to pull your reader in</li>
+                        <li><strong>Issue:</strong> A few background sentences about the topic</li>
+                        <li><strong>Thesis:</strong> Your claim and your reasons (already done!)</li>
+                    </ul>
+
+                    <br><br><strong>Helpful Tip:</strong> Don’t worry about being perfect. You can always go back and revise
+                    your intro once you finish your body paragraphs.
+
+                    <br><br><strong>Example Hook:</strong><br>
+                    <em>Imagine coming home from school, exhausted — and still having hours of homework to do.</em>
+            </div>
+</div>
+        <h3 class="subtitle">Your intro needs to H.I.T. 👊: Hook, Issue, Thesis</h3>
+        <div class="instructions">
+            <!-- Instructions -->
+            <p>Time to introduce your reader to the topic of your paper. Here you will give some background
+                information on the subject you are writing. </p>
+            <div class="resources">
+                <!-- Link for Hook Resource -->
+                <a href="hook-resource.html" target="_blank" class="resource-link">Need help with your Hook?</a>
+                <br>
+                <a class="resource-link" href="transitions-resource.html" target="_blank">More Transition Words &
+                    Phrases</a>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>🪝 Hook - grab your reader’s attention</h3>
+            <p class="h3-instruction">🎣 Start with a sentence that catches your reader’s attention and makes them
+                want to keep reading.</p>
+            <div class="sentence-starters">
+                <strong>Try a sentence starter:</strong>
+                <button class="btn-tip" onclick="insertSentenceStarter('hook-box', 'Some argue that ')">Some argue
+                    that...</button>
+                <button class="btn-tip" onclick="insertSentenceStarter('hook-box', 'Imagine a world where ')">Imagine a
+                    world
+                    where...</button>
+                <button class="btn-tip" onclick="insertSentenceStarter('hook-box', 'Many people believe ')">Many
+                    people believe...</button>
+                <button class="btn-tip"
+                    onclick="insertSentenceStarter('hook-box', 'It may seem like a small issue, but ')">It may seem
+                    like a small issue, but...</button>
+            </div>
+            <p><a href="hook-resource.html" target="_blank" class="resource-link">More Hook Options</a></p>
+            <div class="coach-button-wrapper">
+                <button class="btn-coach" onclick="showWritingCoach('hook-box')">👩‍🏫 Writing Coach</button>
+                <div class="writing-tip-box hidden" id="writing-tip-hook-box"></div>
+                <div class="writing-preview-box hidden" id="writing-preview-hook-box"></div>
+            </div>
+            <div id="hook-box" class="output-box" contenteditable="true" data-placeholder="Type your hook here...">
+            </div>
+            <button class="refresh-btn" data-target="hook-box">🔄 Refresh</button>
+            <div class="section">
+                <h3>💥 Issue – summarize the issue in 1–2 sentences </h3>
+                    <div class="button-group">
+                    <button class="tip-btn" data-tip-id="tip-issue">💡Teacher Tip</button>
+                
+                <p class="h3-instruction">📖 Give a little background on the topic. Keep it short and neutral. Do
+                    not share your opinion yet.</p>
+                <div id="tip-issue" class="teacher-tip hidden">
+                    <strong>💡 Teacher Tip:</strong> This is where you give a little background information about
+                    the topic.
+
+                    <br><br><strong>What does “issue” mean?</strong><br>
+                    The issue is the main topic or problem your essay is about. You’re not stating your opinion yet
+                    — just helping the reader understand what the debate is.
+
+                    <br><br><strong>How to write it:</strong><br>
+                    - Keep it to 1–2 sentences
+                    - Stay neutral — no personal opinion yet
+                    - Think: What is this essay really about?
+
+                    <br><br><strong>Example:</strong><br>
+                    <em>To begin, homework is a common part of school meant to help students learn outside of class. But some
+                        people think it causes more harm than good. Start the summary off with a transition
+                        word.</em>
+                </div>
+            </div>
+                <div class="sentence-starters">
+                    <strong>Try a transition phrase:</strong>
+                    <button class="btn-tip" onclick="insertSentenceStarter('issue-box', 'To begin,')">To
+                        begin,</button>
+                    <button class="btn-tip"
+                        onclick="insertSentenceStarter('issue-box', 'Initially,')">Initially,</button>
+                    <button class="btn-tip" onclick="insertSentenceStarter('issue-box', 'At first,')">At
+                        first,</button>
+                </div>
+                <a class="resource-link" href="transitions-resource.html" target="_blank">More Transition Words &
+                    Phrases</a>
+
+                <div class="coach-button-wrapper">
+                    <button class="btn-coach" onclick="showWritingCoach('issue-box')">👩‍🏫 Writing Coach</button>
+                    <div class="writing-tip-box hidden" id="writing-tip-issue-box"></div>
+                    <div class="writing-preview-box hidden" id="writing-preview-issue-box"></div>
+                </div>
+
+                <div id="issue-box" class="drop-box" contenteditable="true"
+                    data-placeholder="Summarize the issue here..."></div>
+                <button class="refresh-btn" data-target="issue-box">🔄 Refresh</button>
+            </div>
+
+            <div class="section">
+                <h3>📌 Thesis</h3>
+                <p class="h3-instruction"> Your thesis is the <strong>last</strong> sentence in the introduction
+                    paragraph.</p>
+                <div id="intro-thesis-box" class="output-box"></div>
+            </div>
+            <div class="section">
+                <h3>🧩 Put it all together: Read and make edits so your thoughts are written clearly</h3>
+                <p class="h3-instruction"> Combine your hook, issue, and thesis into one strong introduction
+                    paragraph.</p>
+                <button class="read-aloud-btn" id="play-intro-final"
+                    onclick="toggleReadAloud('intro-final', 'play-intro-final')">🔊 Read Aloud</button>
+                    <button class="btn-coach" onclick="showWritingCoach('intro-final')">👩‍🏫 Writing Coach</button>
+                    <div id="writing-tip-intro-final" class="writing-tip-box hidden"></div>
+                    <div id="writing-preview-intro-final" class="writing-preview-box hidden"></div>
+                       
+                <div id="intro-final" class="output-box" contenteditable="true"></div>
+                <button class="refresh-btn" data-target="intro-final">🔄 Refresh</button>
+            </div>
+        </div>
+
+        <!--Next Section Button -->
+        <button id="intro-next-btn" class="next-section-btn"><span>Next Section<br>➡️</span></button>
+        <div id="intro-complete-message" class="completion-message hidden">
+            <h2>🎉 Excellent Introduction! 🎉</h2>
+            <p>You’ve created a strong opening that draws the reader in and sets the stage for your essay.</p>
+            <p>Next up: We’ll begin building your first body paragraph to support your ideas!</p>
+        </div>
+    </div>
+
+    <!-- Page 4: Body Paragraph 1 -->
+    <div class="section-body1" id="body1">
+        <div id="body-paragraph-1">
+            <h2 class="page-title">
+                🧠 Body Paragraph 1 🧠 </h2>
+            <div class="button-group">
+                <div class="button-row">
+                    <button class="small-btn play-directions-btn" data-section-id="body1">🔊 Play Directions</button>
+                    <button class="tip-btn" data-tip-id="tip-bp1">💡 Teacher Tip</button>
+                </div>
+            <div id="tip-bp1" class="teacher-tip hidden">
+                <strong>💡 Teacher Tip:</strong> This body paragraph is all about your <strong>first reason</strong>
+                from your thesis.
+
+                <br><br><strong>What’s the purpose?</strong><br>
+                You’re using this paragraph to support your claim by explaining your first reason, giving evidence
+                from the article, and analyzing it.
+
+                <br><br><strong>Remember:</strong><br>
+                ✏️ <em>If your thesis says...</em><br>
+                <em>“Homework should not be required because it causes stress and takes away family time.”</em><br>
+                ✅ Then your first body paragraph is about <em>stress</em>!
+
+                <br><br><strong>Structure:</strong><br>
+                - Start with your reason
+                - Add a quote from the article (evidence)
+                - Explain how the quote supports your point
+            </div>
+            </div>
+            <div class="instructions">
+                <p>Time to use your first reason and evidence to prove your point. You will explain how the evidence
+                    proves your reason.</p>
+                <p>Don't forget to use transitions in your writing!</p>
+                <div class="resources">
+                    <a class="resource-link" href="transitions-resource.html" target="_blank">More Transition Words
+                        & Phrases</a>
+                </div>
+            </div>
+
+            <div class="section" id="reason1-section">
+                <h3>☝️ Reason 1</h3>
+                <p class="h3-instruction">✍️ Begin with a clear sentence that states your reason from your thesis.
+                    Use a transition phrase.</p>
+                <div class="sentence-starters">
+                    <strong> Reason Starters:</strong><br>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp1-reason', 'One reason is')">One
+                        reason is</button>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp1-reason', 'First,')">First,</button>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp1-reason', 'A main reason is')">A main
+                        reason is</button>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp1-reason', 'One important reason is')">One
+                        important
+                        reason is</button>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp1-reason', 'To begin with,')">To begin
+                        with,</button>
+                </div>
+
+                <div id="bp1-reason" class="drop-box green" contenteditable="true"
+                    data-placeholder="Start building your sentence here..."></div>
+
+                <h3>🔎 Evidence</h3>
+                <p class="h3-instruction">💬 Add a direct quote from the text that supports your reason. Start with
+                    a transition.</p>
+                <div class="sentence-starters">
+                    <p><strong>Evidence Starters:</strong></p>
+                    <button class="btn-tip"
+                        onclick="insertSentenceStarter('bp1-evidence', 'According to the text,')">According to the
+                        text,</button>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp1-evidence', 'The author states,')">The
+                        author
+                        states,</button>
+                    <button class="btn-tip"
+                        onclick="insertSentenceStarter('bp1-evidence', 'In the article, it says,')">In the article,
+                        it says,</button>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp1-evidence', 'For example,')">For
+                        example,</button>
+                </div>
+                <a class="resource-link" href="transitions-resource.html" target="_blank">More Transition Words &
+                    Phrases</a>
+                <div id="bp1-evidence" class="drop-box green" contenteditable="true"
+                    data-placeholder="Type your evidence and transition here..."></div>
+
+                <h3>🌠 Explanation</h3>
+                <p class="h3-instruction">💫 Explain how your quote proves your point. Be clear and connect it back
+                    to your thesis. Start with a transition</p>
+                <div class="sentence-starters">
+                    <strong>Explanation Starters:</strong><br>
+                    <button class="btn-tip"
+                        onclick="insertSentenceStarter('bp1-explanation', 'This quote shows that')">This quote shows
+                        that</button>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp1-explanation', 'This means that')">This
+                        means
+                        that</button>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp1-explanation', 'This proves that')">This
+                        proves
+                        that</button>
+                    <button class="btn-tip"
+                        onclick="insertSentenceStarter('bp1-explanation', 'The author is trying to say that')">The
+                        author is trying to say that</button>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp1-explanation', 'As a result')">As a
+                        result</button>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp1-explanation', 'This reveals that')">This
+                        reveals
+                        that</button>
+                </div>
+                <div class="coach-button-wrapper">
+                    <button class="btn-coach" onclick="showWritingCoach('bp1-explanation')">👩‍🏫 Writing
+                        Coach</button>
+                    <div class="writing-tip-box hidden" id="writing-tip-bp1-explanation"></div>
+                    <div class="writing-preview-box hidden" id="writing-preview-bp1-explanation"></div>
+                </div>
+                <a class="resource-link" href="transitions-resource.html" target="_blank">More Transition Words &
+                    Phrases</a>
+                <button class="refresh-btn" data-target="bp1-explanation">🔄 Refresh</button>
+                <div id="bp1-explanation" class="drop-box" contenteditable="true"
+                    data-placeholder="Explain how your evidence supports the claim..."></div>
+            </div>
+
+            <div class="section">
+                <h3>🧩 Put it all together: Read and make edits so your thoughts are written clearly</h3>
+                <p class="h3-instruction">Combine your reason, quote, and explanation into a full body paragraph.
+                </p>
+                <button class="read-aloud-btn" id="play-bp1-final"
+                    onclick="toggleReadAloud('bp1-final', 'play-bp1-final')">🔊 Read Aloud</button>
+                    <button class="btn-coach" onclick="showWritingCoach('bp1-final')">👩‍🏫 Writing Coach</button>
+                    <div id="writing-tip-bp1-final" class="writing-tip-box hidden"></div>
+                    <div id="writing-preview-bp1-final" class="writing-preview-box hidden"></div>
+                    
+                    <div id="bp1-final" class="output-box" contenteditable="true"></div>
+                <button class="refresh-btn" data-target="bp1-final">🔄 Refresh</button>
+            </div>
+        </div>
+        <!--Next Section Button -->
+        <button id="bp1-next-btn" class="next-section-btn"><span>Next Section<br>➡️</span></button>
+        <div id="bp1-complete-message" class="completion-message hidden">
+            <h2>💪 Body Paragraph 1 Complete! 💪</h2>
+            <p>You explained your first reason from your thesis clearly and backed it up with strong evidence from your
+                text.</p>
+            <p>Next, you’ll repeat the process for your second reason in Body Paragraph 2!</p>
+        </div>
+    </div>
+
+    <!-- Page 5: Body Paragraph 2 -->
+    <div class="section-body2" id="body2">
+        <div id="body-paragraph-2">
+            <h2 class="page-title">
+                🧠 Body Paragraph 2 🧠 </h2>
+                <div class="button-group">
+                    <div class="button-row">
+                        <button class="small-btn play-directions-btn" data-section-id="body2">🔊 Play Directions</button>
+                        <button class="tip-btn" data-tip-id="tip-bp2">💡Teacher Tip</button>
+                    </div>
+            <div id="tip-bp2" class="teacher-tip hidden">
+                <strong>💡 Teacher Tip:</strong> This body paragraph is all about your <strong>second reason</strong>
+                from your thesis.
+
+                <br><br><strong>What’s the purpose?</strong><br>
+                You’re using this paragraph to support your claim by explaining your first reason, giving evidence
+                from the article, and analyzing it.
+
+                <br><br><strong>Remember:</strong><br>
+                ✏️ <em>If your thesis says...</em><br>
+                <em>“Homework should not be required because it causes stress and takes away family time.”</em><br>
+                ✅ Then your second body paragraph is about how it<em>takes away family time</em>!
+
+                <br><br><strong>Structure:</strong><br>
+                - Start with your reason
+                - Add a quote from the article (evidence)
+                - Explain how the quote supports your point
+            </div>
+                </div>
+            <div class="section" id="reason2-section">
+                <h3>☝️ Reason 2</h3>
+                <p class="h3-instruction">✍️ Begin with a clear sentence that states your reason from your thesis.
+                    Use a transition phrase.</p>
+                <div class="sentence-starters">
+                    <strong> Reason Starters:</strong><br>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp2-reason', 'Another reason is')">Another
+                        reason
+                        is</button>
+                    <button class="btn-tip"
+                        onclick="insertSentenceStarter('bp2-reason', 'Additionally,')">Additionally,</button>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp2-reason', 'Next,')">Next,</button>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp2-reason', 'A second reason is')">A
+                        second reason is</button>
+                </div>
+
+                <div id="bp2-reason" class="drop-box blue" contenteditable="true"
+                    data-placeholder="Start building your sentence here..."></div>
+
+                <h3>🔎 Evidence</h3>
+                <p class="h3-instruction">💬 Add a direct quote from the text that supports your reason. Start with
+                    a transition.</p>
+                <div class="sentence-starters">
+                    <p><strong>Evidence Starters:</strong></p>
+                    <button class="btn-tip"
+                        onclick="insertSentenceStarter('bp2-evidence', 'According to the text,')">According to the
+                        text,</button>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp2-evidence', 'The author states,')">The
+                        author
+                        states,</button>
+                    <button class="btn-tip"
+                        onclick="insertSentenceStarter('bp2-evidence', 'In the article, it says,')">In the article,
+                        it says,</button>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp2-evidence', 'For example,')">For
+                        example,</button>
+                </div>
+                <a class="resource-link" href="transitions-resource.html" target="_blank">More Transition Words &
+                    Phrases</a>
+                <div id="bp2-evidence" class="drop-box blue" contenteditable="true"
+                    data-placeholder="Type your evidence and transition here..."></div>
+
+                <h3>🌠 Explanation</h3>
+                <p class="h3-instruction"> 💫Explain how your quote proves your point. Be clear and connect it back
+                    to your thesis. Start with a transition.</p>
+                <div class="sentence-starters">
+                    <p><strong>Explanation Starters:</strong></p>
+                    <button class="btn-tip"
+                        onclick="insertSentenceStarter('bp2-explanation', 'This quote shows that')">This quote shows
+                        that</button>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp2-explanation', 'This means that')">This
+                        means
+                        that</button>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp2-explanation', 'This proves that')">This
+                        proves
+                        that</button>
+                    <button class="btn-tip"
+                        onclick="insertSentenceStarter('bp2-explanation', 'The author is trying to say that')">The
+                        author is trying to say that</button>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp2-explanation', 'As a result,')">As a
+                        result,</button>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp2-explanation', 'This reveals that')">This
+                        reveals
+                        that</button>
+                </div>
+                <div class="coach-button-wrapper">
+                    <button class="btn-coach" onclick="showWritingCoach('bp2-explanation')">👩‍🏫 Writing
+                        Coach</button>
+                    <div class="writing-tip-box hidden" id="writing-tip-bp2-explanation"></div>
+                    <div class="writing-preview-box hidden" id="writing-preview-bp2-explanation"></div>
+                </div>
+                <a class="resource-link" href="transitions-resource.html" target="_blank">More Transition Words &
+                    Phrases</a>
+                <div id="bp2-explanation" class="drop-box" contenteditable="true"
+                    data-placeholder="Explain how your evidence supports the claim..."></div>
+                <button class="refresh-btn" data-target="bp2-explanation">🔄 Refresh</button>
+            </div>
+
+            <div class="section">
+                <h3>🧩 Put it all together: Read and make edits so your thoughts are written clearly</h3>
+                <p class="h3-instruction">Combine your reason, quote, and explanation into a full body paragraph.
+                </p>
+                <button class="read-aloud-btn" id="play-bp2-final"
+                    onclick="toggleReadAloud('bp2-final', 'play-bp2-final')">🔊 Read Aloud</button>
+                    <button class="btn-coach" onclick="showWritingCoach('bp2-final')">👩‍🏫 Writing Coach</button>
+                    <div id="writing-tip-bp2-final" class="writing-tip-box hidden"></div>
+                    <div id="writing-preview-bp2-final" class="writing-preview-box hidden"></div>
+                    
+                    <div id="bp2-final" class="output-box" contenteditable="true"></div>
+                <button class="refresh-btn" data-target="bp2-final">🔄 Refresh</button>
+            </div>
+        </div>
+        <!--Next Section Button -->
+        <button id="bp2-next-btn" class="next-section-btn"><span>Next Section<br>➡️</span></button>
+        <div id="bp2-complete-message" class="completion-message hidden">
+            <h2>📝 Body Paragraph 2 Complete! 📝</h2>
+            <p>You now have both reasons supported with explanations and transitions.</p>
+            <p>Let’s wrap it all up with a strong conclusion!</p>
+        </div>
+    </div>
+
+    <!-- Body Paragraph 3 -->
+    <div class="section-body3" id="body3">
+        <div id="body-paragraph-3">
+            <h2 class="page-title">🧠 Body Paragraph 3 🧠 </h2>
+            <div class="button-group">
+                <div class="button-row">
+                <button class="small-btn play-directions-btn" data-section-id="body3">🔊 Play Directions</button>
+                <button class="tip-btn" data-tip-id="tip-bp3">💡Teacher Tip</button>
+                </div>
+            <div id="tip-bp3" class="teacher-tip hidden">
+                <strong>💡 Teacher Tip:</strong> In Body Paragraph 3, you can either give a third reason or include
+                a counterclaim.
+
+                <br><br><strong>What’s a counterclaim?</strong><br>
+                A counterclaim is the other side of the argument — what someone who disagrees with you might say.
+
+                <br><br><strong>Why use it?</strong><br>
+                Addressing a counterclaim shows that you've thought carefully about both sides. It actually makes
+                your argument stronger.
+
+                <br><br><strong>Example:</strong><br>
+                <em>Some people argue that homework teaches responsibility. However, students already learn
+                    responsibility through classwork, chores, and extracurriculars.</em>
+            </div>
+            </div>
+            <div class="section" id="reason3-section">
+                <h3>☝️ Reason 3 </h3>
+                <p class="h3-instruction">✍️ Begin with a clear sentence that states your reason from your thesis.
+                    Use a transition phrase.</p>
+                <div class="sentence-starters">
+                    <strong>💡 Reason Starters:</strong>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp3-reason', 'Finally,')">Finally,</button>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp3-reason', 'The last reason is')">The
+                        last reason is</button>
+                    <button class="btn-tip"
+                        onclick="insertSentenceStarter('bp3-reason', 'Opponents might say')">Opponents might
+                        say</button>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp3-reason', 'Some people argue that')">Some
+                        people argue
+                        that</button>
+                </div>
+
+                <div id="bp3-reason" class="drop-box purple" contenteditable="true"
+                    data-placeholder="Start building your sentence here..."></div>
+
+                <h3>🔎 Evidence</h3>
+                <p class="h3-instruction">💬 Add a direct quote from the text that supports your reason. Start with
+                    a transition.</p>
+                <div class="sentence-starters">
+                    <p><strong>Evidence Starters:</strong></p>
+                    <button class="btn-tip"
+                        onclick="insertSentenceStarter('bp3-evidence', 'According to the text,')">According to the
+                        text,</button>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp3-evidence', 'The author states,')">The
+                        author
+                        states,</button>
+                    <button class="btn-tip"
+                        onclick="insertSentenceStarter('bp3-evidence', 'In the article, it says,')">In the article,
+                        it says,</button>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp3-evidence', 'For example,')">For
+                        example,</button>
+                </div>
+                <a class="resource-link" href="transitions-resource.html" target="_blank">More Transition Words &
+                    Phrases</a>
+
+                <div id="bp3-evidence" class="drop-box purple" contenteditable="true"
+                    data-placeholder="Type your evidence and transition here..."></div>
+
+                <h3>🌠 Explanation</h3>
+                <p class="h3-instruction">💫 Explain how your quote proves your point. Be clear and connect it back
+                    to your thesis.</p>
+                <div class="sentence-starters">
+                    <strong> Explanation Starters:</strong><br>
+                    <button class="btn-tip"
+                        onclick="insertSentenceStarter('bp3-explanation', 'This quote shows that')">This quote shows
+                        that</button>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp3-explanation', 'This means that')">This
+                        means
+                        that</button>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp3-explanation', 'This proves that')">This
+                        proves
+                        that</button>
+                    <button class="btn-tip"
+                        onclick="insertSentenceStarter('bp3-explanation', 'The author is trying to say that')">The
+                        author is trying to say that</button>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp3-explanation', 'As a result')">As a
+                        result</button>
+                    <button class="btn-tip" onclick="insertSentenceStarter('bp3-explanation', 'This reveals that')">This
+                        reveals
+                        that</button>
+                </div>
+                <div class="coach-button-wrapper">
+                    <button class="btn-coach" onclick="showWritingCoach('bp3-explanation')">👩‍🏫 Writing
+                        Coach</button>
+                    <div class="writing-tip-box hidden" id="writing-tip-bp3-explanation"></div>
+                    <div class="writing-preview-box hidden" id="writing-preview-bp3-explanation"></div>
+                </div>
+                <a class="resource-link" href="transitions-resource.html" target="_blank">More Transition Words &
+                    Phrases</a>
+                <div id="bp3-explanation" class="drop-box" contenteditable="true"
+                    data-placeholder="Explain how your evidence supports the claim..."></div>
+                <button class="refresh-btn" data-target="bp3-explanation">🔄 Refresh</button>
+            </div>
+            <div class="section">
+                <h3>🧩 Put it all together</h3>
+                <p class="h3-instruction"> Combine your reason, quote, and explanation into a full body
+                    paragraph.</p>
+                <button class="read-aloud-btn" id="play-bp3-final"
+                    onclick="toggleReadAloud('bp3-final', 'play-bp3-final')">🔊 Read Aloud</button>
+                    <button class="btn-coach" onclick="showWritingCoach('bp3-final')">👩‍🏫 Writing Coach</button>
+                    <div id="writing-tip-bp3-final" class="writing-tip-box hidden"></div>
+                    <div id="writing-preview-bp3-final" class="writing-preview-box hidden"></div>
+                    
+                    <div id="bp3-final" class="output-box" contenteditable="true"></div>
+                <button class="refresh-btn" data-target="bp3-final">🔄 Refresh</button>
+            </div>
+        </div>
+        <!--Next Section Button -->
+        <button id="bp3-next-btn" class="next-section-btn"><span>Next Section<br>➡️</span></button>
+        <div id="bp3-complete-message" class="completion-message hidden">
+            <h2>🧠 Body Paragraph 3 Complete! 🧠</h2>
+            <p>You've supported all three of your reasons with strong evidence and explanation.</p>
+        </div>
+    </div>
+
+    <!-- Page 6: Conclusion -->
+    <div class="section-conclusion" id="conclusion">
+        <h2 class="page-title">🏁 Conclusion 🏁</h2>
+            <div class="button-group">
+                <div class="button-row">
+                <button class="small-btn play-directions-btn" data-section-id="conclusion">🔊 Play Directions</button>
+                <button class="tip-btn" data-tip-id="tip-conclusion"> 💡Teacher Tip</button>
+                </div>
+        <div id="tip-conclusion" class="teacher-tip hidden">
+            <strong>💡 Teacher Tip:</strong> Your conclusion is your chance to remind the reader what your essay
+            was
+            all about — and leave them with a strong final impression.
+
+            <br><br><strong>What to include:</strong>
+            <ul style="margin-top: 8px;">
+                <li>✅ A transition (like "In conclusion")</li>
+                <li>✅ A restated version of your thesis (same idea, new words)</li>
+                <li>✅ A call to action or final thought</li>
+            </ul>
+
+            <br><br><strong>Pro Tip:</strong> Don’t introduce any new reasons or evidence. Just wrap it up
+            clearly
+            and confidently!
+
+            <br><br><strong>Example:</strong><br>
+            <em>In conclusion, homework causes more stress than success. Students need time to rest, spend time
+                with
+                family, and enjoy their childhood.</em>
+        </div>
+        </div>
+        <div class="section">
+            <h3>✨ Closing Transition</h3>
+            <p class="h3-instruction">🔚 Start your conclusion with a transition and a clear sentence that relates to your position on the topic. Don’t copy your thesis exactly — and don’t introduce new ideas here.
+            </p>
+            <div class="sentence-starters">
+                <p><strong> 🏁 Conclusion Starters</strong></p>
+                <button class="btn-tip" onclick="insertSentenceStarter('conclusion-transition', 'In conclusion,')">In
+                    conclusion,</button>
+                <button class="btn-tip" onclick="insertSentenceStarter('conclusion-transition', 'To summarize,')">To
+                    summarize,</button>
+                <button class="btn-tip"
+                    onclick="insertSentenceStarter('conclusion-transition', 'Ultimately,')">Ultimately,</button>
+                <button class="btn-tip" onclick="insertSentenceStarter('conclusion-transition', 'As a result,')">As
+                    a result,</button>
+            </div>
+            <div id="conclusion-transition" class="drop-box" contenteditable="true"
+                data-placeholder="Type or choose a transition..."></div>
+            <h3>📌Restate Thesis</h3>
+            <p class="h3-instruction">♻️ Say your thesis again in new words—don’t copy it word for word.
+                <i>(This is
+                    generated for you)</i>
+            </p>
+            <div id="restate-thesis" class="drop-box" contenteditable="true"></div>
+            <h3>
+                📢 Call to Action
+                <p class="h3-instruction">📣 Think about what you want your reader to remember from your
+                    argument
+                </p>
+                <div class="button-group">
+                <button class="tip-btn" data-tip-id="tip-cta">💡Teacher Tip</button>
+            </h3>
+
+            <div id="tip-cta" class="teacher-tip hidden">
+                <strong>💡 Teacher Tip:</strong> This is your chance to leave your reader with a message that
+                matters.
+
+                <br><br><strong>What is a call to action?</strong><br>
+                A call to action tells the reader what they should think, feel, or do after reading your essay.
+                It’s
+                the “So what?” or “What now?” moment.
+
+                <br><br><strong>Make it powerful:</strong>
+                <ul style="margin-top: 8px;">
+                    <li>✅ Use strong, clear language</li>
+                    <li>✅ Connect it back to your thesis</li>
+                    <li>✅ Be specific and confident</li>
+                </ul>
+
+                <br><br><strong>Example:</strong><br>
+                <em>It is time to rethink homework policies so students can have a healthier, more balanced
+                    life.</em>
+            
+            </div>
+            <div class="sentence-starters">
+                <strong>Call to Action Starters:</strong><br>
+                <button class="btn-tip" onclick="insertSentenceStarter('call-to-action', 'We must')">We
+                    must</button>
+                <button class="btn-tip" onclick="insertSentenceStarter('call-to-action', 'It is time to')">It is
+                    time to</button>
+                <button class="btn-tip"
+                    onclick="insertSentenceStarter('call-to-action', 'Take the first step toward a better future')">Take
+                    the first step toward a better future</button>
+                <button class="btn-tip"
+                    onclick="insertSentenceStarter('call-to-action', 'Speak up before it is too late')">Speak up
+                    before it is too late</button>
+                <button class="btn-tip" onclick="insertSentenceStarter('call-to-action', 'Take a stand and')">Take a
+                    stand and</button>
+                <button class="btn-tip" onclick="insertSentenceStarter('call-to-action', 'Do not wait')">Do not
+                    wait</button>
+            </div>
+            <p><a href="cta-resource.html" target="_blank" class="resource-link">More Call to Action Options</a>
+            </p>
+            <div id="call-to-action" class="drop-box" contenteditable="true"
+                data-placeholder="Type or choose a call to action..."></div>
+        </div>
+        <div class="section">
+            <h3>🧩Put it all together: Read and make edits so your thoughts are written clearly</h3>
+            <p class="h3-instruction">Combine your ideas into one strong, final paragraph.</p>
+            <button class="read-aloud-btn" id="play-conclusion-final"
+                onclick="toggleReadAloud('conclusion-final', 'play-conclusion-final')">🔊 Read Aloud</button>
+                <button class="btn-coach" onclick="showWritingCoach('conclusion-final')">👩‍🏫 Writing Coach</button>
+                <div id="writing-tip-conclusion-final" class="writing-tip-box hidden"></div>
+                <div id="writing-preview-conclusion-final" class="writing-preview-box hidden"></div>
+                
+                <div id="conclusion-final" class="output-box" contenteditable="true"></div>
+            <button class="btn-refresh refresh-btn" data-target="conclusion-final">🔄 Refresh</button>
+        </div>
+
+        <!--Next Section Button -->
+        <button id="conclusion-next-btn" class="next-section-btn"><span>Next Section<br>➡️</span></button>
+        <div id="conclusion-complete-message" class="completion-message hidden">
+            <h2>✨💪 Conclusion Done! 💪✨</h2>
+            <p>You wrapped up your ideas effectively and left your reader with something to think about.</p>
+            <p>Time to pull everything together into your final essay!</p>
+        </div>
+    </div>
+    <!-- Page 7: Final Essay -->
+    <div class="section-final" id="final">
+        <h2 class="page-title">
+            📃 Final Essay </h2>
+        <div class="button-group">
+            <div class="button-row">
+                <button class="small-btn play-directions-btn" data-section-id="final">🔊 Play Directions</button>
+                <button class="tip-btn" data-tip-id="tip-final-essay">💡Teacher Tip</button>
+            </div>
+            <div id="tip-final-essay" class="teacher-tip hidden">
+                <strong>💡 Teacher Tip:</strong> Your full essay is almost done — now it's time to revise and make
+                sure
+                everything is clear, complete, and academic.
+
+                <br><br><strong>Use your Writer’s Checklist to guide your final edits!</strong>
+                It will help you make sure your writing is polished and ready to go.
+
+                <br><br><strong>Here are some big things to double-check:</strong>
+                <ul style="margin-top: 8px;">
+                    <li>✅ Your essay flows in a <strong>logical order</strong></li>
+                    <li>✅ You’ve used <strong>quotation marks</strong> around evidence</li>
+                    <li>✅ You’ve written in <strong>third person</strong> (no “I” or “you”)</li>
+                    <li>✅ There are <strong>no contractions</strong> (write “do not” instead of “don’t”)</li>
+                    <li>✅ Sentences are varied and easy to read</li>
+                    <li>✅ Transitions connect your ideas smoothly</li>
+                    <li>✅ You ended your essay with a strong conclusion or call to action</li>
+                </ul>
+
+                <br><br><strong>Pro Tip:</strong> Use the ✅ checklist to keep track of what you’ve fixed — and the
+                🔊
+                read-aloud button to catch anything that sounds off!
+            </div>
+        </div>
+        <div class="section">
+            <p class="h3-instruction">Review your essay using the checklist and make edits.</p>
+
+            <div class="coach-button-wrapper">
+                <button class="btn-coach" onclick="showWritingCoach('essay-final')">👩‍🏫 Writing Coach</button>
+                <div class="writing-tip-box hidden" id="writing-tip-essay-final"></div>
+                <div class="writing-preview-box hidden" id="writing-preview-essay-final"></div>
+            </div>
+            <button class="read-aloud-btn" id="play-essay-final"
+                onclick="toggleReadAloud('essay-final', 'play-essay-final')">🔊 Read Aloud</button>
+            <div id="essay-final" class="output-box" contenteditable="true"></div>
+            <button class="refresh-btn" data-target="essay-final">🔄 Refresh</button>
+            <button id="run-final-checklist">📋 Run Final Checklist</button>
+            <div id="checklist-review" class="writing-tip-box hidden"></div>
+            
+            <button onclick="handleGoogleDocsExport()" class="docs-btn">
+                <img src="google-docs.png" alt="Google Docs Icon" class="button-icon">
+                Send to Google Docs
+              </button>
+            <button id="copy-essay-btn">Copy All Text</button>
+        </div>
+       
+    <div class="section-checklist" id="checklist">
+        <h2>Writer's Checklist ☑️</h2>
+        <label><input type="checkbox" name="check clear topic"> Clear topic</label>
+        <label><input type="checkbox" name="check strong hook"> Strong hook</label>
+        <label><input type="checkbox" name="check logical order"> Logical order</label>
+        <label><input type="checkbox" name="check strong evidence"> Strong evidence</label>
+        <label><input type="checkbox" name="check quotation marks"> Used quotation marks for evidence</label>
+        <label><input type="checkbox" name="check varied sentences"> Varied sentences</label>
+        <label><input type="checkbox" name="check precise words"> Precise words</label>
+        <label><input type="checkbox" name="check effective ending"> Effective ending</label>
+        <label><input type="checkbox" name="check transition phrases"> Transition phrases used</label>
+        <label><input type="checkbox" name="check grammar"> Check grammar, spelling, punctuation</label>
+    </div>
+        <!--Complete message-->
+        <!-- ✅ All Done Button (moved outside hidden div) -->
+        <button id="all-done-btn" class="next-section-btn"><span>All Done 🎉</span></button>
+        <div id="final-celebration-message" class="completion-message hidden">
+            <h2>🏁🏁 You Did It! 🏁🏁</h2>
+            <p>You’ve written a complete, organized, and thoughtful essay. That’s something to be proud of!</p>
+            <p><strong>GO SUBMIT YOUR ASSIGNMENT NOW!</strong> 🎊</p>
+            <p>After that, take a moment to celebrate your hard work—you’re officially done! 🎊</p>
+        </div>
+
+        <style>
+            .completion-message {
+                background-color: #e0ffe0;
+                border: 2px solid #88cc88;
+                padding: 20px;
+                margin: 20px 0;
+                border-radius: 10px;
+                text-align: center;
+                font-size: 1.2em;
+            }
+
+            .hidden {
+                display: none;
+            }
+
+            #confetti-canvas {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                pointer-events: none;
+                z-index: 9999;
+            }
+        </style>
+    </div>
+  <footer class="footer">
+    <p>© 2025 Maggie McDonald | Built for teachers, by a teacher | All rights reserved. Licensed for individual teacher use only</p>
+  </footer>
+  <!-- Canvas for confetti -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- ✅ Load all JS at the end -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <script src="js/multilangual-directions-data.js" defer></script>
+
+  <!-- Core functionality -->
+  <script src="js/utils.js" defer></script>
+  <script src="js/readaloud.js" defer></script>
+  <script src="js/init-modules.js" defer></script>
+  <script src="js/data-sync.js" defer></script>
+  <script src="js/writing-feedback.js" defer></script>
+  <script src="js/progress.js" defer></script>
+  <script src="js/content-generators.js" defer></script>
+  <script src="js/google-integration.js" defer></script>
+  <script src="js/event-handlers.js" defer></script>
+  <script src="js/main.js" defer></script>
+</body>
+
+</html>

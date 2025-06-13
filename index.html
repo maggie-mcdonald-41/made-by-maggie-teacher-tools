@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ultimate Argumentative Essay Organizer</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* Mobile tweaks */
+    @media (max-width: 768px) {
+      .header-flex {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+
+      .header-flex img {
+        margin-bottom: 1rem;
+      }
+
+      .feature-grid,
+      #included-grid {
+        grid-template-columns: 1fr !important;
+      }
+
+      .cta-button {
+        width: 100%;
+        max-width: 320px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="header">
+    <div class="header-flex" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+
+      <div style="flex: 1;">
+        <h1 style="margin: 0;">Ultimate Argumentative Essay Organizer</h1>
+        <p style="margin: 0;">Support all learners with structure, guidance, and interactive writing tools.</p>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>Make Essay Writing Clear, Fun, and Accessible</h1>
+    <p>This digital graphic organizer helps students plan and write persuasive essays with confidence. Scaffolded guidance, engaging tools, and language supports included!</p>
+  <!-- Access Code Form -->
+    <section id="access-gate">
+      <label for="access-code">🔐 Enter Access Code:</label>
+      <input type="text" id="access-code" placeholder="e.g. TEACH2025" />
+      <button class="cta-button" onclick="verifyCode()">✅ Launch Organizer</button>
+      <p id="error-msg" style="color: red; display: none;">❌ Invalid code. Please try again.</p>
+    </section>
+  </main>
+
+  <script>
+    function verifyCode() {
+      const code = document.getElementById('access-code').value.trim();
+      const validCodes = ['TEACH2025', 'MCTEACH', 'MAGGIE2025']; // Add your own
+
+      if (validCodes.includes(code)) {
+        window.location.href = "./organizer/index.html"; // Local folder
+      } else {
+        document.getElementById('error-msg').style.display = 'block';
+      }
+    }
+  </script>
+    <p style="max-width: 700px; font-size: 1rem; margin-top: 1rem;">
+      💻 Want this for your classroom? Purchase includes a personal teacher license with student access via link + code.
+      No accounts, no setup—just open and write.
+    </p>
+    <p style="max-width: 700px; font-size: 1rem; margin-top: 0.5rem;">
+      📥 Lesson plan and slides are unlocked after code entry and also delivered via email after purchase.
+    </p>
+  </section>
+
+  <section class="features">
+    <h2>🎒 Designed with Students & Teachers in Mind</h2>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <h3>💡 Sentence Starters</h3>
+        <p>Click-to-insert transitions, hooks, and evidence starters support all writers.</p>
+      </div>
+      <div class="feature-card">
+        <h3>🎧 Read Aloud</h3>
+        <p>Toggle voice and language options for audio directions and section content.</p>
+      </div>
+      <div class="feature-card">
+        <h3>👩‍🏫 Teacher Tips</h3>
+        <p>Built-in guidance for every section—just like having a teacher right there.</p>
+      </div>
+      <div class="feature-card">
+        <h3>📥 Save & Resume</h3>
+        <p><strong>Download and upload progress</strong> with ease—no sign-in required. Supports <strong>local storage</strong> or <strong>Google Drive integration</strong> when enabled.</p>
+      </div>
+      <div class="feature-card">
+        <h3>🧠 Evidence-First Mode</h3>
+        <p>Supports non-linear thinkers by letting them start with what they know.</p>
+      </div>
+      <div class="feature-card">
+        <h3>🌍 Language Supports</h3>
+        <p>Translations and multilingual audio help students who need scaffolds.</p>
+      </div>
+      <div class="feature-card">
+        <h3>📚 Concrete Examples</h3>
+        <p>Each section includes modeled samples and writing templates for clarity.</p>
+      </div>
+      <div class="feature-card">
+        <h3>🔤 Dyslexia-Friendly Font</h3>
+        <p>Toggle-friendly font option designed for readability and accessibility.</p>
+      </div>
+      <div class="feature-card">
+        <h3>🛡️ Academic Integrity Checks</h3>
+        <p>Built-in writing feedback and edit history tracking help ensure students are doing their own work. Designed to promote authentic writing and support accountability in the classroom.</p>
+      </div>
+      
+    </div>
+
+    <h2 style="margin-top: 4rem;">📦 What's Included</h2>
+    <div id="included-grid">
+      <div class="feature-card">
+        <h3>📁 Digital Organizer Tool</h3>
+        <p>Interactive essay builder with customizable structure and support tools.</p>
+        <a href="/" >
+          <img src="argumentative-essay-cover-image.png" alt="Made by Maggie Logo" style="height: 8rem; margin-right: 1rem;" />
+        </a>
+      </div>
+      <div class="feature-card">
+        <h3>📄 Lesson Plan + Slides</h3>
+        <p>Editable resources for teaching argumentative writing over 6–10 days.</p>
+        <p style="font-size: 0.95rem; margin-top: 0.5rem;">
+          🔐 <strong>Access these files after entering your access code inside the Organizer.</strong> You’ll also receive an email with the download link after purchase.
+        </p>
+        <a href="/app/index.html">
+          <button class="cta-button">🔓 Enter Access Code</button>
+        </a>        
+      </div>
+      <div class="feature-card">
+        <h3>📝 Teacher Notes & License</h3>
+        <p>Your purchase includes a personal classroom license. By using this tool, you agree to the license terms provided.</p>
+        <a href="license.txt" target="_blank" class="license-link">🔗 View Full License Terms</a>
+      </div>      
+    </div>
+    
+    
+  </div>
+  </section>
+
+  
+  <section class="about">
+    <a href="/" >
+      <img src="logo-3.png" alt="Made by Maggie Logo" style="height: 600px; margin-right: 1rem;" />
+    </a>
+    
+  </section>
+
+  <section class="about" style="background-color: #FFA69E;">
+    <h2>💖 My Mission</h2>
+    <div style="display: flex; flex-direction: column; align-items: center;">
+    <p>Hi, I am Maggie! I am a certified special education teacher with a master’s degree in Special Education and a passion for supporting students with diverse learning needs. 
+      I believe every student deserves access to tools that make learning feel possible.
+      This organizer was built to support diverse learning styles, promote confidence, and provide encouragement every step of the way. 
+      My mission is to create meaningful resources that make all students feel capable, valued, and ready to succeed.
+      This tool was developed from real classroom needs—designed to empower students while saving teachers time.</p>
+  </section>
+  <footer class="footer">
+    <p>© 2025 Maggie McDonald | Built for teachers, by a teacher.</p>
+  </footer>
+</body>
+
+</html>
