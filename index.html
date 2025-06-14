@@ -49,21 +49,23 @@
     <p>This digital graphic organizer helps students plan and write persuasive essays with confidence. Scaffolded
       guidance, engaging tools, and language supports included!</p>
     <!-- Access Code Form -->
+    <div class="access-wrapper">
     <section id="access-gate">
       <label for="access-code">🔐 Enter Access Code:</label>
       <input type="text" id="access-code" placeholder="e.g. TEACH2025" />
       <button class="cta-button" onclick="verifyCode()">✅ Launch Organizer</button>
       <p id="error-msg" style="color: red; display: none;">❌ Invalid code. Please try again.</p>
     </section>
+    </div>
     </main>
 
     <script>
       function verifyCode() {
         const code = document.getElementById('access-code').value.trim();
-        const validCodes = ['WRITE2025', 'MCTEACH', 'MAGGIE2025']; // Add your own
+        const validCodes = ['WRITE2025', 'MCTEACH', 'MAGGIE2025']; 
 
         if (validCodes.includes(code)) {
-          window.location.href = "./organizer/index.html";
+          window.location.href = "./argumentative-organizer/index.html";
         } else {
           document.getElementById('error-msg').style.display = 'block';
         }
@@ -140,12 +142,14 @@
           receive an email with the download link after purchase.
         </p>
         <!-- 🔓 Google Drive Access Code Section -->
+        <div class="access-wrapper">
         <section id="drive-access-gate">
           <label for="drive-code">🔐 Enter Access Code for Teacher Materials:</label>
           <input type="text" id="drive-code" placeholder="e.g. TEACH2025" />
           <button class="cta-button" onclick="verifyDriveCode()">✅ Access Resources</button>
           <p id="drive-error-msg" style="color: red; display: none;">❌ Invalid code. Please try again.</p>
         </section>
+        </div>
         <script>
           function verifyDriveCode() {
             const code = document.getElementById('drive-code').value.trim();
