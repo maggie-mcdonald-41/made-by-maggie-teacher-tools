@@ -396,7 +396,7 @@ fragmentWarnings.forEach(fragment => {
   const freq = {};
   words.forEach(word => freq[word] = (freq[word] || 0) + 1);
   Object.keys(freq).forEach(word => {
-    if (freq[word] > 1) {
+    if (freq[word] > 3) {
       const regex = new RegExp(`\\b${word}\\b`, 'gi');
       for (const match of text.matchAll(regex)) {
         addHighlight(match[0], "repeat", "Repeated word: consider rephrasing", match.index);
