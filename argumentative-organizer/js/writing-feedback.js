@@ -391,18 +391,29 @@ fragmentWarnings.forEach(fragment => {
       addHighlight(match[0], "pronoun", message, match.index);
     }
   });
+// === Detect repeated words used 4+ times (excluding common ones) ===
+const words = text.toLowerCase().match(/\b\w{4,}\b/g) || [];
+const freq = {};
+const ignoreList = new Set([
+  "because", "therefore", "however", "which", "should",
+  "would", "about", "their", "other", "these", "those",
+  "first", "second", "third", "again", "another", "also",
+  "author", "article", "quote", "text", "essay", "reason"
+]);
 
-  const words = text.toLowerCase().match(/\b\w{4,}\b/g) || [];
-  const freq = {};
-  words.forEach(word => freq[word] = (freq[word] || 0) + 1);
-  Object.keys(freq).forEach(word => {
-    if (freq[word] > 3) {
-      const regex = new RegExp(`\\b${word}\\b`, 'gi');
-      for (const match of text.matchAll(regex)) {
-        addHighlight(match[0], "repeat", "Repeated word: consider rephrasing", match.index);
-      }
+words.forEach(word => {
+  freq[word] = (freq[word] || 0) + 1;
+});
+
+Object.keys(freq).forEach(word => {
+  if (freq[word] >= 4 && !ignoreList.has(word)) {
+    const regex = new RegExp(`\\b${word}\\b`, 'gi');
+    for (const match of text.matchAll(regex)) {
+      addHighlight(match[0], "repeat", `Repeated word "${word}" (${freq[word]}×): consider rephrasing`, match.index);
     }
-  });
+  }
+});
+
 
 return [...highlightRegistry.entries()].map(([key, entry]) => {
   const offset = parseInt(key.split('-')[0]);
