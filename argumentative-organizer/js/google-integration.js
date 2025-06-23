@@ -4,7 +4,6 @@
 // 1) Constants & state
 const CLIENT_ID   = GOOGLE_CLIENT_ID;
 const SCOPES      = [
-  'https://www.googleapis.com/auth/drive.appdata',
   'https://www.googleapis.com/auth/drive.file',
   'https://www.googleapis.com/auth/documents'
 ].join(' ');

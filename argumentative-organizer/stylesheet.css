@@ -1300,8 +1300,6 @@ body.dark-mode .section-final {
 
 }
 
-
-
 button.read-aloud-btn {
   background-color: #4CAF50 !important; /* Force override */
   color: white !important;
@@ -1319,7 +1317,6 @@ button.read-aloud-btn:hover {
   background-color: #45a049 !important;
   transform: scale(1.05);
 }
-
 
 .teacher-tip {
   background-color: #fff9c4;
@@ -1342,7 +1339,6 @@ body.dark-mode .teacher-tip {
   max-width: 700px;
   margin: 16px auto;
 }
-
 
 /* === Shared Button Styling (unchanged unless noted) === */
 .tip-btn,
@@ -1463,6 +1459,18 @@ body.dark-mode .tip-good {
   min-width: 200px;
 }
 
+.writing-preview-box mark.highlight {
+  background-color: #FFD466;
+  color: black;
+  padding: 1px 4px;
+  border-radius: 3px;
+  cursor: help;
+  font-weight: bold;
+  margin: 0 1px;
+  position: relative;
+  z-index: 1;
+}
+/*
 .writing-preview-box {
   background-color: #f0f8ff;
   border-left: 4px solid #3399ff;
@@ -1470,6 +1478,19 @@ body.dark-mode .tip-good {
   margin-top: 8px;
   border-radius: 6px;
   font-size: 0.95rem;
+  min-height: 100px;
+  position: relative;
+  z-index: 1;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  position: relative;
+}
+*/
+.preview-header {
+  font-size: 1.1em;
+  font-weight: bold;
+  color: #ffd700; /* gold or yellow highlight */
+  margin-bottom: 0.25em;
 }
 
 mark.glow {
@@ -1480,10 +1501,17 @@ mark.glow {
 mark.pulse {
   animation: pulse 1s ease-out;
 }
-mark.highlight {
-  background-color: #fff2a8;
-  cursor: pointer;
-  transition: box-shadow 0.2s ease, background-color 0.2s ease;
+
+.highlight {
+  position: relative;
+  z-index: 2;
+  pointer-events: auto; /* allow hover */
+}
+
+#highlight-content {
+  position: relative;
+  display: block;    /* ensures full-width wrapping */
+
 }
 
 mark.highlight:hover {
@@ -1509,51 +1537,115 @@ mark.highlight.glow {
   50%  { background-color: #fff79a; transform: scale(1.05); }
   100% { background-color: #ffd966; transform: scale(1); }
 }
-mark.highlight[data-type="repeat"] {
-  background-color: #f4c542;
+mark.highlight.repeat {
+  background-color: #05C1B8;
   color: black;
 }
 
-mark.highlight[data-type="capitalization"] {
-  background-color: #ffb347;
+mark.highlight.capitalization {
+  background-color: #FF9900;
   color: black;
 }
 
-mark.highlight[data-type="contraction"] {
+mark.highlight.contraction {
   background-color: #ff6b6b;
   color: white;
 }
 
-mark.highlight[data-type="personal"] {
+mark.highlight.personal {
   background-color: #f28585;
   color: white;
 }
 
-mark.highlight[data-type="subjectverb"] {
+mark.highlight.confusedpair {
   background-color: #ff8c94;
   color: black;
 }
-
-mark[data-type="subjectverb"] {
-  background-color: #b39ddb; /* Soft purple */
+mark.highlight.subjectverb {
+  background-color: #84EBE6;
   color: black;
 }
 
-
-mark.highlight[data-type="exclamation"] {
+mark.highlight.exclamation{
   background-color: #b084f7;
   color: white;
 }
 
-mark.highlight[data-type="runon"],
-mark.highlight[data-type="fragment"] {
-  background-color: #6bd0c9;
+mark.highlight.fragment {
+  box-shadow: inset 0 -0.3em 0 #0AD1CC;
   color: black;
 }
 
-mark.highlight[data-type="spelling"] {
+
+mark.highlight.spelling {
   background-color: #82d173;
   color: black;
+}
+
+.preview-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+}
+
+.preview-fragment .underline-highlight.fragment {
+  position: absolute;
+  top: 0;
+  left: 0;
+  /* full-width underline background, tweak height/padding as needed */
+  background-color: rgba(255, 50, 50, 0.1);
+  z-index: 1;
+  pointer-events: none; /* so the inline marks still get hover/title */
+}
+
+.preview-inline {
+  position: relative;
+  z-index: 2;
+}
+
+/* make sure your marks are truly on top, too */
+.preview-inline mark.highlight {
+  position: relative;
+  z-index: 2;
+}
+
+.preview-runon {
+  position: relative;    /* establish a stacking context */
+  z-index: 1;            /* behind everything else */
+  pointer-events: none;
+}
+
+.preview-background {
+  position: relative;
+}
+
+
+.runon-layer .underline-highlight {
+  background: rgba(255,200,0,0.2);
+  z-index: 1;
+}
+.fragment-layer .underline-highlight {
+  background: rgba(255,50,50,0.1);
+  z-index: 2;
+}
+/*
+.highlight.fragment {
+  background-color: #0AD1CC; 
+}
+
+*/
+.highlight.runon {
+  /* a nice inset underline behind your normal background */
+  box-shadow: inset 0 -0.3em 0 rgba(255,200,0,0.3);
+}
+
+.underline-highlight {
+  display: inline-block;
+  position: relative;
+  z-index: 0;
+  pointer-events: none;
 }
 
 body.dark-mode .writing-preview-box {
@@ -1563,14 +1655,22 @@ body.dark-mode .writing-preview-box {
 }
 
 .writing-preview-box mark {
-  background-color: #fff176;
-  color: black;
-  padding: 0 3px;
-  border-radius: 3px;
   cursor: help;
   font-weight: bold;
 }
 
+.writing-preview-box {
+  background-color: #f0f8ff;
+  border-left: 4px solid #3399ff;
+  padding: 16px; /* Increased from 10px */
+  margin-top: 8px;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  line-height: 1.6; /* Adds vertical breathing room */
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  position: relative;
+}
 .tip-warning {
   background-color: #fff3cd;
   border-left: 4px solid #ffc107;
@@ -1580,6 +1680,7 @@ body.dark-mode .writing-preview-box {
   color: #856404;
   font-size: 0.95rem;
 }
+
 
 body.dark-mode .tip-warning {
   background-color: #4b4400;
