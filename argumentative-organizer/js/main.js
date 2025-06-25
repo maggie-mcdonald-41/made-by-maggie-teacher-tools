@@ -287,6 +287,7 @@ thesisBox.addEventListener('input', () => {
   syncButton.classList.add('attention');
 });
 
+document.getElementById('confirm-sync-button')?.addEventListener('click', confirmReverseSync);
 });
 
 

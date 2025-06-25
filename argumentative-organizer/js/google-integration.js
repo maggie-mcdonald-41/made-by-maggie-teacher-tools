@@ -2,7 +2,7 @@
    Google OAuth + Drive Autosave + Docs Export + Edit Logging */
 
 // 1) Constants & state
-const GOOGLE_CLIENT_ID = '592399844090-i5e5nc7a098as70j39cab8lsv8ini9t0.apps.googleusercontent.com';
+const CLIENT_ID = '592399844090-i5e5nc7a098as70j39cab8lsv8ini9t0.apps.googleusercontent.com';
 const SCOPES      = [
   'https://www.googleapis.com/auth/drive.file',
   'https://www.googleapis.com/auth/documents'
@@ -11,7 +11,7 @@ const SCOPES      = [
 let tokenClient;
 let accessToken = localStorage.getItem('accessToken');
 let userEmail   = localStorage.getItem('userEmail');
-let fileId      = userEmail ? localStorage.getItem(`essayFileId_${userEmail}`) : null;
+let fileId = window.essayFileId || null;
 let isSignedIn  = !!accessToken;
 const writingLog = [];
 
@@ -46,7 +46,20 @@ function logActivity(action, id = null) {
   const timestamp = now.toLocaleString();
   const label = id && sectionLabels[id] ? sectionLabels[id] : id;
   const entry = label ? `[${timestamp}] ${action} (${label})` : `[${timestamp}] ${action}`;
+
+  // ✅ Prevent exact duplicates in a row
+  if (writingLog[writingLog.length - 1] === entry) return;
+
   writingLog.push(entry);
+  localStorage.setItem('writingLog', JSON.stringify(writingLog));
+  renderWritingLog();
+}
+
+function renderWritingLog() {
+  const container = document.getElementById('teacher-log');
+  if (container) {
+    container.innerText = writingLog.join('\n');
+  }
 }
 
 function showLoadingMessage(text) {
@@ -83,16 +96,25 @@ async function restoreGoogleAuthIfPossible() {
     scope:     SCOPES,
     callback:  () => {} // silent
   });
+
   showLoadingMessage('🔄 Restoring your saved essay…');
   await loadFromDrive();
+  restoreWritingLogFromStorage(); // ✅ Add this here
   hideLoadingMessage();
   startAutoSave();
   setupEnhancedMonitoring();
-  // update the Sign-In button text
+
   const signInBtn = document.getElementById('googleSignIn');
   if (signInBtn) {
     signInBtn.innerHTML = '✅ Signed In';
   }
+}
+
+
+function restoreWritingLogFromStorage() {
+  const savedLog = JSON.parse(localStorage.getItem('writingLog') || '[]');
+  writingLog.push(...savedLog);
+  renderWritingLog();
 }
 
 // 4) Sign-in on user click
@@ -238,42 +260,45 @@ function setupEnhancedMonitoring() {
   detectAndWarnGrammarly();
   setTimeout(detectAndWarnGrammarly, 3000); // Extra check after Grammarly loads
 
-  document.querySelectorAll('[contenteditable="true"]').forEach(el => {
-    const id = el.id;
+document.querySelectorAll('[contenteditable="true"]').forEach(el => {
+  const id = el.id;
 
-    el.addEventListener('input', () => {
-      if (!startedSections.has(id)) {
-        startedSections.add(id);
-        editStartTimes[id] = Date.now();
-        logActivity("Started editing", id);
-      }
+  if (el.dataset.monitored === 'true') return; // ✅ Skip if already wired
+  el.dataset.monitored = 'true'; // ✅ Mark as wired
 
-      debouncedSaveToDrive(saveToDriveNow)();
-    });
-
-    el.addEventListener('blur', () => {
-      if (startedSections.has(id)) {
-        startedSections.delete(id);
-
-        const duration = Date.now() - (editStartTimes[id] || Date.now());
-        const minutes = Math.round(duration / 60000);
-        revisionCounts[id] = (revisionCounts[id] || 0) + 1;
-
-        logActivity(`Finished editing after ${minutes} min (revision ${revisionCounts[id]})`, id);
-        delete editStartTimes[id];
-      }
-    });
-
-    el.addEventListener('paste', () => {
-      logActivity("Pasted into", id);
-      debouncedSaveToDrive(saveToDriveNow)();
-    });
-
-    el.addEventListener('ai-edit', () => {
-      logActivity("Used AI Help in", id);
-      delete el.dataset.aiInserted;
-    });
+  el.addEventListener('input', () => {
+    if (!startedSections.has(id)) {
+      startedSections.add(id);
+      editStartTimes[id] = Date.now();
+      logActivity("Started editing", id);
+    }
+    debouncedSaveToDrive(saveToDriveNow)();
   });
+
+  el.addEventListener('blur', () => {
+    if (startedSections.has(id)) {
+      startedSections.delete(id);
+
+      const duration = Date.now() - (editStartTimes[id] || Date.now());
+      const minutes = Math.round(duration / 60000);
+      revisionCounts[id] = (revisionCounts[id] || 0) + 1;
+
+      logActivity(`Finished editing after ${minutes} min (revision ${revisionCounts[id]})`, id);
+      delete editStartTimes[id];
+    }
+  });
+
+  el.addEventListener('paste', () => {
+    logActivity("Pasted into", id);
+    debouncedSaveToDrive(saveToDriveNow)();
+  });
+
+  el.addEventListener('ai-edit', () => {
+    logActivity("Used AI Help in", id);
+    delete el.dataset.aiInserted;
+  });
+});
+
 }
 
 // 7) Export to Docs

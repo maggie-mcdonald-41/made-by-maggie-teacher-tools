@@ -60,15 +60,15 @@
     </div>
 
     <script>
-      function verifyCode() {
-        const code = document.getElementById('access-code').value.trim();
-        const validCodes = ['WRITE2025', 'MCTEACH', 'MAGGIE2025'];
-        if (validCodes.includes(code)) {
-          window.location.href = "./argumentative-organizer/index.html";
-        } else {
-          document.getElementById('error-msg').style.display = 'block';
-        }
-      }
+  function verifyCode() {
+    const code = document.getElementById('access-code').value.trim().toUpperCase(); // Normalize to uppercase
+    const validCodes = ['WRITE2025', 'MCTEACH', 'MAGGIE2025']; // Already uppercase
+    if (validCodes.includes(code)) {
+      window.location.href = "./argumentative-organizer/index.html";
+    } else {
+      document.getElementById('error-msg').style.display = 'block';
+    }
+  }
     </script>
 
     <p style="max-width: 700px; font-size: 1rem; margin-top: 1rem;">
@@ -84,14 +84,14 @@
     <h2>🎒 Designed with Students & Teachers in Mind</h2>
     <div class="feature-grid">
       <div class="feature-card"><h3>💡 Sentence Starters</h3><p>Click-to-insert transitions, hooks, and evidence starters support all writers.</p></div>
-      <div class="feature-card"><h3>🎧 Read Aloud</h3><p>Toggle voice and language options for audio directions and section content.</p></div>
+      <div class="feature-card"><h3>🎧 Read Aloud & Language Supports</h3><p>Toggle voice and language options for audio directions and section content.</p></div>
       <div class="feature-card"><h3>👩‍🏫 Teacher Tips</h3><p>Built-in guidance for every section—just like having a teacher right there.</p></div>
       <div class="feature-card"><h3>📥 Save & Resume</h3><p><strong>Download and upload progress</strong> with ease—no sign-in required. Supports <strong>local storage</strong> or <strong>Google Drive integration</strong> when enabled.</p></div>
       <div class="feature-card"><h3>🧠 Evidence-First Mode</h3><p>Supports non-linear thinkers by letting them start with what they know.</p></div>
-      <div class="feature-card"><h3>🌍 Language Supports</h3><p>Translations and multilingual audio help students who need scaffolds.</p></div>
+      <div class="feature-card"><h3>🧑‍💻 Writing Coach</h3><p>Real-time feedback highlights grammar mistakes, sentence fragments, run-ons, off-topic responses, and more. It checks for spelling, repetition, transitions, and structure—without ever writing for the student. Designed to build strong, independent writers.</p></div>
       <div class="feature-card"><h3>📚 Concrete Examples</h3><p>Each section includes modeled samples and writing templates for clarity.</p></div>
       <div class="feature-card"><h3>🔤 Dyslexia-Friendly Font</h3><p>Toggle-friendly font option designed for readability and accessibility.</p></div>
-      <div class="feature-card"><h3>🛡️ Academic Integrity Checks</h3><p>Built-in writing feedback and edit history tracking help ensure students are doing their own work. Designed to promote authentic writing and support accountability in the classroom.</p></div>
+      <div class="feature-card"><h3>🛡️ Academic Integrity Checks</h3><p>Built-in writing edit history tracking help ensure students are doing their own work. Designed to promote authentic writing and support accountability in the classroom.</p></div>
     </div>
 
     <h2 style="margin-top: 4rem;">📦 What's Included</h2>
@@ -106,14 +106,42 @@
         <p>Editable resources for teaching argumentative writing over 6–10 days.</p>
         <p class="subtext">🔐 <strong>Access these files after entering your access code inside the Organizer.</strong> You’ll also receive an email with the download link after purchase.</p>
 
-        <div class="access-wrapper">
-          <section id="drive-access-gate">
-            <label for="drive-code">🔐 Enter Access Code for Teacher Materials:</label>
-            <input type="text" id="drive-code" class="access-code-input" placeholder="e.g. TEACH2025" />
-            <button class="cta-button" onclick="verifyDriveCode()">✅ Access Resources</button>
-            <p id="drive-error-msg" class="error-msg">❌ Invalid code. Please try again.</p>
-          </section>
+    <div class="access-wrapper">
+      <section id="drive-access-gate">
+        <label for="drive-access-code">🔐 Enter Access Code for Teacher Materials:</label>
+        <input type="text" id="drive-access-code" class="access-code-input" placeholder="e.g. TEACH2025" />
+        <button class="cta-button" onclick="verifyDriveCode()">✅ Access Resources</button>
+        <p id="drive-error-msg" class="error-msg" style="color: red; display: none;">❌ Invalid code. Please try again.</p>
+
+        <!-- Hidden drive link shown after successful code entry -->
+        <div id="drive-link-container" style="display: none; margin-top: 1rem;">
+          ✅ Access granted! <a id="drive-link" href="#" target="_blank">Click here to open the teacher resources folder</a>
         </div>
+      </section>
+    </div>
+
+<script>
+function verifyDriveCode() {
+  const code = document.getElementById('drive-access-code').value.trim().toUpperCase(); // Convert input to uppercase
+  const validCodes = ['WRITE2025', 'MCTEACH', 'MAGGIE2025']; // Already uppercase
+  const errorMsg = document.getElementById('drive-error-msg');
+  const linkContainer = document.getElementById('drive-link-container');
+  const driveLink = document.getElementById('drive-link');
+
+  const driveFolderUrl = 'https://drive.google.com/drive/folders/YOUR_FOLDER_ID_HERE';
+
+  if (validCodes.includes(code)) {
+    errorMsg.style.display = 'none';
+    linkContainer.style.display = 'block';
+    driveLink.href = driveFolderUrl;
+  } else {
+    linkContainer.style.display = 'none';
+    errorMsg.style.display = 'block';
+  }
+}
+</script>
+
+
 
         <div class="feature-card included-card">
           <h3>📝 Teacher Notes & License</h3>
@@ -133,16 +161,19 @@
         <img src="images/essay-nav.png" alt="Preview 1" class="carousel-image">
         <img src="images/essay-thesis.png" alt="Preview 2" class="carousel-image">
         <img src="images/essay-evidence.png" alt="Preview 3" class="carousel-image">
-        <img src="images/essay-evidence-2.png" alt="Preview 3" class="carousel-image">
-        <img src="images/essay-introduction.png" alt="Preview 3" class="carousel-image">
-        <img src="images/essay-bp1.png" alt="Preview 3" class="carousel-image">
-        <img src="images/essay-thesis-done.png" alt="Preview 3" class="carousel-image">
-        <img src="images/essay-ef-menu.png" alt="Preview 3" class="carousel-image">
-        <img src="images/essay-outline.png" alt="Preview 3" class="carousel-image">
-        <img src="images/essay-bp3.png" alt="Preview 3" class="carousel-image">
-        <img src="images/essay-conclusion1.png" alt="Preview 3" class="carousel-image">
-        <img src="images/essay-conclusion2.png" alt="Preview 3" class="carousel-image">
-        <img src="images/essay-final.png" alt="Preview 3" class="carousel-image">
+        <img src="images/essay-evidence-2.png" alt="Preview 4" class="carousel-image">
+        <img src="images/essay-introduction.png" alt="Preview 5" class="carousel-image">
+        <img src="images/essay-bp1.png" alt="Preview 6" class="carousel-image">
+        <img src="images/essay-thesis-done.png" alt="Preview 7" class="carousel-image">
+        <img src="images/essay-ef-menu.png" alt="Preview 8" class="carousel-image">
+        <img src="images/essay-outline.png" alt="Preview 9" class="carousel-image">
+        <img src="images/essay-bp3.png" alt="Preview 10" class="carousel-image">
+        <img src="images/essay-conclusion1.png" alt="Preview 11" class="carousel-image">
+        <img src="images/essay-conclusion2.png" alt="Preview 12" class="carousel-image">
+        <img src="images/essay-final.png" alt="Preview 13" class="carousel-image">
+        <img src="images/writing-coach.png" alt="Preview 14" class="carousel-image">
+        <img src="images/writing-coach-2.png" alt="Preview 15" class="carousel-image">
+        <img src="images/teacher-log.png" alt="Preview 16" class="carousel-image">
 
 
       </div>
@@ -161,7 +192,7 @@
         <li>✅ Editable Slides & Teacher Notes</li>
         <li>✅ Personal Classroom License</li>
       </ul>
-      <p class="price-tag">$15 – One-Time Purchase</p>
+      <p class="price-tag">$15 – One-Year's Access</p>
       <a href="https://payhip.com/YOURPRODUCTLINK" target="_blank" class="purchase-button">💳 Buy Now</a>
       <p class="secure-note">🔒 Secure checkout via Payhip</p>
     </div>

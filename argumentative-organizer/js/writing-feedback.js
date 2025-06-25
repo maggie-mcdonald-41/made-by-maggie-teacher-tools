@@ -139,8 +139,12 @@ function getMidSentenceCapitalizationWarnings(text) {
     if (allowedCapitalWords.has(word)) continue;
 
     const before = text.slice(0, index).trimEnd();
-    const isSentenceStart = /(^|\.|\!|\?|\n|\r|\r\n)["“”']?$/.test(before.slice(-4));
-    if (!isSentenceStart) {
+    const isActuallyStart = index === 0 || /[.!?]["“”']?\s*$/.test(before.slice(-10));
+    const isKnownStarter = transitionPhrases.some(p => {
+      return text.slice(index - p.length - 1, index + word.length).toLowerCase().includes(p);
+    });
+
+    if (!isActuallyStart && !isKnownStarter) {
       midSentenceCapitalWords.push({ word, index });
     }
   }
@@ -151,9 +155,12 @@ function getMidSentenceCapitalizationWarnings(text) {
     for (const match of text.matchAll(regex)) {
       const index = match.index;
       const preceding = text.slice(Math.max(0, index - 50), index);
-      if (!/[.!?]["”']?\s*$/.test(preceding)) {
+      const isStartOfText = index === 0;
+      const followsPunctuation = /[.!?]["”']?\s*$/.test(preceding);
+      if (!isStartOfText && !followsPunctuation) {
         transitionCapitalErrors.push({ word: capitalized, index });
       }
+
     }
   });
 
@@ -162,6 +169,7 @@ function getMidSentenceCapitalizationWarnings(text) {
     transitionCaps: transitionCapitalErrors
   };
 }
+
 
 function getSentenceFragmentWarnings(text) {
   const doc = nlp(text);
@@ -297,10 +305,10 @@ fragmentWarnings.forEach(fragment => {
       }
     }
 
-    const skipRunOnCheck = targetId.includes('thesis');
     const isCopied = normalize(thesisText).includes(normalize(trimmed)) || normalize(restatedText).includes(normalize(trimmed));
 
-    if (!skipRunOnCheck && !isCopied && trimmed.split(/\s+/).length > 25) {
+    if (!isCopied && trimmed.split(/\s+/).length > 25) {
+
       const escaped = trimmed.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
       const match = text.match(new RegExp(escaped, 'i'));
       const sentenceOffset = match?.index ?? -1;

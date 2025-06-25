@@ -157,6 +157,7 @@ function attemptThesisReverseSync() {
   const previewBox = document.getElementById('sync-preview');
   const previewClaim = document.getElementById('preview-claim');
   const previewReasons = document.getElementById('preview-reasons');
+  const paragraphCount = parseInt(document.getElementById('paragraphCount')?.value, 10);
 
   // Reset previous state
   warning.innerText = '';
@@ -164,21 +165,30 @@ function attemptThesisReverseSync() {
   previewClaim.innerText = '';
   previewReasons.innerHTML = '';
 
-  if (!thesis.includes(' because ')) {
-    warning.innerText = "⚠️ Unable to sync — please use the standard format like: 'Claim because Reason 1 and Reason 2.'";
+  if (!thesis.toLowerCase().includes('because')) {
+    warning.innerText = `⚠️ Unable to sync — please use the format: 'Claim because Reason 1${paragraphCount >= 2 ? " and Reason 2" : ""}${paragraphCount === 3 ? " and Reason 3" : ""}.'`;
     return;
   }
 
-  const [claimPart, reasonsPartRaw] = thesis.split(' because ');
-  const reasonsPart = reasonsPartRaw.replace(/\.$/, '');
+  const [claimPartRaw, reasonsPartRaw] = thesis.split(/because/i);
+  if (!claimPartRaw || !reasonsPartRaw) {
+    warning.innerText = "⚠️ Could not extract claim and reasons. Please check your sentence structure.";
+    return;
+  }
 
-  const reasonPieces = reasonsPart
-    .split(/,| and /)
+  const claimPart = claimPartRaw.trim().replace(/\.$/, '');
+  const normalizedReasons = reasonsPartRaw
+    .replace(/,\s*and\s+/gi, ', ')
+    .replace(/\s+and\s+/gi, ', ')
+    .replace(/\.$/, '');
+
+  const reasonPieces = normalizedReasons
+    .split(',')
     .map(r => r.trim())
     .filter(r => r.length > 0);
 
-  if (reasonPieces.length < 1 || reasonPieces.length > 3) {
-    warning.innerText = "⚠️ Unable to sync — please use the format like: 'Claim because Reason 1 and Reason 2.'";
+  if (reasonPieces.length !== paragraphCount) {
+    warning.innerText = `⚠️ Unable to sync — your thesis should include exactly ${paragraphCount} reason${paragraphCount > 1 ? 's' : ''}.`;
     return;
   }
 
@@ -199,35 +209,40 @@ function attemptThesisReverseSync() {
 function confirmReverseSync() {
   const previewBox = document.getElementById('sync-preview');
   const claim = previewBox.dataset.claim;
-  const reasons = JSON.parse(previewBox.dataset.reasons);
+  let reasons;
+  try {
+    reasons = JSON.parse(previewBox.dataset.reasons);
+  } catch (e) {
+    console.error("❌ Failed to parse reasons:", previewBox.dataset.reasons);
+    return;
+  }
 
+  // Update claim
   if (claim) {
     document.getElementById('claim-box').innerText = claim;
   }
-  if (reasons[0]) {
-    document.getElementById('reason1-box').innerText = reasons[0];
-  }
-  if (reasons[1]) {
-    document.getElementById('reason2-box').innerText = reasons[1];
-  }
-  if (reasons[2]) {
-    document.getElementById('reason3-box').innerText = reasons[2];
-  }
+
+  // Update each reason box dynamically
+  reasons.forEach((reason, index) => {
+    const box = document.getElementById(`reason${index + 1}-box`);
+    if (box) {
+      box.innerText = reason;
+    }
+  });
 
   // Save changes to localStorage
   syncData();
 
-  // Clear preview
-  document.getElementById('sync-preview').classList.add('hidden');
-  document.getElementById('sync-warning').innerText = "✅ Claim and reasons updated!";
-    // Show success message
-    const messageEl = document.getElementById('sync-warning');
-    messageEl.innerText = "✅ Claim and reasons updated!";
-  
-    // Auto-hide message after 4 seconds
-    setTimeout(() => {
-      messageEl.innerText = "";
-    }, 4000);
-}
+  // Clear preview display
+  previewBox.classList.add('hidden');
 
+  // Show success message
+  const messageEl = document.getElementById('sync-warning');
+  messageEl.innerText = "✅ Claim and reasons updated!";
+  
+  // Auto-hide message after 4 seconds
+  setTimeout(() => {
+    messageEl.innerText = "";
+  }, 4000);
+}
 // === end event-handlers.js ===
