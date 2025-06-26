@@ -170,53 +170,45 @@ function getMidSentenceCapitalizationWarnings(text) {
   };
 }
 
-
 function getSentenceFragmentWarnings(text) {
   const doc = nlp(text);
   const fragmentWarnings = [];
 
   const subordinators = [
-    "although", "because", "though", "since", "unless", "while", "whereas", 
-    "even though", "as if", "as though", "if", "until", "after", "before", 
+    "although", "because", "though", "since", "unless", "while", "whereas",
+    "even though", "as if", "as though", "if", "until", "after", "before",
     "when", "whenever", "once"
   ];
 
-  doc.sentences().forEach((sentenceDoc) => {
-    const sentenceText = sentenceDoc.text().trim();
+  doc.sentences().forEach(sentenceDoc => {
+    const sentence = sentenceDoc.text().trim();
     const terms = sentenceDoc.terms().json();
     if (terms.length === 0) return;
 
-    const offset = terms[0].terms[0]?.index || text.indexOf(sentenceText);
+    const offset = text.indexOf(sentence);
+    const startsWithSub = subordinators.some(sub => sentence.toLowerCase().startsWith(sub + " "));
 
-    const hasSubject = sentenceDoc.match('#Noun').found;
-    const hasVerb = sentenceDoc.match('#Verb').found;
-    const isShort = sentenceText.length < 5;
+    // 🔥 New logic: treat as fragment if it starts with subordinator and isn't part of compound sentence
+    const isFragment = startsWithSub &&
+      !sentence.toLowerCase().match(/\b(and|but|so|yet|or|nor)\b/) &&
+      sentence.length < 100;
 
-    const startsWithSubordinator = subordinators.some(sub =>
-      sentenceText.toLowerCase().startsWith(sub + " ")
-    );
+    console.log("📍 Fragment check:", {
+      sentence,
+      startsWithSub,
+      isFragment
+    });
 
-    const reason = "Possible sentence fragment: missing subject or verb, or incomplete clause.";
-
-if ((startsWithSubordinator && (!hasSubject || !hasVerb)) || (!hasVerb && !isShort)) {
-  console.log("⚠️ Fragment Detected:", {
-    sentence: sentenceText,
-    hasSubject,
-    hasVerb,
-    startsWithSubordinator,
-    offset
-  });
-
-  fragmentWarnings.push({
-    word: sentenceText,
-    offset,
-    endOffset: offset + sentenceText.length,
-    type: "fragment",
-    titles: new Set([reason]),
-    isRunon: true // Triggers background highlight
-  });
-}
-
+    if (isFragment && offset !== -1) {
+      fragmentWarnings.push({
+        word: sentence,
+        offset,
+        endOffset: offset + sentence.length,
+        type: "fragment",
+        titles: new Set(["Possible sentence fragment: this may be an incomplete thought."]),
+        isRunon: true
+      });
+    }
   });
 
   return fragmentWarnings;
@@ -264,14 +256,45 @@ function highlightWritingIssues(text, targetId) {
   }
 
 const fragmentWarnings = getSentenceFragmentWarnings(text);
+console.log("🪵 Detected Fragments:", fragmentWarnings);
+
 fragmentWarnings.forEach(fragment => {
-  highlightRegistry.set(`${fragment.offset}-${fragment.word}`, {
-    word: fragment.word,
+  highlightRegistry.set(`fragment-${fragment.offset}`, {
+    word: "",
     offset: fragment.offset,
     endOffset: fragment.endOffset,
     types: new Set(["fragment"]),
-    titles: new Set(["Possible sentence fragment: missing subject or verb, or incomplete clause."]),
-    isRunon: true // 💡 important for preview layer
+    titles: fragment.titles,
+    isRunon: true,
+    styles: { zIndex: 1, background: "rgba(255, 160, 122, 0.2)" }
+  });
+
+  const words = fragment.word.match(/\b\w+\b/g) || [];
+  let searchStart = fragment.offset;
+
+  words.forEach(word => {
+    const wordOffset = text.indexOf(word, searchStart);
+    if (wordOffset === -1) return;
+    searchStart = wordOffset + word.length;
+
+    const key = `${wordOffset}-${word}`;
+    const existing = highlightRegistry.get(key);
+
+    if (existing) {
+      existing.types.add("fragment");
+      if (existing.titles instanceof Set) {
+        existing.titles.add(...fragment.titles);
+      } else {
+        existing.titles = new Set([...existing.titles || [], ...fragment.titles]);
+      }
+    } else {
+      highlightRegistry.set(key, {
+        word,
+        offset: wordOffset,
+        types: new Set(["fragment"]),
+        titles: fragment.titles
+      });
+    }
   });
 });
 

@@ -1,26 +1,29 @@
-LICENSE
-
-📝 License & Usage Terms
+📝 LICENSE & USAGE TERMS
 Ultimate Argumentative Essay Organizer
- © 2025 Maggie McDonald – All Rights Reserved
+© 2025 Maggie McDonald – All Rights Reserved
 
 👩‍🏫 What You Can Do:
-✅ Use this tool with your own students
- ✅ Share the access link and access code only with your class
- ✅ Post the link in your LMS (Google Classroom, Canvas, etc.)
- ✅ Download/upload and reuse with multiple class sections you teach
- ✅ Customize your lesson pacing or pair it with other instructional materials
+✅ Use this tool with students under your license
+✅ Share the access link and code only with your students
+✅ Post the link in your LMS (Google Classroom, Canvas, etc.)
+✅ Download/upload student work and reuse it across multiple class sections
+✅ Customize pacing and use it alongside your own instructional materials
+✅ Showcase to your admin or curriculum team for school/district adoption
 
 🚫 What You Cannot Do:
-❌ Share the access code publicly or post it online
- ❌ Share or sell this tool to other teachers or institutions
- ❌ Modify the HTML/CSS/JS source code and resell or redistribute
- ❌ Upload the files to public repositories or websites
+❌ Share the full access code publicly (e.g., social media, public forums)
+❌ Share or sell this tool to other educators, schools, or institutions
+❌ Modify and resell the HTML, CSS, or JavaScript files
+❌ Upload the files or code to public repositories or commercial platforms
 
-🔐 Licensing
-Your purchase grants one classroom license (for one teacher’s use).
- Need a school or multi-class license? Contact Maggie McDonald at [hamaggie25@gmail.com].
+🔐 Licensing:
+Free Tier: Available to all educators for individual evaluation or limited student use.
+
+Full Access License: Grants use by one teacher with up to 30 students.
+
+School/District Licenses: For site-wide or multi-teacher use, contact Maggie McDonald at [hamaggie25@gmail.com].
 
 ❤️ Thank You!
-This tool was built with love for educators and students who deserve scaffolds, creativity, and confidence in their writing. By respecting this license, you support future tools, updates, and improvements.
-
+This tool was designed by a teacher to support students of all learning levels. 
+Your support makes continued improvements, new organizers, and accessible features possible. 
+Respecting this license helps keep the tool growing—for you and the next generation of writers.
