@@ -90,7 +90,12 @@ body {
 @media (max-width: 768px) {
   .nav-container {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: start;
+
+  }
+
+  .nav-logo {
+  font-size: 1.2rem;
   }
 
   .nav-toggle {
@@ -98,7 +103,7 @@ body {
     background: none;
     border: none;
     color: white;
-    font-size: 1.5rem;
+    font-size: 1rem;
     margin-top: 0.5rem;
     cursor: pointer;
   }
@@ -444,8 +449,10 @@ font-size: 1.25rem;
 }
 
 .testimonial-grid {
-  display: flex;
-  
+  display: grid;
+  grid-template-columns:  auto;
+  gap: 2rem;
+  margin-top: 2rem;
 }
 
 /* === FAQ Section === */
@@ -533,6 +540,10 @@ font-size: 1.25rem;
   #included-grid {
     grid-template-columns: 1fr;
   }
+
+  .about-photo img {
+    width: 15rem;
+  }
 }
 
 /* === What's Included Section Enhancements === */
@@ -585,12 +596,13 @@ font-size: 1.25rem;
 
 .carousel-container {
   overflow: hidden;
-  max-width: 900px;
+  max-width: 800px;
+  max-height: 700px;
   margin: 2rem auto 0 auto;
   border-radius: 16px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
   background-color: #2a1933;
-  padding: 1.5rem;
+  padding: 1.2rem;
 }
 
 .carousel-track {
@@ -601,7 +613,7 @@ font-size: 1.25rem;
 
 .carousel-image {
   width: 40rem;         
-  height: 40rem;  
+  height: 37rem;  
   object-fit: cover;  
   border-radius: 10px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);

@@ -56,21 +56,30 @@
         <label for="access-code">🔐 Enter Access Code:</label>
         <input type="text" id="access-code" placeholder="e.g. TEACH2025" />
         <button class="cta-button" onclick="verifyCode()">✅ Launch Organizer</button>
-        <p id="error-msg" style="color: red; display: none;">❌ Invalid code. Please try again.</p>
+        <p id="error-msg" style="color: red; display: none;">
+          ❌ That code didn’t work. Double-check for typos or <a href="#purchase" style="color: #9c6ded; text-decoration: underline;">get full access here</a>.
+        </p>
       </section>
     </div>
+<script>
+  const inputEl = document.getElementById('access-code');
+  const errorMsg = document.getElementById('error-msg');
 
-    <script>
   function verifyCode() {
-    const code = document.getElementById('access-code').value.trim().toUpperCase(); // Normalize to uppercase
-    const validCodes = ['WRITE2025', 'MCTEACH', 'MAGGIE2025']; // Already uppercase
+    const code = inputEl.value.trim().toUpperCase();
+    const validCodes = ['WRITE2025', 'MCTEACH', 'MAGGIE2025'];
     if (validCodes.includes(code)) {
       window.location.href = "./argumentative-organizer/index.html";
     } else {
-      document.getElementById('error-msg').style.display = 'block';
+      errorMsg.style.display = 'block';
     }
   }
-    </script>
+
+  inputEl.addEventListener('input', () => {
+    errorMsg.style.display = 'none';
+  });
+</script>
+
 
     <p class="hero-subtext">
       💻 Want this for your classroom? Purchase includes a personal teacher license with student access via link + code. No accounts, no setup—just open and write.
@@ -229,7 +238,7 @@
   <div class="testimonial-grid">
     <div class="testimonial-card">
       <p class="review">“This is the one-on-one support we have needed in the virtual classroom!”</p>
-      <p class="reviewer">— Learning Coach</p>
+      <p class="reviewer">— Brittany, GCA Learning Coach</p>
     </div>
       <div class="testimonial-card">
       <p class="review">“I’ve never seen my students so confident about writing.
@@ -278,7 +287,9 @@
         <label for="drive-access-code">🔐 Enter Access Code for Teacher Materials:</label>
         <input type="text" id="drive-access-code" class="access-code-input" placeholder="e.g. TEACH2025" />
         <button class="cta-button" onclick="verifyDriveCode()">✅ Access Resources</button>
-        <p id="drive-error-msg" class="error-msg" style="color: red; display: none;">❌ Invalid code. Please try again.</p>
+        <p id="drive-error-msg" style="color: red; display: none;">
+          ❌ That code didn’t work. Double-check for typos or <a href="#purchase" style="color: #9c6ded; text-decoration: underline;">get full access here</a>.
+        </p>
 
         <!-- Hidden drive link shown after successful code entry -->
         <div id="drive-link-container" style="display: none; margin-top: 1rem;">
@@ -295,7 +306,7 @@ function verifyDriveCode() {
   const linkContainer = document.getElementById('drive-link-container');
   const driveLink = document.getElementById('drive-link');
 
-  const driveFolderUrl = 'https://drive.google.com/drive/folders/YOUR_FOLDER_ID_HERE';
+  const driveFolderUrl = 'https://drive.google.com/drive/folders/1_YHGrpp0HKzsFgAd_i-zHn5Aw-BbuVeD';
 
   if (validCodes.includes(code)) {
     errorMsg.style.display = 'none';
