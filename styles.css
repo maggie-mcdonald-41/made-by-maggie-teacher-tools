@@ -18,9 +18,16 @@ body {
   font-family: 'Nunito', 'Segoe UI', sans-serif;
   margin: 0;
   padding: 0;
-  background: linear-gradient(to right, var(--light-teal), var(--golden));
+  background: linear-gradient(90deg, #84EBE6, #FFD466, #FFA69E);
   color: #333;
 }
+
+@media (max-width: 600px) {
+  h1 {
+    font-size: 1.8rem;
+  }
+}
+
 
 /* === HEADER === */
 .header {
@@ -51,7 +58,7 @@ body {
 
 .nav-logo {
   font-weight: bold;
-  font-size: 1.2rem;
+  font-size: 1.75rem;
 }
 
 .nav-links {
@@ -130,14 +137,23 @@ body {
 }
 
 .hero p {
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   max-width: 700px;
   margin-bottom: 2rem;
 }
 
+.hero-subtext {
+  font-size: 1.125rem; /* or 1.25rem for even better readability */
+  line-height: 1.6;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+
 /* === CTA BUTTON === */
-.cta-button {
-  background-color: var(--orange);
+.cta-button,
+.sticky-purchase-button {
+  background-color: #9c6ded;
   color: #fff;
   border: none;
   padding: 1rem 2rem;
@@ -149,7 +165,7 @@ body {
 }
 
 .cta-button:hover {
-  background-color: var(--sun);
+  background-color: 	#0AD1CC;
   transform: scale(1.05);
 }
 
@@ -176,6 +192,9 @@ body {
   font-size: 2rem;
   margin-bottom: 1rem;
   color: var(--deep-teal);
+}
+#tool-preview p {
+  font-size: 1.25rem
 }
 /* ====== General Video Styling ====== */
 .video-section h2 {
@@ -220,7 +239,7 @@ body {
 
 .info {
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 1.25rem;
   color: #FFA69E;
 }
 /* ====== Grid for Additional Videos ====== */
@@ -260,6 +279,7 @@ body {
 
 /* === FEATURES SECTION === */
 .features {
+  scroll-margin-top: 100px;
   padding: 3rem 1rem;
   background-color: white;
   text-align: center;
@@ -272,6 +292,13 @@ body {
   margin-bottom: 1rem;
   color: var(--deep-teal);
 }
+.features h3 {
+  font-size: 1.75rem;
+}
+
+.features p {
+  font-size: 1.25rem;
+}
 
 .feature-grid {
   display: grid;
@@ -281,6 +308,7 @@ body {
 }
 
 .purchase-section {
+  scroll-margin-top: 100px;
   background-color: #84EBE6;
   padding: 3rem 1.5rem;
   text-align: center;
@@ -295,6 +323,10 @@ body {
   border-radius: 20px;
   box-shadow: 0 8px 20px rgba(0,0,0,0.05);
   font-size: 1.1rem;
+}
+
+#purchase p {
+font-size: 1.25rem;
 }
 
 #purchase h2 {
@@ -326,7 +358,7 @@ body {
 }
 
 .purchase-button {
-  background-color: #FF9900;
+  background-color: #9c6ded;
   color: white;
   padding: 0.8rem 1.5rem;
   border-radius: 10px;
@@ -337,7 +369,7 @@ body {
 }
 
 .purchase-button:hover {
-  background-color: #e68600;
+  background-color: 	#0AD1CC;
 }
 
 .secure-note {
@@ -374,7 +406,8 @@ body {
 
 /* === Testimonial Section === */
 #testimonials {
-  background: linear-gradient(90deg, #84EBE6, #FFD466); /* Same gradient as above */
+  scroll-margin-top: 100px;
+  background: linear-gradient(90deg, #84EBE6, #FFD466, #FFA69E);
   padding: 3rem 1.5rem;
   text-align: center;
   border-top: 3px solid var(--orange);
@@ -391,10 +424,10 @@ body {
   max-width: 800px;
   margin: 0 auto;
   background-color: white;
-  border-left: 5px solid var(--bright-teal);
-  border-radius: 16px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  padding: 1.5rem 2rem;
+  border-radius: 20px;
+  border-left: 6px solid var(--bright-teal);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 }
 
 .review {
@@ -415,9 +448,45 @@ body {
   
 }
 
+/* === FAQ Section === */
+#faq {
+  background-color: #fdfdfd;
+  padding: 3rem 1.5rem;
+  text-align: left;
+  max-width: 800px;
+  margin: 0 auto;
+  border-top: 3px dashed var(--bright-teal);
+  border-bottom: 3px dashed var(--orange);
+}
+
+#faq h2 {
+  font-size: 2rem;
+  color: var(--deep-teal);
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.faq-item {
+  margin-bottom: 1.5rem;
+}
+
+.faq-item h3 {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 0.25rem;
+}
+
+.faq-item p {
+  font-size: 1.25rem;
+  color: #555;
+  margin: 0;
+}
+
 
 /* === ABOUT SECTION === */
 .about {
+  scroll-margin-top: 100px;
   background: linear-gradient(145deg, var(--peach), var(--light-pink));
   padding: 3rem 1rem;
   color: #000;
@@ -430,9 +499,16 @@ body {
 }
 
 .about p {
-  font-size: 1.1rem;
+  font-size: 1.5rem;
   max-width: 800px;
   margin: 0 auto;
+}
+
+
+.about-photo img {
+  width: 30em;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px #9c6ded;
 }
 
 /* === WHAT'S INCLUDED === */
@@ -441,6 +517,10 @@ body {
   grid-template-columns: repeat(4, 1fr);
   gap: 2rem;
   margin-top: 2rem;
+}
+
+#included-grid p {
+  font-size: 1.25rem;
 }
 
 @media (max-width: 1100px) {
@@ -486,6 +566,7 @@ body {
 
 /* === Carousel Section === */
 .carousel-section {
+  scroll-margin-top: 100px;
   padding: 4rem 2rem;
   background: linear-gradient(90deg, #84EBE6, #FFD466, #FFA69E);
   text-align: center;
@@ -557,7 +638,7 @@ body {
 
 /* CTA Button (Access Code) */
 .cta-button {
-  background-color: #FF9900;
+  background-color: #9c6ded;
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -569,7 +650,7 @@ body {
 }
 
 .cta-button:hover {
-  background-color: #FFB800;
+  background-color: 	#0AD1CC;
   transform: scale(1.03);
 }
 
@@ -646,12 +727,42 @@ body {
   }
 }
 
+/* === Sticky Purchase Button ===*/
+.sticky-purchase-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #9c6ded;
+  color: white;
+  padding: 0.75rem 1.25rem;
+  font-size: 1rem;
+  font-weight: bold;
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  text-decoration: none;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.sticky-purchase-button:hover {
+  background-color: #0AD1CC;
+  transform: scale(1.05);
+}
+
+@media (max-width: 600px) {
+  .sticky-purchase-button {
+    bottom: 16px;
+    right: 16px;
+    font-size: 0.95rem;
+    padding: 0.6rem 1rem;
+  }
+}
 
 /* === FOOTER === */
 .footer {
   text-align: center;
   padding: 2rem 1rem;
-  font-size: 0.9rem;
+  font-size: 1.25rem;
   background-color: var(--deep-teal);
   color: #fff;
   font-weight: bold;
