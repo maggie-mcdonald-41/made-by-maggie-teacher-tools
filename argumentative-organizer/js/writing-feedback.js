@@ -139,7 +139,10 @@ function getMidSentenceCapitalizationWarnings(text) {
     if (allowedCapitalWords.has(word)) continue;
 
     const before = text.slice(0, index).trimEnd();
-    const isActuallyStart = index === 0 || /[.!?]["“”']?\s*$/.test(before.slice(-10));
+    const isActuallyStart =
+      index === 0 ||
+      /[.!?]["“”']?\s*$/.test(before.slice(-20)) || // improve punctuation context
+      /^\s*["“”']?[A-Z]/.test(text.slice(index));   // check for sentence-initial capitalization inside quotes
     const isKnownStarter = transitionPhrases.some(p => {
       return text.slice(index - p.length - 1, index + word.length).toLowerCase().includes(p);
     });

@@ -168,6 +168,91 @@ body {
   color: #fff;
 }
 
+#tool-preview h2 {
+  text-align: center; /* ⬅ Add this */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: var(--deep-teal);
+}
+/* ====== General Video Styling ====== */
+.video-section h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: var(--deep-teal);
+}
+
+.video-section {
+  padding: 2rem;
+  background-color: #05C1B8;
+  text-align: center;
+}
+
+/* Standalone main overview video */
+.video-section .video-card {
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: #2a1933;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.video-card video {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.video-caption {
+  text-align: center; /* ⬅ Add this */
+  display: flex;
+  justify-content: center;
+  margin-top: 0.75rem;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #ffff;
+}
+
+/* ====== Grid for Additional Videos ====== */
+.video-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.video-grid .video-card {
+  background-color: #2a1933;
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+
+/* ====== Responsive Tweaks ====== */
+@media (max-width: 768px) {
+  .video-grid {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+
+  .video-section .video-card {
+    padding: 0.75rem;
+  }
+
+  .video-caption {
+    font-size: 0.95rem;
+  }
+}
+
+
 /* === FEATURES SECTION === */
 .features {
   padding: 3rem 1rem;
@@ -191,7 +276,7 @@ body {
 }
 
 .purchase-section {
-  background-color: #fef9f5;
+  background-color: #84EBE6;
   padding: 3rem 1.5rem;
   text-align: center;
   border-top: 3px solid #FF9900;
@@ -205,6 +290,12 @@ body {
   border-radius: 20px;
   box-shadow: 0 8px 20px rgba(0,0,0,0.05);
   font-size: 1.1rem;
+}
+
+#purchase h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: var(--deep-teal);
 }
 
 .purchase-box h3 {
@@ -569,7 +660,7 @@ body {
   }
 
   .included-image {
-    width: 80%;
+    width: 70%;
     max-width: 100%;
     height: auto;
     margin-top: 1rem;
