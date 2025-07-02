@@ -52,6 +52,8 @@
       <li><a href="#testimonials">Testimontials</a></li>
       <li><a href="#purchase">Purchase</a></li>
       <li><a href="#about">About</a></li>
+      <li><a href="#contact">Contact</a></li>
+
     </ul>
   </div>
 </nav>
@@ -105,20 +107,34 @@ document.querySelectorAll('.nav-links a').forEach(link => {
   const inputEl = document.getElementById('access-code');
   const errorMsg = document.getElementById('error-msg');
 
-  function verifyCode() {
+  async function verifyCode() {
     const code = inputEl.value.trim().toUpperCase();
-    const validCodes = ['WRITE2025', 'MCTEACH', 'MAGGIE2025'];
-    if (validCodes.includes(code)) {
-      window.location.href = "./argumentative-organizer/index.html";
-    } else {
-      errorMsg.style.display = 'block';
+
+    try {
+      const res = await fetch("/.netlify/functions/verify-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        window.location.href = "./argumentative-organizer/index.html";
+      } else {
+        errorMsg.style.display = "block";
+      }
+    } catch (err) {
+      console.error("Code verification failed", err);
+      errorMsg.style.display = "block";
     }
   }
 
-  inputEl.addEventListener('input', () => {
-    errorMsg.style.display = 'none';
+  inputEl.addEventListener("input", () => {
+    errorMsg.style.display = "none";
   });
 </script>
+
 
 <br><br>
     <p class="hero-subtext">
@@ -153,7 +169,7 @@ document.querySelectorAll('.nav-links a').forEach(link => {
  <section class="video-section">
   <h2>🎥 Features in Action</h2>
   <div class="video-card">
-    <video controls poster="images/teacher-log-preview.jpg">
+    <video controls poster="images/social-image.png">
       <source src="videos/demo1.mp4" type="video/mp4">
       Your browser does not support the video tag.
     </video>
@@ -327,7 +343,7 @@ document.querySelectorAll('.nav-links a').forEach(link => {
         <li><i>No Subscription Required</i></li>
       </ul>
       <p class="price-tag">$15 – One Year of Access</p>
-    <a href="https://payhip.com/YOURPRODUCTLINK" target="_blank" class="purchase-button">
+    <a href="https://payhip.com/b/HFp7R" target="_blank" class="purchase-button">
       💳 Get the Full Version – $15
     </a>
       <p class="secure-note">🔒 Secure checkout via Payhip</p>
@@ -362,25 +378,39 @@ document.querySelectorAll('.nav-links a').forEach(link => {
     </div>
 
 <script>
-function verifyDriveCode() {
-  const code = document.getElementById('drive-access-code').value.trim().toUpperCase(); // Convert input to uppercase
-  const validCodes = ['WRITE2025', 'MCTEACH', 'MAGGIE2025']; // Already uppercase
+async function verifyDriveCode() {
+  const code = document.getElementById('drive-access-code').value.trim().toUpperCase();
   const errorMsg = document.getElementById('drive-error-msg');
   const linkContainer = document.getElementById('drive-link-container');
   const driveLink = document.getElementById('drive-link');
 
   const driveFolderUrl = 'https://drive.google.com/drive/folders/1_YHGrpp0HKzsFgAd_i-zHn5Aw-BbuVeD';
 
-  if (validCodes.includes(code)) {
-    errorMsg.style.display = 'none';
-    linkContainer.style.display = 'block';
-    driveLink.href = driveFolderUrl;
-  } else {
+  try {
+    const response = await fetch('/.netlify/functions/verify-drive-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      errorMsg.style.display = 'none';
+      linkContainer.style.display = 'block';
+      driveLink.href = driveFolderUrl;
+    } else {
+      linkContainer.style.display = 'none';
+      errorMsg.style.display = 'block';
+    }
+  } catch (err) {
+    console.error("Verification error:", err);
     linkContainer.style.display = 'none';
     errorMsg.style.display = 'block';
   }
 }
 </script>
+
 
         <div class="feature-card included-card">
           <h3>📝 Teacher Notes & License</h3>
@@ -437,6 +467,50 @@ function verifyDriveCode() {
     </div>
 
   </section>
+  <section id="contact" class="contact-section">
+  <h2>💬 Contact</h2>
+  <p>We’d love to hear from you! Use this form to send questions, feedback, or reviews.</p>
+
+  <form name="contact" method="POST" data-netlify="true" class="contact-form">
+    <input type="hidden" name="form-name" value="contact" />
+    
+    <label for="name">Your Name:</label>
+    <input type="text" name="name" id="name" required />
+
+    <label for="email">Your Email (optional):</label>
+    <input type="email" name="email" id="email" />
+
+    <label for="message">Your Message:</label>
+    <textarea name="message" id="message" rows="5" required></textarea>
+
+    <button type="submit">Send Message</button>
+  </form>
+  <div id="thank-you" class="thank-you-message" style="display:none;">
+  <h3>🎉 Thank you!</h3>
+  <p>Your message has been received. We'll get back to you soon.</p>
+</div>
+
+</section>
+<script>
+  const form = document.querySelector("form");
+  const thankYouMessage = document.getElementById("thank-you");
+
+  form?.addEventListener("submit", function (e) {
+    e.preventDefault();
+    const data = new FormData(form);
+
+    fetch("/", {
+      method: "POST",
+      body: data,
+    })
+    .then(() => {
+      form.style.display = "none";
+      thankYouMessage.style.display = "block";
+    })
+    .catch((error) => alert("There was an issue submitting the form."));
+  });
+</script>
+
 
   <!-- Footer -->
   <footer class="footer">
