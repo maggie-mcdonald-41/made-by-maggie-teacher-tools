@@ -29,9 +29,19 @@
 
   <!-- JavaScript for toggle -->
 <script>
-  function toggleNav() {
-    document.querySelector('.nav-container').classList.toggle('open');
-  }
+function toggleNav() {
+  const nav = document.querySelector('.nav-container');
+  nav.classList.toggle('open');
+}
+
+// Auto-close when a nav link is clicked (mobile)
+document.querySelectorAll('.nav-links a').forEach(link => {
+  link.addEventListener('click', () => {
+    const nav = document.querySelector('.nav-container');
+    nav.classList.remove('open');
+  });
+});
+
 </script>
 
 
@@ -80,7 +90,7 @@
   });
 </script>
 
-
+<br><br>
     <p class="hero-subtext">
       💻 Want this for your classroom? Purchase includes a personal teacher license with student access via link + code. No accounts, no setup—just open and write.
     </p>
@@ -405,7 +415,7 @@ function verifyDriveCode() {
 <!-- Sticky Bottom Banner -->
 <div class="sticky-banner">
   <div class="banner-inner">
-    <span class="banner-text">🚀 Ready to get the full version? Try the demo or unlock all features now!</span>
+    <span class="banner-text">🚀 Try it free — unlock all features anytime.</span>
     <div class="banner-buttons">
       <a href= "./argumentative-organizer-free/index.html" class="demo-btn">🎯 Try the Demo</a>
       <a href="#purchase" class="buy-btn" target="_blank">💼 Buy Now</a>
