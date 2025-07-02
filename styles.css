@@ -15,8 +15,7 @@
 }
 
 body {
-  font-family: 'Nunito', 'Segoe UI', sans-serif;
-  margin: 0;
+ font-family: "Poppins", sans-serif;  margin: 0;
   padding: 0;
   background: linear-gradient(90deg, #84EBE6, #FFD466, #FFA69E);
   color: #333;
@@ -89,6 +88,7 @@ body {
 
 /* === Mobile Navigation === */
 @media (max-width: 768px) {
+
 
   .main-nav {
     padding: 0.5rem 1rem;
@@ -270,8 +270,10 @@ body {
   height: auto;
   border-radius: 8px;
   aspect-ratio: 16 / 9;
-  object-fit: cover;
+  object-fit: contain; /* Shows the entire video without cropping */
+  background-color: #000; /* Optional: adds letterboxing instead of blank space */
 }
+
 
 .video-caption {
   text-align: center; /* ⬅ Add this */
@@ -884,26 +886,31 @@ font-size: 1.25rem;
 
     /* Mobile tweaks */
     @media (max-width: 768px) {
-      .header-flex {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-      }
+  .main-footer {
+    padding: 1rem;
+  }
+  .footer-text {
+    font-size: 0.9rem;
+  }
+  .header-flex {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .header-flex img {
+    margin-bottom: 1rem;
+  }
 
-      .header-flex img {
-        margin-bottom: 1rem;
-      }
+  .feature-grid,
+   #included-grid {
+    grid-template-columns: 1fr !important;
+  }
 
-      .feature-grid,
-      #included-grid {
-        grid-template-columns: 1fr !important;
-      }
-
-      .cta-button {
-        width: 100%;
-        max-width: 320px;
-      }
-      .whats-included-section {
+  .cta-button {
+    width: 100%;
+    max-width: 320px;
+  }
+  .whats-included-section {
   display: flex;
   flex-wrap: wrap;
   gap: 2rem;
