@@ -108,19 +108,39 @@ function updateEssay() {
   const conclusion = document.getElementById('conclusion-final')?.innerText.trim();
   const boxId = 'essay-final';
   const essayBox = document.getElementById(boxId);
-  const generated = [intro, bp1, bp2, bp3, conclusion].filter(Boolean).join('\n\n').trim();
-  const current = essayBox?.innerText.trim();
+
+  const indentParagraph = p => p ? `&nbsp;&nbsp;&nbsp;&nbsp;${p}` : '';
+  const paragraphs = [intro, bp1, bp2, bp3, conclusion]
+    .filter(Boolean)
+    .map(indentParagraph)
+    .join('<br><br>');
+
+  const current = essayBox?.innerHTML.trim();
   const previous = localStorage.getItem(boxId);
 
   if (
     !activeEdits.has(boxId) &&
-    (!current || current === previous || current === generated)
+    (!current || current === previous || current === paragraphs)
   ) {
-    essayBox.innerText = generated;
-    localStorage.setItem(boxId, generated);
+    essayBox.innerHTML = paragraphs;
+    localStorage.setItem(boxId, paragraphs);
   }
 }
 
+function getEssayTextForExport() {
+  const intro = document.getElementById('intro-final')?.innerText.trim();
+  const bp1 = document.getElementById('bp1-final')?.innerText.trim();
+  const bp2 = document.getElementById('bp2-final')?.innerText.trim();
+  const bp3 = document.getElementById('bp3-final')?.innerText.trim();
+  const conclusion = document.getElementById('conclusion-final')?.innerText.trim();
+
+  const paragraphs = [intro, bp1, bp2, bp3, conclusion]
+    .filter(Boolean)
+    .map(p => `\t${p}`)
+    .join('\n\n');
+
+  return paragraphs;
+}
 
 
   function regenerateBoxContent(id) {

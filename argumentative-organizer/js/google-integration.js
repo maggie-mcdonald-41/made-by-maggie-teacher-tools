@@ -303,7 +303,7 @@ document.querySelectorAll('[contenteditable="true"]').forEach(el => {
 
 // 7) Export to Docs
 async function exportToGoogleDocs() {
-  const finalText = document.getElementById('essay-final')?.innerText.trim() || '';
+  const finalText = getEssayTextForExport();
   if (finalText.length < 10) return alert('⚠️ Essay is too short to export.');
 
   if (!accessToken) {
