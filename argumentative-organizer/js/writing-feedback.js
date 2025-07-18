@@ -217,6 +217,42 @@ function getSentenceFragmentWarnings(text) {
   return fragmentWarnings;
 }
 
+function getPassiveVoiceWarnings(text) {
+  const passiveWarnings = [];
+  const doc = nlp(text);
+  const sentences = doc.sentences().json();
+
+  const passiveAuxiliaries = [
+    "is", "am", "are", "was", "were", "be", "been", "being",
+    "has been", "have been", "had been"
+  ];
+
+  sentences.forEach(({ text: sentenceText }) => {
+    const lowered = sentenceText.toLowerCase();
+
+    // Must have "by" AND a form of "be" + past participle-ish structure
+    const mightBePassive = passiveAuxiliaries.some(be => lowered.includes(` ${be} `)) &&
+                           lowered.includes(" by ");
+
+    if (mightBePassive) {
+      const offset = text.indexOf(sentenceText);
+      if (offset !== -1) {
+        passiveWarnings.push({
+          word: sentenceText,
+          offset,
+          endOffset: offset + sentenceText.length,
+          type: "passive",
+          titles: new Set(["Passive voice: try rewriting so the subject does the action."]),
+          isRunon: true
+        });
+      }
+    }
+  });
+
+  return passiveWarnings;
+}
+
+
 function highlightWritingIssues(text, targetId) {
   highlightRegistry.clear();
   const cleanedText = removeQuotedText(text);
@@ -259,6 +295,49 @@ function highlightWritingIssues(text, targetId) {
   }
 
 const fragmentWarnings = getSentenceFragmentWarnings(text);
+const passiveWarnings = getPassiveVoiceWarnings(text);
+console.log("🪵 Detected Passive:", passiveWarnings);
+
+passiveWarnings.forEach(passive => {
+  highlightRegistry.set(`passive-${passive.offset}`, {
+    word: "",
+    offset: passive.offset,
+    endOffset: passive.endOffset,
+    types: new Set(["passive"]),
+    titles: passive.titles,
+    isRunon: true,
+    styles: { zIndex: 1, background: "rgba(173, 216, 230, 0.2)" } // light blue
+  });
+
+  const words = passive.word.match(/\b\w+\b/g) || [];
+  let searchStart = passive.offset;
+
+  words.forEach(word => {
+    const wordOffset = text.indexOf(word, searchStart);
+    if (wordOffset === -1) return;
+    searchStart = wordOffset + word.length;
+
+    const key = `${wordOffset}-${word}`;
+    const existing = highlightRegistry.get(key);
+
+    if (existing) {
+      existing.types.add("passive");
+      if (existing.titles instanceof Set) {
+        existing.titles.add(...passive.titles);
+      } else {
+        existing.titles = new Set([...(existing.titles || []), ...passive.titles]);
+      }
+    } else {
+      highlightRegistry.set(key, {
+        word,
+        offset: wordOffset,
+        types: new Set(["passive"]),
+        titles: passive.titles
+      });
+    }
+  });
+});
+
 console.log("🪵 Detected Fragments:", fragmentWarnings);
 
 fragmentWarnings.forEach(fragment => {
