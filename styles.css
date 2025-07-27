@@ -481,6 +481,45 @@ font-size: 1.25rem;
   margin-top: 0.5rem;
 }
 
+.purchase-row {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  padding: 40px 20px;
+}
+
+
+.price-tag {
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-bottom: 12px;
+  color: #4e3de0; /* Accent color */
+}
+
+.purchase-button {
+  display: inline-block;
+  background-color: #29d3c2;
+  color: #fff;
+  text-decoration: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.purchase-button:hover {
+  background-color: #22b6a9;
+}
+
+.secure-note {
+  font-size: 0.9rem;
+  margin-top: 10px;
+  color: #666;
+}
+
+
 
 @media (max-width: 900px) {
   .feature-grid {
@@ -503,8 +542,36 @@ font-size: 1.25rem;
   transition: transform 0.2s ease;
 }
 
+.included-image {
+  max-width: 45%; /* Adjust size of images to fit */
+  height: auto;
+}
+
 .feature-card:hover {
   transform: translateY(-5px);
+}
+
+/* ====Social Image===*/
+.social-image {
+  display: flex;                  /* Use Flexbox to align items in a row */
+  justify-content: space-evenly;  /* Space the images evenly */
+  flex-wrap: wrap;                 /* Allow images to wrap to the next line on smaller screens */
+}
+
+img.included-image {
+  max-width: 580px;
+}
+
+/* Media query for mobile screens */
+@media (max-width: 600px) {
+  .social-image {
+    flex-direction: column;      /* Stack images vertically on small screens */
+    align-items: center;         /* Center images */
+  }
+
+  .included-image {
+    max-width: 80%;              /* Resize images to fit better on small screens */
+  }
 }
 
 /* === Testimonial Section === */
@@ -552,6 +619,59 @@ font-size: 1.25rem;
   gap: 2rem;
   margin-top: 2rem;
 }
+.tools-section {
+  padding: 40px 20px;
+  background: linear-gradient(to bottom, #ffffff, #fef9f4);
+  border-top: 4px solid #ffc107; /* warm yellow */
+  border-bottom: 4px solid #29d3c2; /* teal from footer */
+}
+
+.tools-heading {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 24px;
+  font-weight: 700;
+  color: #4e3de0; /* violet/indigo tone */
+}
+
+.tools-table-wrapper {
+  overflow-x: auto;
+}
+
+.tools-table {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  border-collapse: collapse;
+  font-size: 1rem;
+  background-color: #fff;
+  border: 2px solid #eee;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.tools-table thead {
+  background-color: #fdd835; /* warm yellow for header */
+  color: #333;
+}
+
+.tools-table th,
+.tools-table td {
+  text-align: left;
+  padding: 14px 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.tools-table tbody tr:nth-child(odd) {
+  background-color: #fefcf7;
+}
+
+.tools-table td em {
+  font-style: italic;
+  color: #777;
+}
+
 
 /* === FAQ Section === */
 #faq {
@@ -882,10 +1002,14 @@ font-size: 1.25rem;
 .license-link:hover {
   color: #4a148c;
 }
-
 @media (max-width: 600px) {
-  .feature-card {
-    padding: 1rem;
+  .feature-card.included-card {
+    flex-direction: column; /* Stack the images vertically on small screens */
+    align-items: center; /* Center the images */
+  }
+
+  .included-image {
+    max-width: 80%; /* Resize images to fit better on small screens */
   }
 }
 /* Sticky Banner */

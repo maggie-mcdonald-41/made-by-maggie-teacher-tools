@@ -10,7 +10,7 @@ exports.handler = async function (event, context) {
   const normalizedCode = code.trim().toUpperCase();
 
   const argumentativeCodes = ["WRITE2025", "MCTEACH", "MAGGIE2025"];
-  const opinionCodes = ["OPINION2025", "GRADE3", "MAGGIE2025"];
+  const opinionCodes = ["OPINION2025", "GRADE3", "OP2025"];
 
   if (argumentativeCodes.includes(normalizedCode)) {
     return {

@@ -52,6 +52,7 @@
       <li><a href="#tool-preview">Preview</a></li>
       <li><a href="#features">Features</a></li>
       <li><a href="#testimonials">Testimontials</a></li>
+      <li><a href="#tools">Tools</a></li>
       <li><a href="#purchase">Purchase</a></li>
       <li><a href="#about">About</a></li>
       <li><a href="#contact">Contact</a></li>
@@ -83,8 +84,9 @@ document.querySelectorAll('.nav-links a').forEach(link => {
   <header class="header">
     <div class="header-flex" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
       <div style="flex: 1;">
-        <h1 style="margin: 0;">Ultimate Argumentative Essay Organizer</h1>
-        <p style="margin: 0;">Support all learners with structure, guidance, and interactive writing tools.</p>
+        <h1 style="margin: 0;">The Ultimate Graphic Organizers</h1>
+        <p style="margin: 0;">Built by a special education teacher, these web-based organizers guide students through clear, scaffolded writing without doing the work for them.</p>
+
       </div>
     </div>
   </header>
@@ -92,7 +94,9 @@ document.querySelectorAll('.nav-links a').forEach(link => {
   <!-- Hero Section -->
   <section class="hero">
     <h1>Make Essay Writing Clear, Fun, and Accessible</h1>
-    <p>This digital argumentative graphic organizer helps students plan and write persuasive essays with confidence. Scaffolded guidance, engaging tools, and language supports included!</p>
+    <p><strong>Have an essay to write? I’ve got just the tool for you.</strong><br>
+Whether you’re in 3rd grade or your first year of college, these tools break down the writing process step by step so you can write with clarity and confidence.
+<i>This isn’t AI that writes for you.</i> It’s real support that teaches you how to write: organized, focused, and strong from start to finish.</p>
 
     <!-- Access Code Form -->
     <div class="access-wrapper">
@@ -370,15 +374,47 @@ async function verifyCode() {
   </div>
 </section>
 
+<!--Tools-->
+<section id="tools" class="tools-section">
+  <h2 class="tools-heading">💼 Writing Tools Available</h2>
+  <div class="tools-table-wrapper">
+    <table class="tools-table">
+      <thead>
+        <tr>
+          <th>Tool</th>
+          <th>Description</th>
+          <th>Grades</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Argumentative Essay Organizer</td>
+          <td>Step-by-step scaffolding for structured argument writing</td>
+          <td>4–12</td>
+        </tr>
+        <tr>
+          <td>Opinion Essay Organizer</td>
+          <td>Friendly support for early opinion writing</td>
+          <td>3–6</td>
+        </tr>
+        <tr>
+          <td><em>(More coming soon!)</em></td>
+          <td colspan="2">Informative, Narrative, and more...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 
   <!-- Purchase Section -->
   <section id="purchase" class="purchase-section">
     <h2>🛒 Purchase the Organizer</h2>
     <p>Get instant access to the Ultimate Argumentative Essay Organizer and classroom materials.</p>
+   <div class="purchase-row"> 
     <div class="purchase-box">
-      <h3>📦 Includes:</h3>
+      <h3>📦 Argumentative Graphic Organizer:</h3>
       <ul>
-        <li>✅ Interactive Digital Organizer</li>
+        <li>✅ Interactive Argumentative Digital Organizer</li>
         <li>✅ 6–10 Day Lesson Plan</li>
         <li>✅ Editable Slides & Teacher Notes</li>
         <li>✅ Personal Classroom License</li>
@@ -390,6 +426,23 @@ async function verifyCode() {
     </a>
       <p class="secure-note">🔒 Secure checkout via Payhip</p>
     </div>
+
+    <div class="purchase-box">
+      <h3>📦 Opinion Graphic Organizer:</h3>
+      <ul>
+        <li>✅ Interactive Opinion Digital Organizer</li>
+        <li>✅ 6–10 Day Lesson Plan</li>
+        <li>✅ Editable Slides & Teacher Notes</li>
+        <li>✅ Personal Classroom License</li>
+        <li><i>No Subscription Required</i></li>
+      </ul>
+      <p class="price-tag">$15 – One Year of Access</p>
+    <a href="https://payhip.com/b/uVWqM" target="_blank" class="purchase-button">
+      💳 Get the Full Version – $15
+    </a>
+      <p class="secure-note">🔒 Secure checkout via Payhip</p>
+    </div>
+
     <div class="purchase-box district-box">
   <h3>🏫 District Access</h3>
   <ul>
@@ -402,6 +455,7 @@ async function verifyCode() {
     🏫 Purchase for Your District
   </a>
   <p class="secure-note">💬 Questions? <a href="#contact">Contact us</a> for a custom quote.</p>
+</div>
 </div>
 <div class="video-wrapper">
   <h3>🎥 Features in Action</h3>
@@ -419,7 +473,10 @@ async function verifyCode() {
       <div class="feature-card included-card">
         <h3>📁 Digital Organizer Tool</h3>
         <p>Interactive essay builder with customizable structure and support tools.</p>
+        <div class="social-image">
         <img src="images/social-image.png" alt="Made by Maggie Logo" class="included-image" />
+        <img src="images/opinion-social-image.png" alt="Opinion Organizer image" class="included-image" />
+        </div>
       </div>
       <div class="feature-card included-card">
         <h3>📄 Lesson Plan + Slides</h3>
@@ -449,8 +506,6 @@ async function verifyDriveCode() {
   const linkContainer = document.getElementById('drive-link-container');
   const driveLink = document.getElementById('drive-link');
 
-  const driveFolderUrl = 'https://drive.google.com/drive/folders/1_YHGrpp0HKzsFgAd_i-zHn5Aw-BbuVeD';
-
   try {
     const response = await fetch('/.netlify/functions/verify-drive-code', {
       method: 'POST',
@@ -460,10 +515,10 @@ async function verifyDriveCode() {
 
     const result = await response.json();
 
-    if (result.success) {
+    if (result.success && result.folderUrl) {
       errorMsg.style.display = 'none';
       linkContainer.style.display = 'block';
-      driveLink.href = driveFolderUrl;
+      driveLink.href = result.folderUrl;
     } else {
       linkContainer.style.display = 'none';
       errorMsg.style.display = 'block';
@@ -474,6 +529,7 @@ async function verifyDriveCode() {
     errorMsg.style.display = 'block';
   }
 }
+
 </script>
 
 
@@ -589,7 +645,7 @@ async function verifyDriveCode() {
     <span class="banner-text">🚀 Try it free — unlock all features anytime.</span>
     <div class="banner-buttons">
       <a href= "./argumentative-organizer-free/index.html" class="demo-btn">🎯 Try the Demo</a>
-      <a href="https://payhip.com/b/HFp7R" class="buy-btn" target="_blank">💼 Buy Now</a>
+      <a href="https://payhip.com/madebymaggie" class="buy-btn" target="_blank">💼 Buy Now</a>
     </div>
   </div>
 </div>
