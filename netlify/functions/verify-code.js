@@ -1,27 +1,39 @@
-// netlify/functions/verify-code.js
-exports.handler = async (event) => {
-  const { code } = JSON.parse(event.body || '{}');
-  const validCodes = ['WRITE2025', 'MCTEACH', 'MAGGIE2025'];
-
-  if (!code) {
+exports.handler = async function (event, context) {
+  if (event.httpMethod !== "POST") {
     return {
-      statusCode: 400,
-      body: JSON.stringify({ success: false, message: "No code provided" })
+      statusCode: 405,
+      body: "Method Not Allowed",
     };
   }
 
+  const { code } = JSON.parse(event.body);
   const normalizedCode = code.trim().toUpperCase();
 
-  if (validCodes.includes(normalizedCode)) {
+  const argumentativeCodes = ["WRITE2025", "MCTEACH", "MAGGIE2025"];
+  const opinionCodes = ["OPINION2025", "GRADE3", "MAGGIE2025"];
+
+  if (argumentativeCodes.includes(normalizedCode)) {
     return {
       statusCode: 200,
-      body: JSON.stringify({ success: true })
+      body: JSON.stringify({
+        success: true,
+        redirectPath: "./argumentative-organizer/index.html",
+      }),
+    };
+  }
+
+  if (opinionCodes.includes(normalizedCode)) {
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        success: true,
+        redirectPath: "./opinion-organizer/index.html",
+      }),
     };
   }
 
   return {
-    statusCode: 403,
-    body: JSON.stringify({ success: false, message: "Invalid code" })
+    statusCode: 200,
+    body: JSON.stringify({ success: false }),
   };
 };
-

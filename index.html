@@ -109,28 +109,28 @@ document.querySelectorAll('.nav-links a').forEach(link => {
   const inputEl = document.getElementById('access-code');
   const errorMsg = document.getElementById('error-msg');
 
-  async function verifyCode() {
-    const code = inputEl.value.trim().toUpperCase();
+async function verifyCode() {
+  const code = inputEl.value.trim().toUpperCase();
 
-    try {
-      const res = await fetch("/.netlify/functions/verify-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code }),
-      });
+  try {
+    const res = await fetch("/.netlify/functions/verify-code", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code }),
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (data.success) {
-        window.location.href = "./argumentative-organizer/index.html";
-      } else {
-        errorMsg.style.display = "block";
-      }
-    } catch (err) {
-      console.error("Code verification failed", err);
+    if (data.success && data.redirectPath) {
+      window.location.href = data.redirectPath;
+    } else {
       errorMsg.style.display = "block";
     }
+  } catch (err) {
+    console.error("Code verification failed", err);
+    errorMsg.style.display = "block";
   }
+}
 
   inputEl.addEventListener("input", () => {
     errorMsg.style.display = "none";
@@ -161,9 +161,10 @@ document.querySelectorAll('.nav-links a').forEach(link => {
     <li>✅ <strong>Dynamic Thesis Builder</strong></li>
     <li>✅ <strong>Sentence Starter Buttons</strong></li>
     <li>✅ <strong>Final Essay Preview</strong></li>
+    <li>✅ <strong>Argumentative Essay version</strong></li>
     <li>🚫 <strong>Writing Coach feedback</strong> is disabled</li>
     <li>🚫 <strong>Google Drive integration</strong> is disabled</li>
-    <li>🚫 <strong>Only 1 body paragraph</strong> available</li>
+
   </ul>
 </section>
 </section>
