@@ -5,14 +5,20 @@
 const CLIENT_ID = '592399844090-i5e5nc7a098as70j39cab8lsv8ini9t0.apps.googleusercontent.com';
 const SCOPES      = [
   'https://www.googleapis.com/auth/drive.file',
-  'https://www.googleapis.com/auth/documents'
+  'https://www.googleapis.com/auth/documents',
+  'https://www.googleapis.com/auth/userinfo.email'
 ].join(' ');
 
 let tokenClient;
 let accessToken = localStorage.getItem('accessToken');
 let userEmail   = localStorage.getItem('userEmail');
-let fileId = window.essayFileId || null;
 let isSignedIn  = !!accessToken;
+let fileId = null; // Always declared here to avoid ReferenceErrors
+let autosavePaused = false;
+let folderId = null;
+const FOLDER_NAME = 'EssayToolSave';
+
+
 const writingLog = [];
 
 const revisionCounts = {};
@@ -89,6 +95,10 @@ async function gapiRequest(url) {
 
 // 3) Restore on page load
 async function restoreGoogleAuthIfPossible() {
+console.log('[Auth Restore] Trying to restore...');
+console.log('[Auth Restore] accessToken:', accessToken);
+console.log('[Auth Restore] userEmail:', userEmail);
+
   if (!accessToken || !userEmail) return;
   isSignedIn = true;
   tokenClient = google.accounts.oauth2.initTokenClient({
@@ -121,102 +131,294 @@ function restoreWritingLogFromStorage() {
 function startGoogleAuth() {
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
-    scope:     SCOPES,
-    callback:  async (tokenResponse) => {
-      accessToken = tokenResponse.access_token;
-      localStorage.setItem('accessToken', accessToken);
-      isSignedIn = true;
+    scope: SCOPES,
+    callback: async (tokenResponse) => {
+      try {
+        accessToken = tokenResponse.access_token;
+        if (!accessToken) throw new Error("No access token received.");
+        localStorage.setItem('accessToken', accessToken);
+        isSignedIn = true;
 
-      const profile = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      }).then(r => r.json());
+        console.log("🔑 Access token received:", accessToken);
 
-      userEmail = profile.email;
-      localStorage.setItem('userEmail', userEmail);
-      fileId = localStorage.getItem(`essayFileId_${userEmail}`);
+        const profileRes = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
 
-      // update the Sign-In button text
-  const signInBtn = document.getElementById('googleSignIn');
-  if (signInBtn) {
-    signInBtn.innerHTML = '✅ Signed In';
-  }
-      showLoadingMessage('🔄 Restoring your saved essay…');
-      await loadFromDrive();
-      hideLoadingMessage();
-      startAutoSave();
-      setupEnhancedMonitoring();
+        if (!profileRes.ok) {
+          throw new Error(`Failed to fetch user info: ${profileRes.status}`);
+        }
+
+        const profile = await profileRes.json();
+        console.log("✅ User profile loaded:", profile);
+
+        userEmail = profile.email;
+        localStorage.setItem('userEmail', userEmail);
+
+        const signInBtn = document.getElementById('googleSignIn');
+        if (signInBtn) {
+          signInBtn.innerHTML = '✅ Signed In';
+        }
+
+        showLoadingMessage('🔄 Restoring your saved essay…');
+
+        setTimeout(async () => {
+          await loadFromDrive();
+          hideLoadingMessage();
+          startAutoSave();
+          setupEnhancedMonitoring();
+
+          // ✅ Trigger refresh after full sign-in + setup
+          location.reload();
+        }, 150);
+
+      } catch (err) {
+        console.error("❌ Google Sign-In failed:", err);
+        alert("⚠️ Google Sign-In failed. Please try again.");
+      }
     }
   });
-  tokenClient.requestAccessToken();
+
+  // 🔐 Only call after user triggers sign-in (click, etc.)
+  tokenClient.requestAccessToken({ scope: SCOPES });
 }
+
 
 // 5) Drive file load/create
 async function loadFromDrive() {
   try {
-    if (!fileId) {
-      const query = "name = 'EssayToolSave.json' and trashed = false";
-      const res = await gapiRequest(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}`);
-      if (res.files?.length) {
-        fileId = res.files[0].id;
-        localStorage.setItem(`essayFileId_${userEmail}`, fileId);
-      }
-    }
-    if (fileId) {
-      const content = await fetch(
-        `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
-        { headers: { Authorization: `Bearer ${accessToken}` } }
-      ).then(r => r.json());
-      populateFieldsFromJSON(content);
+    await getOrCreateFolder();
+
+const query = `
+  appProperties has { key='app' and value='madebymaggie-organizer' }
+  and appProperties has { key='owner' and value='${userEmail}' }
+  and trashed = false
+  and '${folderId}' in parents
+`;
+
+    const res = await gapiRequest(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,appProperties)`);
+
+    if (res.files?.length) {
+      fileId = res.files[0].id;
+      console.log('[Drive] Matched existing file:', fileId);
     } else {
+      console.log('[Drive] No matching file found. Creating new one...');
       await createDriveFile();
     }
-  } catch {
-    await createDriveFile();
+
+    const content = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    ).then(r => r.json());
+
+    console.log("📦 Drive file content loaded:", content);
+    populateFieldsFromJSON(content);
+
+  } catch (err) {
+    console.error('❌ loadFromDrive() failed:', err);
+    alert('⚠️ Error loading your saved work from Google Drive.');
   }
 }
 
+
 function populateFieldsFromJSON(data) {
+  console.log('[Populate] Received data:', data);
+
   const defaultClaim = "Make a clear statement that shows your position on the topic. This is not a full sentence.";
+
   Object.entries(data).forEach(([id, value]) => {
     const el = document.getElementById(id);
-    if (!el || el.getAttribute('contenteditable')!=='true') return;
-    if (id==='claim-box' && value.includes(defaultClaim)) {
+    if (!el || !id) return;
+
+    if (id === 'claim-box' && value.includes(defaultClaim)) {
       localStorage.removeItem('claim-box');
       return;
     }
-    el.innerText = value;
+
+    if (el.isContentEditable) {
+      el.innerText = value;
+    } else if ('value' in el) {
+      el.value = value;
+    }
+
     localStorage.setItem(id, value);
   });
 }
 
 async function createDriveFile() {
-  const metadata = { name:'EssayToolSave.json', mimeType:'application/json' };
-  const res = await fetch(
-    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{
-      method:'POST', headers:{
-        Authorization:`Bearer ${accessToken}`,
-        'Content-Type':'application/json; charset=UTF-8'
-      }, body:JSON.stringify(metadata)
-    }
-  ).then(r=>r.json());
-  fileId = res.id;
-  localStorage.setItem(`essayFileId_${userEmail}`,fileId);
+  if (fileId) {
+    console.warn('[Drive] File ID already exists. Skipping createDriveFile.');
+    return;
+  }
+
+  await getOrCreateFolder(); // Ensure folder exists before file creation
+
+const metadata = {
+  name: 'EssayToolSave.json',
+  mimeType: 'application/json',
+  parents: [folderId],
+  appProperties: {
+    app: 'madebymaggie-organizer',
+    type: 'argument', //'opinion', etc.
+    owner: userEmail 
+  }
+};
+
+
+  try {
+    const res = await fetch(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json; charset=UTF-8'
+        },
+        body: JSON.stringify(metadata)
+      }
+    ).then(r => r.json());
+
+    if (!res.id) throw new Error('❌ Failed to create Drive file — no ID returned.');
+
+    fileId = res.id;
+    console.log('[Drive] Created new file:', fileId);
+
+  } catch (error) {
+    console.error('[Drive] Error creating file:', error);
+    alert('❌ Failed to create Drive file. Please try again or check your connection.');
+  }
 }
+
+const startAutoSave=()=>setInterval(saveToDriveNow,15000);
 
 // 6) Auto-save & debounce
 function saveToDriveNow() {
-  if (!fileId||!accessToken) return;
-  const data={};
-  document.querySelectorAll('[contenteditable="true"]').forEach(el=>data[el.id]=el.innerText);
+  if (autosavePaused) {
+    console.warn('🛑 Autosave skipped (paused)');
+    return;
+  }
+
+  if (!fileId || !accessToken) {
+    console.warn('🚫 Skipping save — missing fileId or accessToken');
+    return;
+  }
+
+  const data = {};
+
+  document.querySelectorAll('[contenteditable="true"]').forEach(el => {
+    const id = el.id;
+    if (!id) return;
+    data[id] = el.innerText.trim();
+  });
+
+  indicateSavingNow();
+
   fetch(
-    `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,{
-      method:'PATCH', headers:{Authorization:`Bearer ${accessToken}`, 'Content-Type':'application/json'},
-      body:JSON.stringify(data)
+    `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,
+    {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
     }
-  );
+  )
+  .then(res => {
+    if (!res.ok) throw new Error(`Drive save failed: ${res.status}`);
+    showSaveStatus('Saved ✓');
+    console.log('💾 Autosave successful at', new Date().toLocaleTimeString());
+  })
+  .catch(err => {
+    console.error('❌ Autosave failed:', err);
+    logActivity('❌ Autosave failed');
+    showSaveStatus('❌ Save failed', 4000);
+  });
 }
+
+
 const debouncedSaveToDrive = (fn,delay=500)=>(...a)=>{clearTimeout(fn._t);fn._t=setTimeout(()=>fn(...a),delay)};
-const startAutoSave=()=>setInterval(saveToDriveNow,60000);
+
+
+async function getOrCreateFolder() {
+  const query = `name = '${FOLDER_NAME}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
+  const res = await gapiRequest(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}`);
+
+  if (res.files?.length) {
+    folderId = res.files[0].id;
+    console.log('[Drive] Folder found:', folderId);
+  } else {
+    console.log('[Drive] No folder found. Creating folder...');
+    const folderMeta = {
+      name: FOLDER_NAME,
+      mimeType: 'application/vnd.google-apps.folder'
+    };
+
+    const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(folderMeta)
+    }).then(r => r.json());
+
+    if (!createRes.id) throw new Error('Failed to create Drive folder.');
+    folderId = createRes.id;
+    console.log('[Drive] Folder created:', folderId);
+  }
+}
+
+
+async function findExistingDriveFile() {
+  const query = `
+    appProperties has { key='app' and value='madebymaggie-organizer' }
+    and appProperties has { key='owner' and value='${userEmail}' }
+    and trashed = false
+    and '${folderId}' in parents
+  `;
+  console.log('[Drive Query]', query);
+  const res = await gapiRequest(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name)`);
+  return res.files?.[0]?.id || null;
+}
+
+// Then update inside loadFromDrive() as:
+async function loadFromDrive() {
+  try {
+    await getOrCreateFolder();
+    fileId = await findExistingDriveFile();
+
+    if (!fileId) {
+      console.log('[Drive] No matching file found. Creating new one...');
+      await createDriveFile();
+    }
+  } catch (err) {
+    console.error('❌ loadFromDrive() failed:', err);
+    alert('⚠️ Error loading your saved work from Google Drive.');
+  }
+}
+
+function showSaveStatus(message, duration = 2000) {
+  const statusEl = document.getElementById('save-status');
+  if (!statusEl) return;
+
+  statusEl.innerText = message;
+  statusEl.style.display = 'block';
+
+  clearTimeout(statusEl._hideTimer);
+  statusEl._hideTimer = setTimeout(() => {
+    statusEl.style.display = 'none';
+  }, duration);
+}
+
+function indicateSavingNow() {
+  const statusEl = document.getElementById('save-status');
+  if (!statusEl) return;
+
+  statusEl.innerText = 'Saving...';
+  statusEl.style.display = 'block';
+}
+
 
 function setupEnhancedMonitoring() {
   const startedSections = new Set();
@@ -351,36 +553,56 @@ function handleGoogleDocsExport(){if(!isSignedIn)return alert('Sign in first');e
 
 
 function handleGoogleSignOut() {
-  if (!confirm('👋 Really sign out and clear local work?')) return;
+  if (!confirm('👋 Sign out of Google?')) return;
 
   // Clear saved credentials
   localStorage.removeItem('accessToken');
   localStorage.removeItem('userEmail');
-
-  // Clear on-page content
-  observedIds.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.innerText = '';
-    localStorage.removeItem(id);
-  });
-
-  // Reset Sign-In button
-  const signInBtn = document.getElementById('googleSignIn');
-  if (signInBtn) {
-    signInBtn.innerText = '🔐 Sign In';
-  }
-
-  // Reset Sign-Out button
-  const signOutBtn = document.getElementById('googleSignOut');
-  if (signOutBtn) {
-    signOutBtn.innerText = '🚪 Signed Out';
-  }
 
   // Reload the page after a short delay
   setTimeout(() => {
     location.reload();
   }, 300);
 }
+
+function handleClearFormOnly() {
+  if (!confirm('🧹 Start completely fresh? This will reset everything and prepare a new blank organizer.')) return;
+
+  autosavePaused = true;
+
+  // Remove saved Drive file reference and auth
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('userEmail');
+  localStorage.removeItem('writingLog');
+  fileId = null; // <- Crucial: prevent loading from Drive again
+
+  // Clear all contenteditable boxes
+  observedIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerText = '';
+  });
+
+  // Also clear any form elements (inputs, selects, etc.)
+  document.querySelectorAll('input, textarea, select').forEach(el => {
+    if (el.type === 'checkbox' || el.type === 'radio') el.checked = false;
+    else el.value = '';
+  });
+
+  // Reset UI labels like sign-in status
+  const signInBtn = document.getElementById('googleSignIn');
+  if (signInBtn) signInBtn.innerText = '🔒 Sign in with Google';
+
+  writingLog.length = 0;
+  renderWritingLog();
+
+  // Restart autosave (blank session)
+  setTimeout(() => {
+    autosavePaused = false;
+    alert('✅ Organizer reset! You can start a new essay.');
+  }, 150);
+}
+
+
 
 // 8) Expose globals
 // 8) Expose globals

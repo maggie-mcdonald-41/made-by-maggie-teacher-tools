@@ -14,7 +14,18 @@
   <!-- Google Identity (safe in head) -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://unpkg.com/compromise"></script>
-
+<div id="save-status" style="
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #05C1B8;
+  border: 1px solid #ccc;
+  padding: 6px 12px;
+  border-radius: 5px;
+  font-size: 13px;
+  display: none;
+  z-index: 9999;
+"></div>
 </head>
 
 <body>
@@ -88,6 +99,11 @@
             <button id="googleSignOut">
                 <img src="signout.png" alt="Sign Out" class="google-signoutbtn">
                 <span class="hover-text"> Sign Out & Reset</span>
+            </button>
+
+            <button id="clearFormOnly" class="clear-form-button">
+                <img src="bin.png" alt="Clear form" class="clear-form-icon" />
+                <span class="label-text">Clear Form</span>
             </button>
 
             <div class="download_upload">
@@ -1326,3 +1342,6 @@
 </body>
 
 </html>
+
+<!-- attributes png-->
+ <!--<a href="https://www.flaticon.com/free-icons/trash-can" title="trash can icons">Trash can icons created by kliwir art - Flaticon</a>-->

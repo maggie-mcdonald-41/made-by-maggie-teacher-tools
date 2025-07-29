@@ -123,9 +123,9 @@ function syncEFtoStandard() {
 
 // — 5) DOM Ready / Bootstrap —
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('googleSignIn')?.addEventListener('click', startGoogleAuth);
+document.getElementById('googleSignIn')?.addEventListener('click', startGoogleAuth);
 document.getElementById('googleSignOut')?.addEventListener('click', handleGoogleSignOut);
-
+document.getElementById('clearFormOnly')?.addEventListener('click', handleClearFormOnly);
  
   document.querySelectorAll('[contenteditable="true"]').forEach(box => {
     box.addEventListener('focus', () => activeEdits.add(box.id));
@@ -155,7 +155,11 @@ document.getElementById('googleSignOut')?.addEventListener('click', handleGoogle
   isEvidenceFirst = localStorage.getItem('isEvidenceFirst') === 'true';
   document.getElementById('evidenceFirstToggle').checked = isEvidenceFirst;
 
-  restoreGoogleAuthIfPossible()
+window.addEventListener('load', () => {
+  console.log('[Startup] Window fully loaded. Attempting Google restore.');
+  restoreGoogleAuthIfPossible();
+});
+
   // b) initialize modules
   initEvidenceFirstToggle();
   initAll();              // voice, download/upload, copy, dark/dyslexia, tip-toggles

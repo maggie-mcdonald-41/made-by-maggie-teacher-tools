@@ -458,6 +458,34 @@ body.dark-mode .warning {
   flex-shrink: 0;
 }
 
+.clear-form-button {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 16px;
+  gap: 24px; /* 👈 This sets the large gap between icon and text */
+  font-size: 16px;
+  font-weight: 500;
+  background-color: #f8f9fa;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s, border-color 0.3s;
+}
+
+.clear-form-button:hover {
+  background-color: #ffecec;
+  border-color: #e06666;
+}
+
+.clear-form-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.hover-text {
+  white-space: nowrap;
+}
+
 .download_upload {
   display: flex;
   flex-direction: row;

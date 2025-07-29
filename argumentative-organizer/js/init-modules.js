@@ -40,13 +40,21 @@ function initDownloadUpload() {
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target.result);
-        Object.entries(data).forEach(([key, value]) => {
-          if (key !== 'selectedBodyCount') {
-            const el = document.getElementById(key);
-            if (el) el.innerText = value;
-            localStorage.setItem(key, value);
-          }
-        });
+Object.entries(data).forEach(([key, value]) => {
+  if (key === 'selectedBodyCount') return;
+
+  const el = document.getElementById(key);
+  if (!el) return;
+
+  if (el.isContentEditable) {
+    el.innerText = value;
+  } else if ('value' in el) {
+    el.value = value;
+  }
+
+  localStorage.setItem(key, value);
+});
+
 
         if (data.selectedBodyCount && [1, 2, 3].includes(data.selectedBodyCount)) {
           selectedBodyCount = data.selectedBodyCount;
