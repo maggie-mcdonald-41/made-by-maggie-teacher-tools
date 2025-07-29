@@ -259,7 +259,7 @@ const metadata = {
   parents: [folderId],
   appProperties: {
     app: 'madebymaggie-organizer',
-    type: 'argument', //'opinion', etc.
+    type: 'opinion',
     owner: userEmail 
   }
 };
