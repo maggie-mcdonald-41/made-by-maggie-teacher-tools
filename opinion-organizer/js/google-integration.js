@@ -366,7 +366,6 @@ function saveToDriveNow() {
   console.log('[Drive Save] Payload:', data);
 
   indicateSavingNow();
-
   fetch(
     `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,
     {
@@ -378,7 +377,16 @@ function saveToDriveNow() {
       body: JSON.stringify(data)
     }
   )
-  .then(res => {
+  .then(async res => {
+    if (res.status === 404) {
+      console.warn('📁 File not found on Drive — creating a new one.');
+      // clear the bad ID so we fall back to creating
+      localStorage.removeItem(`fileId-${essayType}`);
+      fileId = null;
+      await createDriveFile();
+      // retry the save with the new file
+      return saveToDriveNow();
+    }
     if (!res.ok) throw new Error(`Drive save failed: ${res.status}`);
     showSaveStatus('Saved ✓');
     console.log('💾 Autosave successful at', new Date().toLocaleTimeString());
@@ -389,7 +397,6 @@ function saveToDriveNow() {
     showSaveStatus('❌ Save failed', 4000);
   });
 }
-
 
 
 const debouncedSaveToDrive = (fn,delay=500)=>(...a)=>{clearTimeout(fn._t);fn._t=setTimeout(()=>fn(...a),delay)};
