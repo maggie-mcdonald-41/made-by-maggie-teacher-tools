@@ -36,7 +36,12 @@ function initEventHandlers() {
         );
         if (!confirmRefresh) return;
       }
-
+    // 🔧 Handle final essay box separately
+    if (id === 'essay-final') {
+      activeEdits.delete('essay-final');
+      updateEssay();
+      return; // ⛔ skip regenerateBoxContent for essay-final
+    }
       regenerateBoxContent(id);
     });
   });

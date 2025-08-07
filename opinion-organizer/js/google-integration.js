@@ -9,11 +9,13 @@ const SCOPES      = [
   'https://www.googleapis.com/auth/userinfo.email'
 ].join(' ');
 
+const essayType = 'opinion'; 
+
 let tokenClient;
 let accessToken = localStorage.getItem('accessToken');
 let userEmail   = localStorage.getItem('userEmail');
 let isSignedIn  = !!accessToken;
-let fileId = null; // Always declared here to avoid ReferenceErrors
+let fileId = localStorage.getItem(`fileId-${essayType}`) || null;
 let autosavePaused = false;
 let folderId = null;
 const FOLDER_NAME = 'EssayToolSave';
@@ -93,31 +95,108 @@ async function gapiRequest(url) {
   return res.json();
 }
 
-// 3) Restore on page load
+/* === 3) Restore on page load === */
 async function restoreGoogleAuthIfPossible() {
-console.log('[Auth Restore] Trying to restore...');
-console.log('[Auth Restore] accessToken:', accessToken);
-console.log('[Auth Restore] userEmail:', userEmail);
+  console.log('[Auth Restore] accessToken:', accessToken, 'userEmail:', userEmail);
+  // bail early if there's no token
+  if (!accessToken) return;
 
-  if (!accessToken || !userEmail) return;
-  isSignedIn = true;
+  // re-init the tokenClient so you can silently refresh later if needed
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
-    scope:     SCOPES,
-    callback:  () => {} // silent
+    scope: SCOPES,
+    callback: () => {}  // we never need an interactive callback here
   });
 
-  showLoadingMessage('🔄 Restoring your saved essay…');
-  await loadFromDrive();
-  restoreWritingLogFromStorage(); // ✅ Add this here
-  hideLoadingMessage();
-  startAutoSave();
-  setupEnhancedMonitoring();
-
+  isSignedIn = true;
+  // update the UI
   const signInBtn = document.getElementById('googleSignIn');
-  if (signInBtn) {
-    signInBtn.innerHTML = '✅ Signed In';
+  if (signInBtn) signInBtn.innerHTML = '✅ Signed In';
+
+  // load *before* autosaving
+  showLoadingMessage('🔄 Restoring your saved essay…');
+    if (!userEmail) {
+    try {
+      const profileRes = await fetch(
+        'https://openidconnect.googleapis.com/v1/userinfo',
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+      if (!profileRes.ok) throw new Error('Profile fetch failed');
+      const profile = await profileRes.json();
+      userEmail = profile.email;
+      localStorage.setItem('userEmail', userEmail);
+    } catch (e) {
+      console.warn('⚠️ Could not fetch userEmail silently:', e);
+    }
   }
+  try {
+    await loadFromDrive();
+    hideLoadingMessage();
+
+    // if you still want your old localStorage log fallback:
+    restoreWritingLogFromStorage();
+
+    // *then* start autosave + monitoring
+    startAutoSave();
+    setupEnhancedMonitoring();
+  } catch (err) {
+    console.error('❌ Restore failed:', err);
+    hideLoadingMessage();
+  }
+}
+
+
+/* === 4) Sign-in on user click === */
+function startGoogleAuth() {
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: async (tokenResponse) => {
+      try {
+        accessToken = tokenResponse.access_token ||
+                      (() => { throw new Error("No access token"); })();
+        localStorage.setItem('accessToken', accessToken);
+        isSignedIn = true;
+        // fetch & store email
+        const profileRes = await fetch(
+          'https://openidconnect.googleapis.com/v1/userinfo',
+          { headers: { Authorization: `Bearer ${accessToken}` } }
+        );
+        if (!profileRes.ok) throw new Error(`Profile fetch failed: ${profileRes.status}`);
+        const profile = await profileRes.json();
+        userEmail = profile.email;
+        localStorage.setItem('userEmail', userEmail);
+
+        // load *first*
+        showLoadingMessage('🔄 Restoring your saved essay…');
+        await loadFromDrive();
+
+        // persist fileId for next page load
+        if (fileId) {
+          localStorage.setItem(`fileId-${essayType}`, fileId);
+        } else {
+          throw new Error("No fileId found after loadFromDrive()");
+        }
+
+        hideLoadingMessage();
+
+        // *then* start autosave & monitoring
+        startAutoSave();
+        setupEnhancedMonitoring();
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        // finally, reload so that restoreGoogleAuthIfPossible will run
+        location.reload();
+      } catch (err) {
+        console.error("❌ Google Sign-In or restore failed:", err);
+        hideLoadingMessage();
+        alert("⚠️ Could not restore your essay. Try again?");
+      }
+    }
+  });
+
+  // trigger the OAuth flow
+  tokenClient.requestAccessToken({ scope: SCOPES });
 }
 
 
@@ -127,97 +206,42 @@ function restoreWritingLogFromStorage() {
   renderWritingLog();
 }
 
-// 4) Sign-in on user click
-function startGoogleAuth() {
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID,
-    scope: SCOPES,
-    callback: async (tokenResponse) => {
-      try {
-        accessToken = tokenResponse.access_token;
-        if (!accessToken) throw new Error("No access token received.");
-        localStorage.setItem('accessToken', accessToken);
-        isSignedIn = true;
-
-        console.log("🔑 Access token received:", accessToken);
-
-        const profileRes = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
-          headers: { Authorization: `Bearer ${accessToken}` }
-        });
-
-        if (!profileRes.ok) {
-          throw new Error(`Failed to fetch user info: ${profileRes.status}`);
-        }
-
-        const profile = await profileRes.json();
-        console.log("✅ User profile loaded:", profile);
-
-        userEmail = profile.email;
-        localStorage.setItem('userEmail', userEmail);
-
-        const signInBtn = document.getElementById('googleSignIn');
-        if (signInBtn) {
-          signInBtn.innerHTML = '✅ Signed In';
-        }
-
-        showLoadingMessage('🔄 Restoring your saved essay…');
-
-        setTimeout(async () => {
-          await loadFromDrive();
-          hideLoadingMessage();
-          startAutoSave();
-          setupEnhancedMonitoring();
-
-          // ✅ Trigger refresh after full sign-in + setup
-          location.reload();
-        }, 150);
-
-      } catch (err) {
-        console.error("❌ Google Sign-In failed:", err);
-        alert("⚠️ Google Sign-In failed. Please try again.");
-      }
-    }
-  });
-
-  // 🔐 Only call after user triggers sign-in (click, etc.)
-  tokenClient.requestAccessToken({ scope: SCOPES });
-}
 
 
 // 5) Drive file load/create
 async function loadFromDrive() {
-  try {
-    await getOrCreateFolder();
+  await getOrCreateFolder();
 
-const query = `
-  appProperties has { key='app' and value='madebymaggie-organizer' }
-  and appProperties has { key='owner' and value='${userEmail}' }
-  and trashed = false
-  and '${folderId}' in parents
-`;
-
-    const res = await gapiRequest(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,appProperties)`);
-
+  if (fileId) {
+    console.log('[Drive] Using stored fileId:', fileId);
+  } else {
+    // only query if we don’t have fileId yet
+    const query = `
+      appProperties has { key='app' and value='madebymaggie-organizer' }
+      and appProperties has { key='owner' and value='${userEmail}' }
+      and trashed = false
+      and '${folderId}' in parents
+    `;
+    const res = await gapiRequest(
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,appProperties)`
+    );
     if (res.files?.length) {
       fileId = res.files[0].id;
-      console.log('[Drive] Matched existing file:', fileId);
+      localStorage.setItem(`fileId-${essayType}`, fileId);
+      console.log('[Drive] Found existing file:', fileId);
     } else {
-      console.log('[Drive] No matching file found. Creating new one...');
+      console.log('[Drive] No matching file — creating one');
       await createDriveFile();
     }
-
-    const content = await fetch(
-      `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    ).then(r => r.json());
-
-    console.log("📦 Drive file content loaded:", content);
-    populateFieldsFromJSON(content);
-
-  } catch (err) {
-    console.error('❌ loadFromDrive() failed:', err);
-    alert('⚠️ Error loading your saved work from Google Drive.');
   }
+
+  // now fetch the JSON payload
+  const content = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+    { headers: { Authorization: `Bearer ${accessToken}` } }
+  ).then(r => r.json());
+
+  populateFieldsFromJSON(content);
 }
 
 
@@ -226,7 +250,21 @@ function populateFieldsFromJSON(data) {
 
   const defaultClaim = "Make a clear statement that shows your position on the topic. This is not a full sentence.";
 
+  // ✅ Restore writingLog and revisionCounts
+  if (Array.isArray(data._writingLog)) {
+    writingLog.length = 0;
+    writingLog.push(...data._writingLog);
+    renderWritingLog();
+  }
+
+  if (typeof data._revisionCounts === 'object' && data._revisionCounts !== null) {
+    Object.assign(revisionCounts, data._revisionCounts);
+  }
+
+  // ✅ Restore contenteditable + form fields
   Object.entries(data).forEach(([id, value]) => {
+    if (id.startsWith('_')) return; // Skip meta entries like _writingLog
+
     const el = document.getElementById(id);
     if (!el || !id) return;
 
@@ -245,6 +283,7 @@ function populateFieldsFromJSON(data) {
   });
 }
 
+
 async function createDriveFile() {
   if (fileId) {
     console.warn('[Drive] File ID already exists. Skipping createDriveFile.');
@@ -253,17 +292,16 @@ async function createDriveFile() {
 
   await getOrCreateFolder(); // Ensure folder exists before file creation
 
-const metadata = {
-  name: 'EssayToolSave.json',
-  mimeType: 'application/json',
-  parents: [folderId],
-  appProperties: {
-    app: 'madebymaggie-organizer',
-    type: 'opinion',
-    owner: userEmail 
-  }
-};
-
+  const metadata = {
+    name: `EssayToolSave-${essayType}.json`,
+    mimeType: 'application/json',
+    parents: [folderId],
+    appProperties: {
+      app: 'madebymaggie-organizer',
+      type: essayType,
+      owner: userEmail 
+    }
+  };
 
   try {
     const res = await fetch(
@@ -281,6 +319,7 @@ const metadata = {
     if (!res.id) throw new Error('❌ Failed to create Drive file — no ID returned.');
 
     fileId = res.id;
+    localStorage.setItem(`fileId-${essayType}`, fileId); // ✅ <--- Add this line right here
     console.log('[Drive] Created new file:', fileId);
 
   } catch (error) {
@@ -288,6 +327,7 @@ const metadata = {
     alert('❌ Failed to create Drive file. Please try again or check your connection.');
   }
 }
+
 
 const startAutoSave=()=>setInterval(saveToDriveNow,15000);
 
@@ -303,13 +343,27 @@ function saveToDriveNow() {
     return;
   }
 
-  const data = {};
+  const data = {
+    _writingLog: writingLog,
+    _revisionCounts: revisionCounts
+  };
+
+  let hasContent = false;
 
   document.querySelectorAll('[contenteditable="true"]').forEach(el => {
     const id = el.id;
     if (!id) return;
-    data[id] = el.innerText.trim();
+    const value = el.innerText.trim();
+    if (value) hasContent = true;
+    data[id] = value;
   });
+
+  if (!hasContent) {
+    console.warn('⚠️ Skipping save — no user content yet');
+    return;
+  }
+
+  console.log('[Drive Save] Payload:', data);
 
   indicateSavingNow();
 
@@ -335,6 +389,7 @@ function saveToDriveNow() {
     showSaveStatus('❌ Save failed', 4000);
   });
 }
+
 
 
 const debouncedSaveToDrive = (fn,delay=500)=>(...a)=>{clearTimeout(fn._t);fn._t=setTimeout(()=>fn(...a),delay)};
@@ -373,30 +428,18 @@ async function getOrCreateFolder() {
 async function findExistingDriveFile() {
   const query = `
     appProperties has { key='app' and value='madebymaggie-organizer' }
-    and appProperties has { key='owner' and value='${userEmail}' }
     and trashed = false
     and '${folderId}' in parents
-  `;
+  and (
+       appProperties has { key='type' and value='${essayType}' }
+    or not appProperties has { key='type' }
+  )
+`;
   console.log('[Drive Query]', query);
   const res = await gapiRequest(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name)`);
   return res.files?.[0]?.id || null;
 }
 
-// Then update inside loadFromDrive() as:
-async function loadFromDrive() {
-  try {
-    await getOrCreateFolder();
-    fileId = await findExistingDriveFile();
-
-    if (!fileId) {
-      console.log('[Drive] No matching file found. Creating new one...');
-      await createDriveFile();
-    }
-  } catch (err) {
-    console.error('❌ loadFromDrive() failed:', err);
-    alert('⚠️ Error loading your saved work from Google Drive.');
-  }
-}
 
 function showSaveStatus(message, duration = 2000) {
   const statusEl = document.getElementById('save-status');
@@ -505,7 +548,14 @@ document.querySelectorAll('[contenteditable="true"]').forEach(el => {
 
 // 7) Export to Docs
 async function exportToGoogleDocs() {
+  // — ensure any in-progress typing is committed
+ const focused = document.activeElement;
+ if (focused && focused.isContentEditable) focused.blur();
+
+  // — grab and inspect the exact text we’re exporting
   const finalText = getEssayTextForExport();
+
+  console.log('[Export Debug] text:', JSON.stringify(finalText));
   if (finalText.length < 10) return alert('⚠️ Essay is too short to export.');
 
   if (!accessToken) {
@@ -524,6 +574,7 @@ async function exportToGoogleDocs() {
       },
       body: JSON.stringify({ title: 'Final Essay' })
     }).then(r => r.json());
+     console.log('[Export Debug] new Doc ID:', createRes.documentId);
 
     if (!createRes.documentId) {
       throw new Error("⛔️ Document creation failed. No ID returned.");
@@ -559,6 +610,7 @@ function handleGoogleSignOut() {
   localStorage.removeItem('accessToken');
   localStorage.removeItem('userEmail');
 
+
   // Reload the page after a short delay
   setTimeout(() => {
     location.reload();
@@ -571,10 +623,12 @@ function handleClearFormOnly() {
   autosavePaused = true;
 
   // Remove saved Drive file reference and auth
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('userEmail');
-  localStorage.removeItem('writingLog');
-  fileId = null; // <- Crucial: prevent loading from Drive again
+// Just clear local session, not Drive file
+localStorage.removeItem('writingLog');
+observedIds.forEach(id => localStorage.removeItem(id));
+
+// ✅ Clear the essayType-specific fileId to avoid reusing a blank file after clear
+localStorage.removeItem(`fileId-${essayType}`);
 
   // Clear all contenteditable boxes
   observedIds.forEach(id => {
@@ -595,6 +649,11 @@ function handleClearFormOnly() {
   writingLog.length = 0;
   renderWritingLog();
 
+  // ✅ Clear progress tracking (adjust key names if needed)
+  localStorage.removeItem('progressData'); // or loop if you use progress-* keys
+  if (typeof updateProgressBar === 'function') updateProgressBar();
+
+
   // Restart autosave (blank session)
   setTimeout(() => {
     autosavePaused = false;
@@ -603,8 +662,6 @@ function handleClearFormOnly() {
 }
 
 
-
-// 8) Expose globals
 // 8) Expose globals
 window.startGoogleAuth             = startGoogleAuth;
 window.restoreGoogleAuthIfPossible = restoreGoogleAuthIfPossible;
@@ -613,4 +670,4 @@ window.handleGoogleSignOut         = handleGoogleSignOut;
 window.setupEnhancedMonitoring     = setupEnhancedMonitoring;
 window.logActivity                 = logActivity;
 /* === end google-integration.js === */
-/* === end google-integration.js === */
+

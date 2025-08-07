@@ -115,7 +115,7 @@ function updateEssay() {
     .map(indentParagraph)
     .join('<br><br>');
 
-  const current = essayBox?.innerHTML.trim();
+  const current = essayBox?.innerText.trim();
   const previous = localStorage.getItem(boxId);
 
   if (
@@ -128,18 +128,17 @@ function updateEssay() {
 }
 
 function getEssayTextForExport() {
-  const intro = document.getElementById('intro-final')?.innerText.trim();
-  const bp1 = document.getElementById('bp1-final')?.innerText.trim();
-  const bp2 = document.getElementById('bp2-final')?.innerText.trim();
-  const bp3 = document.getElementById('bp3-final')?.innerText.trim();
-  const conclusion = document.getElementById('conclusion-final')?.innerText.trim();
+const essayFinal = document
+    .getElementById('essay-final')
+    ?.innerText
+    .trim();
 
-  const paragraphs = [intro, bp1, bp2, bp3, conclusion]
-    .filter(Boolean)
-    .map(p => `\t${p}`)
-    .join('\n\n');
+  if (!essayFinal) {
+    alert('⚠️ No text found in the Final Essay box.');
+    return '';
+  }
 
-  return paragraphs;
+  return essayFinal;
 }
 
 
