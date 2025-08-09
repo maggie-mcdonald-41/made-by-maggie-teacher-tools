@@ -5,7 +5,6 @@
 const CLIENT_ID = '592399844090-i5e5nc7a098as70j39cab8lsv8ini9t0.apps.googleusercontent.com';
 const SCOPES      = [
   'https://www.googleapis.com/auth/drive.file',
-  'https://www.googleapis.com/auth/documents',
   'https://www.googleapis.com/auth/userinfo.email'
 ].join(' ');
 
@@ -331,6 +330,7 @@ async function createDriveFile() {
 
 const startAutoSave=()=>setInterval(saveToDriveNow,15000);
 
+
 // 6) Auto-save & debounce
 function saveToDriveNow() {
   if (autosavePaused) {
@@ -553,61 +553,315 @@ document.querySelectorAll('[contenteditable="true"]').forEach(el => {
 
 }
 
-// 7) Export to Docs
+// --- helpers for safe HTML + proper paragraphs ---
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+// Split on blank lines into <p>…</p>, preserve single newlines as <br>
+function textToParagraphHtml(txt) {
+  const paras = String(txt).trim().split(/\n\s*\n/g);
+  return paras
+    .map(p => `<p>${escapeHtml(p).replace(/\n/g, '<br>')}</p>`)
+    .join('');
+}
+
+// Helper: build clean HTML for conversion
+function buildExportHtml(finalText, writingLog = []) {
+  const essayHtml = textToParagraphHtml(finalText);
+
+  const logItems = (writingLog && writingLog.length)
+    ? writingLog.map(item => `<li>${escapeHtml(item)}</li>`).join('')
+    : '<li>No entries recorded.</li>';
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Final Essay</title>
+<style>
+  body { font-family: Arial, Helvetica, sans-serif; line-height: 1.5; }
+  h1, h2 { margin: 0 0 10pt; }
+  p { 
+    margin: 0 0 12pt; 
+    text-indent: 0.5in; /* First-line indent */
+  }
+  ul { margin: 8pt 0 0 18pt; }
+  .section { margin: 16pt 0; }
+  .divider { border: 0; border-top: 1px solid #ccc; margin: 20pt 0; }
+  .meta { color: #666; font-size: 11px; margin-top: 18pt; }
+  .badge { display:inline-block; background:#eef5ff; padding:4px 8px; border-radius:999px; }
+</style>
+
+</head>
+<body>
+  <h1>Final Essay</h1>
+
+  <div class="section essay">
+    ${essayHtml}
+  </div>
+
+  <hr class="divider" />
+
+  <div class="section">
+    <h2>Teacher View: Writing Log</h2>
+    <ul>${logItems}</ul>
+  </div>
+
+  <div class="meta">
+    <span class="badge">Exported from Made by Maggie Organizer</span>
+  </div>
+</body>
+</html>`;
+}
+
+/* =======================
+   Toast + Sparkles + Confetti
+   ======================= */
+
+// Creates a floating toast with a <canvas> for animations
+/* =======================
+   Toast + Confetti Gather→Burst
+   ======================= */
+
+function createExportToast(initialText = '📄 Exporting to Google Docs…') {
+  const toast = document.createElement('div');
+  toast.id = 'export-status-msg';
+  Object.assign(toast.style, {
+    position: 'fixed',
+    bottom: '20px',
+    right: '20px',
+    background: '#4cafef',
+    color: 'white',
+    padding: '12px 16px',
+    borderRadius: '12px',
+    fontSize: '14px',
+    fontFamily: 'Arial, sans-serif',
+    boxShadow: '0 4px 14px rgba(0,0,0,0.25)',
+    zIndex: '9999',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    pointerEvents: 'none'
+  });
+
+  const label = document.createElement('div');
+  label.textContent = initialText;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 180;
+  canvas.height = 60;
+  canvas.style.display = 'block';
+
+  toast.appendChild(label);
+  toast.appendChild(canvas);
+  document.body.appendChild(toast);
+
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  // Confetti particles
+  const N = 90;
+  const parts = [];
+  const target = { x: W - 24, y: H - 14 }; // gather point near the corner
+  let mode = 'gather'; // 'gather' | 'burst'
+  let rafId = null;
+
+  function rand(min, max) { return Math.random() * (max - min) + min; }
+  function rc() { return `hsl(${Math.floor(rand(0,360))},85%,60%)`; }
+
+  // init scattered confetti
+  for (let i = 0; i < N; i++) {
+    parts.push({
+      x: rand(0, W), y: rand(0, H),
+      vx: rand(-0.5, 0.5), vy: rand(-0.5, 0.5),
+      size: rand(3, 6),
+      rot: rand(0, Math.PI*2),
+      vr: rand(-0.15, 0.15),
+      color: rc(),
+      arrived: false
+    });
+  }
+
+  function step(dt) {
+    ctx.clearRect(0, 0, W, H);
+
+    for (const p of parts) {
+      if (mode === 'gather') {
+        // Attraction toward target with slight damping
+        const dx = target.x - p.x, dy = target.y - p.y;
+        const dist = Math.hypot(dx, dy) || 0.001;
+        const k = 12; // spring-ish factor
+        const ax = (dx / dist) * (k / (dist + 8));
+        const ay = (dy / dist) * (k / (dist + 8));
+
+        p.vx += ax * dt * 60;
+        p.vy += ay * dt * 60;
+
+        // friction
+        p.vx *= 0.92;
+        p.vy *= 0.92;
+
+        // when close, jitter in place
+        if (dist < 10) {
+          p.arrived = true;
+          p.vx += rand(-0.15, 0.15);
+          p.vy += rand(-0.15, 0.15);
+          // stronger friction near target to keep them clustered
+          p.vx *= 0.85;
+          p.vy *= 0.85;
+        }
+      } else if (mode === 'burst') {
+        // gravity + slow air drag
+        p.vy += 0.08 * (dt * 60);
+        p.vx *= 0.995;
+        p.vy *= 0.995;
+      }
+
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rot += p.vr;
+
+      // keep within canvas loosely
+      if (mode === 'gather') {
+        if (p.x < 0 || p.x > W) p.vx *= -0.6;
+        if (p.y < 0 || p.y > H) p.vy *= -0.6;
+      }
+
+      // draw rectangle confetto
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size, -p.size*0.6, p.size*2, p.size*1.2);
+      ctx.restore();
+    }
+  }
+
+  let last = performance.now();
+  function loop(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    step(dt);
+    rafId = requestAnimationFrame(loop);
+  }
+  rafId = requestAnimationFrame(loop);
+
+  function burst() {
+    // give each particle an outward velocity from the target
+    for (const p of parts) {
+      const dx = p.x - target.x, dy = p.y - target.y;
+      const dist = Math.max(0.2, Math.hypot(dx, dy));
+      const power = 3.2 + Math.random()*1.6;
+      p.vx = (dx / dist) * power;
+      p.vy = (dy / dist) * power - 1.2; // slight upward kick
+      p.vr = rand(-0.4, 0.4);
+    }
+    mode = 'burst';
+  }
+
+  return {
+    setText: (t) => label.textContent = t,
+    burst,
+    remove: () => { cancelAnimationFrame(rafId); toast.remove(); }
+  };
+}
+
+/* =======================
+   Export (uses gather→burst)
+   ======================= */
+
 async function exportToGoogleDocs() {
-  // — ensure any in-progress typing is committed
- const focused = document.activeElement;
- if (focused && focused.isContentEditable) focused.blur();
+  // Commit any in-progress typing
+  const focused = document.activeElement;
+  if (focused && focused.isContentEditable) focused.blur();
 
-  // — grab and inspect the exact text we’re exporting
+  // Gather content
   const finalText = getEssayTextForExport();
-
-  console.log('[Export Debug] text:', JSON.stringify(finalText));
-  if (finalText.length < 10) return alert('⚠️ Essay is too short to export.');
-
+  if (!finalText || finalText.trim().length < 10) {
+    alert('⚠️ Essay is too short to export.');
+    return;
+  }
   if (!accessToken) {
-    alert("🚫 Missing access token. Please sign in again.");
+    alert('🚫 Missing access token. Please sign in again.');
     return;
   }
 
-  const full = `${finalText}\n\n🧑‍🏫 Teacher View:\n${writingLog.join('\n')}`;
+  // Toast with confetti gathering
+  const toast = createExportToast('📄 Exporting to Google Docs…');
+
+  const html = buildExportHtml(finalText, writingLog);
+  const titleBase = 'Final Essay';
+  const stamp = new Date().toISOString().slice(0,19).replace('T',' ').replace(/:/g,'-');
+  const title = `${titleBase}${typeof essayType === 'string' ? ` — ${essayType}` : ''} — ${stamp}`;
+
+  // Build multipart/related body for Drive upload
+  const boundary = '-------maggie_' + Math.random().toString(36).slice(2);
+  const delimiter = `\r\n--${boundary}\r\n`;
+  const closeDelim = `\r\n--${boundary}--`;
+
+  const metadata = {
+    name: title,
+    mimeType: 'application/vnd.google-apps.document',
+    ...(folderId ? { parents: [folderId] } : {})
+  };
+
+  const body =
+    delimiter +
+    'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+    JSON.stringify(metadata) +
+    delimiter +
+    'Content-Type: text/html; charset=UTF-8\r\n\r\n' +
+    html +
+    closeDelim;
 
   try {
-    const createRes = await fetch('https://docs.googleapis.com/v1/documents', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ title: 'Final Essay' })
-    }).then(r => r.json());
-     console.log('[Export Debug] new Doc ID:', createRes.documentId);
+    const res = await fetch(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': `multipart/related; boundary=${boundary}`
+        },
+        body
+      }
+    );
 
-    if (!createRes.documentId) {
-      throw new Error("⛔️ Document creation failed. No ID returned.");
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(`Drive upload failed: ${res.status} ${txt}`);
     }
 
-    await fetch(`https://docs.googleapis.com/v1/documents/${createRes.documentId}:batchUpdate`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        requests: [{ insertText: { location: { index: 1 }, text: full } }]
-      })
-    });
+    const file = await res.json();
+    logActivity?.('✅ Exported to Google Docs (via Drive conversion)');
 
-    logActivity('✅ Exported to Google Docs');
-    window.open(`https://docs.google.com/document/d/${createRes.documentId}/edit`, '_blank');
+    // Burst, then open tab with a tiny delay so they see it
+    toast.setText('✅ Export complete — opening Google Doc…');
+    toast.burst();
+    setTimeout(() => {
+      if (file.webViewLink) window.open(file.webViewLink, '_blank');
+      setTimeout(() => toast.remove(), 1200);
+    }, 300); // short pause lets the burst register
   } catch (error) {
-    console.error("❌ Google Docs export failed:", error);
-    alert("❌ Export failed. Please check your sign-in status or try again.");
+    console.error('❌ Google Docs export failed:', error);
+    toast.setText('❌ Export failed. Please try again.');
+    setTimeout(() => toast.remove(), 1500);
+    alert('❌ Export failed. Please check your sign-in status or try again.');
   }
 }
 
 
-function handleGoogleDocsExport(){if(!isSignedIn)return alert('Sign in first');exportToGoogleDocs();}
+
+// Button handler
+function handleGoogleDocsExport() {
+  if (!isSignedIn) return alert('Sign in first');
+  exportToGoogleDocs();
+}
 
 
 function handleGoogleSignOut() {
