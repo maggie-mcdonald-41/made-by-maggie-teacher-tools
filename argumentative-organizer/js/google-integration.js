@@ -9,6 +9,7 @@ const SCOPES      = [
 ].join(' ');
 
 const essayType = 'argument'; // or 'opinion'
+let autosaveTimer = null;
 
 let tokenClient;
 let accessToken = localStorage.getItem('accessToken');
@@ -27,7 +28,7 @@ const editStartTimes = {};
 
 // --- Logging config ---
 const LOG_MAX_DETAILED = 100; // show last N in detail; older entries summarized
-const LOG_TIMEZONE = undefined; // or e.g., 'America/New_York'
+const LOG_TIMEZONE = 'America/New_York';
 
 // --- Types (doc note):
 // entry = {
@@ -66,6 +67,41 @@ function ensureStructuredLog(arr) {
   return arr;
 }
 
+const LOG_SOFT_LIMIT = 2500; // entries
+
+function safePersistLog() {
+  try {
+    localStorage.setItem('writingLog', JSON.stringify(writingLog));
+  } catch (e) {
+    if (e && (e.name === 'QuotaExceededError' || e.code === 22)) {
+      // Compact older entries into summaries
+      const recentCount = LOG_MAX_DETAILED; // keep same as your detail view count
+      const cutoff = Math.max(0, writingLog.length - recentCount);
+      const older = writingLog.slice(0, cutoff);
+      const recent = writingLog.slice(cutoff);
+
+      const summary = summarizeEntries(older).map(s => ({
+        ts: Date.now(),
+        action: 'note',
+        sectionId: s.sectionId,
+        sectionLabel: s.sectionLabel,
+        text:
+          `Summary: time ${fmtDuration(s.timeMs)}`
+          + (s.revisions ? ` · ${s.revisions} rev` : '')
+          + (s.pasteCount ? ` · ${s.pasteCount} paste${s.pasteChars ? `/${s.pasteChars} chars` : ''}` : '')
+          + (s.aiCount ? ` · ${s.aiCount} coach` : '')
+      }));
+
+      writingLog.length = 0;
+      writingLog.push(...summary, ...recent);
+
+      // Try again silently
+      try { localStorage.setItem('writingLog', JSON.stringify(writingLog)); } catch {}
+    }
+  }
+}
+
+
 const debouncedSave = (() => {
   const make = (fn, delay=500) => {
     let t;
@@ -92,30 +128,32 @@ const sectionLabels = {
   'essay-final': '📝 Final Essay'
   // Add more as needed
 };
+const MAX_PASTE_LEN = 10000; // top-level is fine
 
-// Collect editable IDs for sign-out
-const observedIds = Array.from(
-  document.querySelectorAll('[contenteditable="true"]')
-).map(el => el.id);
 
 // 2) Helpers
 function logActivity(action, sectionId = null, extra = {}) {
   const ts = Date.now();
   const sectionLabel = sectionId && sectionLabels[sectionId] ? sectionLabels[sectionId] : sectionId || undefined;
 
-  // Build structured entry
   const entry = { ts, action, ...(sectionId ? { sectionId, sectionLabel } : {}), ...extra };
 
-  // Dedupe exact same action in same section within 2 seconds (common blur spam)
   const last = writingLog[writingLog.length - 1];
-  if (last && last.action === entry.action && last.sectionId === entry.sectionId && (ts - last.ts) < 2000) {
-    return;
-  }
+  if (last && last.action === entry.action && last.sectionId === entry.sectionId && (ts - last.ts) < 2000) return;
 
   writingLog.push(entry);
-  localStorage.setItem('writingLog', JSON.stringify(writingLog));
+
+  // Soft cap to prevent quota blowups
+  if (writingLog.length > LOG_SOFT_LIMIT) {
+    safePersistLog();
+  }
+
+  // Only persist to localStorage if not explicitly skipped
+  if (!extra.noLocal) safePersistLog();
+
   renderWritingLog();
 }
+
 
 function summarizeEntries(entries) {
   const bySection = new Map();
@@ -133,7 +171,7 @@ function summarizeEntries(entries) {
     };
     if (e.action === 'finish') {
       s.timeMs += (e.durationMs || 0);
-      s.revisions += (e.revision ? 1 : 1); // count each finish as a revision event
+      s.revisions += 1;
       s.sessions += 1;
     } else if (e.action === 'paste') {
       s.pasteCount += 1;
@@ -277,11 +315,12 @@ async function restoreGoogleAuthIfPossible() {
     }
   }
   try {
-    await loadFromDrive();
-    hideLoadingMessage();
+await loadFromDrive();
+hideLoadingMessage();
 
-    // if you still want your old localStorage log fallback:
-    restoreWritingLogFromStorage();
+// Fallback only if Drive didn’t have a log
+if (!writingLog.length) restoreWritingLogFromStorage();
+
 
     // *then* start autosave + monitoring
     startAutoSave();
@@ -382,13 +421,14 @@ async function loadFromDrive() {
     }
   }
 
-  // now fetch the JSON payload
-  const content = await fetch(
-    `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
-    { headers: { Authorization: `Bearer ${accessToken}` } }
-  ).then(r => r.json());
+const resp = await fetch(
+  `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+  { headers: { Authorization: `Bearer ${accessToken}` } }
+);
+let content = {};
+try { content = await resp.json(); } catch { content = {}; }
+populateFieldsFromJSON(content);
 
-  populateFieldsFromJSON(content);
 }
 
 
@@ -437,38 +477,37 @@ async function createDriveFile() {
     return;
   }
 
-  await getOrCreateFolder(); // Ensure folder exists before file creation
+  await getOrCreateFolder();
 
   const metadata = {
     name: `EssayToolSave-${essayType}.json`,
     mimeType: 'application/json',
     parents: [folderId],
-    appProperties: {
-      app: 'madebymaggie-organizer',
-      type: essayType,
-      owner: userEmail 
-    }
+    appProperties: { app: 'madebymaggie-organizer', type: essayType, owner: userEmail }
   };
 
   try {
-    const res = await fetch(
-      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json; charset=UTF-8'
-        },
-        body: JSON.stringify(metadata)
-      }
-    ).then(r => r.json());
+    const res = await fetch('https://www.googleapis.com/drive/v3/files', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json; charset=UTF-8'
+      },
+      body: JSON.stringify(metadata)
+    });
+    const json = await res.json();
+    if (!res.ok || !json.id) throw new Error(`Create failed: ${res.status} ${JSON.stringify(json)}`);
 
-    if (!res.id) throw new Error('❌ Failed to create Drive file — no ID returned.');
-
-    fileId = res.id;
-    localStorage.setItem(`fileId-${essayType}`, fileId); // ✅ <--- Add this line right here
+    fileId = json.id;
+    localStorage.setItem(`fileId-${essayType}`, fileId);
     console.log('[Drive] Created new file:', fileId);
 
+    // (Optional) write initial empty JSON so subsequent PATCH media is consistent
+    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ _writingLog: [], _revisionCounts: {} })
+    });
   } catch (error) {
     console.error('[Drive] Error creating file:', error);
     alert('❌ Failed to create Drive file. Please try again or check your connection.');
@@ -476,7 +515,10 @@ async function createDriveFile() {
 }
 
 
-const startAutoSave=()=>setInterval(saveToDriveNow,15000);
+function startAutoSave() {
+  if (autosaveTimer) clearInterval(autosaveTimer);
+  autosaveTimer = setInterval(saveToDriveNow, 15000);
+}
 
 
 // 6) Auto-save & debounce
@@ -544,9 +586,6 @@ function saveToDriveNow() {
     showSaveStatus('❌ Save failed', 4000);
   });
 }
-
-
-const debouncedSaveToDrive = (fn,delay=500)=>(...a)=>{clearTimeout(fn._t);fn._t=setTimeout(()=>fn(...a),delay)};
 
 
 async function getOrCreateFolder() {
@@ -671,14 +710,17 @@ function setupEnhancedMonitoring() {
       revisionCounts[id] = (revisionCounts[id] || 0) + 1;
       logActivity('finish', id, { durationMs, revision: revisionCounts[id] });
       delete editStartTimes[id];
+      debouncedSave();
     });
 
-    el.addEventListener('paste', (evt) => {
-      let n = 0;
-      try { n = (evt.clipboardData?.getData('text/plain') || '').length; } catch {}
-      logActivity('paste', id, { pasteChars: n });
-debouncedSave();
-    });
+el.addEventListener('paste', (evt) => {
+  let n = 0;
+  try { n = (evt.clipboardData?.getData('text/plain') || '').length; } catch {}
+  n = Math.min(n, MAX_PASTE_LEN); // cap it
+  logActivity('paste', id, { pasteChars: n });
+  debouncedSave();
+});
+
 
     el.addEventListener('ai-edit', () => {
       logActivity('ai', id);
@@ -1000,7 +1042,7 @@ async function exportToGoogleDocs() {
     }
 
     const file = await res.json();
-logActivity('export');
+logActivity('export', null, { noLocal: true });
 
     // Burst, then open tab with a tiny delay so they see it
     toast.setText('✅ Export complete — opening Google Doc…');
@@ -1029,15 +1071,11 @@ function handleGoogleDocsExport() {
 function handleGoogleSignOut() {
   if (!confirm('👋 Sign out of Google?')) return;
 
-  // Clear saved credentials
   localStorage.removeItem('accessToken');
   localStorage.removeItem('userEmail');
+  localStorage.removeItem(`fileId-${essayType}`); // ← add this
 
-
-  // Reload the page after a short delay
-  setTimeout(() => {
-    location.reload();
-  }, 300);
+  setTimeout(() => { location.reload(); }, 300);
 }
 
 function handleClearFormOnly() {
@@ -1048,12 +1086,11 @@ function handleClearFormOnly() {
   // Remove saved Drive file reference and auth
 // Just clear local session, not Drive file
 localStorage.removeItem('writingLog');
-observedIds.forEach(id => localStorage.removeItem(id));
 
 // ✅ Clear the essayType-specific fileId to avoid reusing a blank file after clear
 localStorage.removeItem(`fileId-${essayType}`);
 
-// replace the observedIds loops with:
+
 document.querySelectorAll('[contenteditable="true"]').forEach(el => {
   const id = el.id;
   if (id) localStorage.removeItem(id);
