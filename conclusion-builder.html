@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Conclusion Builder by Made by Maggie</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+  <!-- Use your existing site stylesheet -->
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    :root{
+      --deep-teal:#004860; --bright-teal:#05C1B8; --light-teal:#84EBE6;
+      --golden:#FFD466; --peach:#FF8F85; --light-pink:#FFA69E;
+      --chalk:#F5FDFF; --violet:#2a1933;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: "Poppins", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:#333; background:#fff;
+    }
+
+    /* Simple top nav (optional) */
+    .topbar{
+      background:var(--deep-teal); color:#fff; padding:.75rem 1rem;
+      display:flex; justify-content:space-between; align-items:center;
+    }
+    .topbar a{color:#fff; text-decoration:none; font-weight:600}
+    .topbar a:hover{color:var(--golden)}
+
+    /* HERO with ombré like your main site */
+    .hero{
+      padding:3rem 1rem 2.5rem;
+      background: linear-gradient(90deg, var(--light-teal), var(--golden), var(--light-pink));
+      text-align:center; color:#111;
+    }
+    .hero h1{
+      margin:0 0 .5rem; font-size:clamp(1.8rem, 4.5vw, 2.6rem);
+      color:#222;
+      text-shadow: 0 1px 0 rgba(255,255,255,.6);
+    }
+    .hero p{
+      margin:.5rem auto 0; max-width:900px; font-size:clamp(1rem, 2.2vw, 1.25rem);
+      line-height:1.6;
+    }
+    .cta-row{margin-top:1.25rem; display:flex; gap:.75rem; justify-content:center; flex-wrap:wrap}
+    .btn{
+      display:inline-block; padding:.75rem 1.1rem; border-radius:12px; font-weight:700; text-decoration:none;
+      box-shadow:0 4px 10px rgba(0,0,0,.08); transition:.2s transform, .2s background;
+    }
+    .btn-primary{background:#9c6ded; color:#fff}
+    .btn-primary:hover{background:#0AD1CC; transform:translateY(-2px)}
+    .btn-ghost{background:#fff; color:#3d3d3d; border:2px solid #3d3d3d}
+    .btn-ghost:hover{background:#3d3d3d; color:#fff}
+
+    /* Sections */
+    .section{
+      padding:2.25rem 1rem; max-width:1200px; margin:0 auto;
+    }
+    .section h2{
+      text-align:center; color:var(--deep-teal);
+      font-size:clamp(1.4rem, 3.5vw, 2rem); margin:0 0 1rem;
+    }
+
+    /* ===== INSERTED SNIP: Screenshot grid & card styles ===== */
+    .features { padding:2rem 1rem; }
+    #screenshots { scroll-margin-top:90px; }
+    .screenshot-grid{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:1rem;
+      max-width:1100px;
+      margin:1rem auto 0;
+    }
+    .screenshot-grid figure{
+      margin:0;
+      background:#fff;
+      border-left:6px solid var(--bright-teal);
+      border-radius:16px;
+      padding:12px;
+      box-shadow:0 6px 18px rgba(0,0,0,.06);
+    }
+    .screenshot-grid img{
+      width:100%;
+      height:auto;
+      aspect-ratio: 4 / 3;         /* keeps them uniform */
+      object-fit:contain;           /* never overflows */
+      background:#eee;
+      border-radius:10px;
+      display:block;
+    }
+    .screenshot-grid figcaption{
+      margin:.5rem .25rem 0;
+      font-weight:700;
+      text-align:center;
+      color:#222;
+    }
+    @media (max-width: 900px){
+      .screenshot-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 600px){
+      .screenshot-grid{ grid-template-columns: 1fr; }
+    }
+    /* ===== end inserted snip ===== */
+
+    /* FEATURES anchor target (for your menu jump link) */
+    #features{scroll-margin-top:90px}
+
+    /* VERIFICATION INFO */
+    .verify{
+      background:#f9f9f9; border-left:6px solid var(--bright-teal);
+      border-radius:14px; padding:1.25rem; margin-top:1.5rem;
+    }
+    .verify h3{margin:.2rem 0 .6rem; color:#222; font-size:1.15rem}
+    .verify ul{margin:.25rem 0 0 1.25rem}
+    .verify li{margin:.35rem 0}
+
+    /* Footer-ish */
+    .foot{
+  width: 100vw;
+  margin-left: 50%;
+  transform: translateX(-50%);
+    }
+
+    /* Helper to make big images shrink nicely */
+    .contain img{object-fit:contain}
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="main-nav">
+    <div class="nav-container">
+      <a href="https://madebymaggie.org" class="nav-logo">📘 Made by Maggie</a>
+
+      <button class="nav-toggle" onclick="toggleNav()">☰</button>
+
+      <ul class="nav-links">
+        <li><a href="#tool-preview">Preview</a></li>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#testimonials">Testimontials</a></li>
+        <li><a href="#tools">Tools</a></li>
+        <li><a href="#purchase">Purchase</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Hero / Verification anchor content -->
+  <header class="hero" style="background: linear-gradient(90deg, #84EBEE, #FFD466, #FFA69E);">
+    <h1>Conclusion Builder (Google Docs Add-on Sidebar)</h1>
+    <p class="hero-subtext">
+      A guided, step-by-step sidebar that helps students turn their reasons and evidence into a polished conclusion paragraph with prompts, sentence starters, and a one-click insert.
+    </p> <br/>
+
+    <!-- Screenshots block (with inserted styles above) -->
+    <section class="features" id="screenshots">
+      <h2>Screenshots</h2>
+      <div class="screenshot-grid">
+        <figure>
+          <img src="/images/conclusion-builder-sidebar.png" alt="Sidebar open in Google Docs showing Conclusion Builder steps">
+          <figcaption>Sidebar Open</figcaption>
+        </figure>
+        <figure>
+          <img src="/images/conclusion-builder-preview.png" alt="Social image Preview of features">
+          <figcaption>Build &amp; Preview</figcaption>
+        </figure>
+        <figure>
+          <img src="/images/conclusion-builder-result.png" alt="Inserted conclusion paragraph in the doc body">
+          <figcaption>Inserted Paragraph</figcaption>
+        </figure>
+      </div>
+
+
+    <div class="doc-meta">
+      <br/>
+      <strong>Where it runs:</strong> Google Docs (sidebar add-on via Apps Script).<br/>
+      <strong>How to open:</strong> <span class="kbd">Extensions → Conclusion Builder → Open Builder</span> (or the custom menu “Conclusion Builder”).<br/>
+      <strong>What it does:</strong> Shows a sidebar, guides a conclusion, and inserts the final paragraph into the current doc only when the user clicks “Insert.”<br/>
+      <strong>How to get this builder:</strong> Purchase and recieve the copy link. Send the link to your students and they work!
+    <div>
+         </section>
+  </section>
+<section id="video-instruction" 
+style="
+  width:100%;
+  padding:3rem 0;
+  background: linear-gradient(90deg, #84EBE6, #FFD466, #FFA69E);
+  text-align:center;
+">
+  <h2 style="
+    font-size:2rem;
+    margin-bottom:1.5rem;
+    color:#004860;
+    font-weight:800;
+  ">
+    How to Use the Conclusion Builder
+  </h2>
+
+  <div style="
+    width:100%;
+    max-width:1000px;
+    margin:0 auto;
+  ">
+    <div style="
+      position:relative;
+      width:100%;
+      padding-bottom:56.25%; /* 16:9 ratio */
+      height:0;
+      overflow:hidden;
+      border-radius:16px;
+      box-shadow:0 6px 20px rgba(0,0,0,0.18);
+    ">
+      <iframe 
+        src="https://www.youtube.com/embed/ZveqWEjHtko"
+        title="The Conclusion Builder – YouTube"
+        frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen
+        style="
+          position:absolute;
+          top:0; left:0;
+          width:100%; height:100%;
+          border-radius:16px;
+        ">
+      </iframe>
+    </div>
+  </div>
+</section>
+
+
+  <section class="features" id="privacy">
+    <h2>Data Use & Privacy</h2>
+    <p>
+      The Conclusion Builder processes text <em>only within the current Google Doc</em> to assemble a conclusion paragraph. We do not transfer document content to external servers, sell data, or share data with third parties. No persistent personal data is stored by this add-on.
+    </p>
+    <p>
+      See our <a href="/privacy.html">Privacy Policy</a> and <a href="/terms.html">Terms of Service</a>.
+    </p>
+  </section>
+  <section class="features" id="contact">
+    <h2>Support</h2>
+    <p>Questions about verification or functionality? Contact us via the <a href="/#contact">contact form</a>.</p>
+  </section>
+<section class="features" id="purchase">
+<div style="text-align:center; margin:2.5rem 0;">
+
+  <p style="
+    font-size:1.25rem;
+    font-weight:700;
+    color:var(--deep-teal);
+    margin-bottom:0.75rem;
+  ">
+    $5 — One-Time Purchase
+  </p>
+
+  <a href="https://payhip.com/b/CuTJz" target="_blank" rel="noopener"
+     style="
+       display:inline-block;
+       background:#9c6ded;
+       color:#fff;
+       padding:0.9rem 1.6rem;
+       font-size:1.15rem;
+       font-weight:700;
+       border-radius:14px;
+       text-decoration:none;
+       box-shadow:0 4px 10px rgba(0,0,0,.12);
+       transition: all .25s ease;
+     "
+     onmouseover="this.style.background='#0AD1CC'; this.style.transform='scale(1.05)'"
+     onmouseout="this.style.background='#9c6ded'; this.style.transform='scale(1)'"
+  >
+    Purchase Conclusion Builder
+  </a>
+
+  <p style="
+    font-size:0.95rem;
+    margin-top:0.75rem;
+    color:#555;
+  ">
+    Includes a Google Doc copy link you can share with your class.
+  </p>
+
+</div>
+
+
+</section>
+
+  </header>
+  <footer class="footer">
+    <div style="text-align:center; margin:3rem 0 2rem;">
+  <img 
+    src="/images/logo-3.png" 
+    alt="Made by Maggie Teacher Tools logo"
+    style="max-width:180px; width:100%; height:auto; opacity:0.95;"
+  />
+</div>
+    © <span id="y"></span> Made by Maggie | Conclusion Builder | Made for teachers, by a teacher
+    </footer>
+
+  <script>
+    document.getElementById('y').textContent = new Date().getFullYear();
+  </script>
+
+</body>
+</html>
