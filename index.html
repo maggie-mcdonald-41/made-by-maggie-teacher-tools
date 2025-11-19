@@ -43,10 +43,9 @@
     <button class="nav-toggle" onclick="toggleNav()">☰</button>
 
     <ul class="nav-links">
-      <li><a href="#tool-preview">Preview</a></li>
+      <li><a href="#tools">Tools</a></li>
       <li><a href="#features">Features</a></li>
       <li><a href="#testimonials">Testimontials</a></li>
-      <li><a href="#tools">Tools</a></li>
       <li><a href="#purchase">Purchase</a></li>
       <li><a href="#about">About</a></li>
       <li><a href="#contact">Contact</a></li>
@@ -78,26 +77,23 @@ document.querySelectorAll('.nav-links a').forEach(link => {
   <header class="header">
     <div class="header-flex" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
       <div style="flex: 1;">
-        <h1 style="margin: 0;">The Ultimate Graphic Organizers</h1>
-        <p style="margin: 0;">Built by a special education teacher, these web-based organizers guide students through clear, scaffolded writing without doing the work for them.</p>
-
+        <h1 style="margin: 0;">Made by Maggie Teaching Tools</h1>
       </div>
     </div>
   </header>
 
   <!-- Hero Section -->
   <section class="hero">
-    <h1>Make Essay Writing Clear, Fun, and Accessible</h1>
-    <p><strong>Have an essay to write? I’ve got just the tool for you.</strong><br>
-Whether you’re in 3rd grade or your first year of college, these tools break down the writing process step by step so you can write with clarity and confidence.
-<i>This isn’t AI that writes for you.</i> It’s real support that teaches you how to write: organized, focused, and strong from start to finish.</p>
+    <h1>Tools that teach students to think, write, and grow! <br> ✨This is built for classrooms, by a teacher✨</h1>
+    <p><strong>Whether it’s testing practice or essay writing, I’ve got just the tool to support your students.</strong><br>
+I build easy-to-use digital organizers, reading question trainers, and Google Docs writing tools that support students through every stage of the writing process. Each resource blends structure, scaffolding, and interactivity to help learners stay engaged and succeed. Teachers get reliable, classroom-ready tools! Students get the guidance they need to shine</p>
 
     <!-- Access Code Form -->
     <div class="access-wrapper">
       <section id="access-gate">
         <label for="access-code">🔐 Enter Access Code:</label>
         <input type="text" id="access-code" placeholder="e.g. TEACH2025" />
-        <button class="cta-button" onclick="verifyCode()">✅ Launch Organizer</button>
+        <button class="cta-button" onclick="verifyCode()">✅ Launch Tool</button>
         <p id="error-msg" style="color: red; display: none;">
           ❌ That code didn’t work. Double-check for typos or <a href="#purchase" style="color: #9c6ded; text-decoration: underline;">get full access here</a>.
         </p>
@@ -135,215 +131,125 @@ async function verifyCode() {
   });
 </script>
 
-
-<br><br>
-    <p class="hero-subtext">
-      💻 Want this for your classroom? Purchase includes a personal teacher license with student access via link + code. No accounts, no setup—just open and write.
-    </p>
-    <p class="hero-subtext">
-      📥 Lesson plan and slides are unlocked after code entry and also delivered via email after purchase.
-    </p>
-
-  <h2>🎯 Try The Ultimate Argumentative Graphic Organizer for Free</h2>
-  <p class="hero-subtext">No login or sign-up needed. Explore the basic organizer and see how it can transform writing in your classroom.</p>
-
-  <a href="./argumentative-organizer-free/index.html" class="cta-button cta-free-trial">🎁 Try the Free Version</a>
-  <!-- Free Demo Feature List -->
-<section class="demo-features">
-  <h3>🧪 Free Demo Includes:</h3>
-  <ul>
-    <li>✅ <strong>Read-Aloud Accessibility</strong> <em>(English only)</em></li>
-    <li>✅ <strong>Dyslexia-friendly font</strong></li>
-    <li>✅ <strong>One Body Paragraph</strong> <em>(fully interactive)</em></li>
-    <li>✅ <strong>Evidence First Mode</strong></li>
-    <li>✅ <strong>Dynamic Thesis Builder</strong></li>
-    <li>✅ <strong>Sentence Starter Buttons</strong></li>
-    <li>✅ <strong>Final Essay Preview</strong></li>
-    <li>✅ <strong>Argumentative Essay version</strong></li>
-    <li>🚫 <strong>Writing Coach feedback</strong> is disabled</li>
-    <li>🚫 <strong>Google Drive integration</strong> is disabled</li>
-
-  </ul>
 </section>
+
+<!-- New Tools -->
+<section id="tools" class="tools-section">
+  <h2 class="tools-heading">💼 Writing & Reading Tools</h2>
+
+  <div class="tools-grid">
+
+    <!-- Card 1 -->
+    <div class="tool-card">
+      <img src="images/social-image.png" alt="Argumentative Organizer" class="tool-image">
+      <h3>Argumentative Essay Organizer</h3>
+      <p class="tool-desc">Step-by-step scaffolding for structured argument writing.</p>
+      <p class="tool-grades">Grades: 4–12</p>
+      <a href="/graphic-organizers.html" class="tool-btn" target="_blank">Learn More</a>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="tool-card">
+      <img src="images/opinion-social-image.png" alt="Opinion Organizer" class="tool-image">
+      <h3>Opinion Essay Organizer</h3>
+      <p class="tool-desc">Friendly, accessible support for early opinion writing.</p>
+      <p class="tool-grades">Grades: 3–6</p>
+      <a href="/graphic-organizers.html" class="tool-btn" target="_blank">Learn More</a>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="tool-card">
+      <img src="images/conclusion-builder-preview.png" alt="Conclusion Builder" class="tool-image">
+      <h3>Conclusion Builder</h3>
+      <p class="tool-desc">Write strong, focused final paragraphs directly inside Google Docs.</p>
+      <p class="tool-grades">Grades: 5–12</p>
+      <a href="/conclusion-builder.html" class="tool-btn" target="_blank">Learn More</a>
+    </div>
+
+    <!-- Card 4 -->
+    <div class="tool-card">
+      <img src="images/reading-type-logo.png" alt="Reading Trainer" class="tool-image">
+      <h3>Reading Test-Style Question Trainer</h3>
+      <p class="tool-desc">Interactive passages paired with state-style reading questions.</p>
+      <p class="tool-grades">Grades: 5–12</p>
+      <a href="/reading-type-practice.html" class="tool-btn" target="_blank">Learn More</a>
+    </div>
+
+    <!-- Card 5 -->
+    <div class="tool-card coming-soon">
+      <img src="images/coming-soon.png" alt="Coming Soon" class="tool-image">
+      <h3>More Coming Soon!</h3>
+      <p class="tool-desc">Informative, Narrative, and additional organizers in progress.</p>
+      <p class="tool-grades">Grades: 3–12</p>
+      <span class="tool-btn disabled">Coming Soon</span>
+    </div>
+
+  </div>
 </section>
+
+
 <!-- Insert video here -->
+<section class="features" id="features"></section>
 <section class="video-section">
-  <h2>🎥 Why I Made This Tool</h2>
-  <div class="video-card">
-    <div class="responsive-video-wrapper">
-      <iframe src="https://www.youtube.com/embed/Kc6zL0Jhf2o?si=1zqje8h54aKox3NI"
-              title="District Overview Video"
-              frameborder="0" 
-              allowfullscreen 
-              class="responsive-video"></iframe>
-    </div>
-    <p class="video-caption">Argumentative Essay Overview</p>
-    <p class="info"><strong>Perfect for:</strong> Middle school ELA, high school ELA, resource/inclusion classes, writing intervention groups, or any teacher who wants to scaffold argumentative writing with confidence.</p>
-  </div>
-</section>
+  <h2>🎥 Check out the Tools</h2>
 
- <!-- Carousel Preview -->
-  <section id="tool-preview" class="carousel-section">
-    <h2>🧭 Explore the Organizer</h2>
-    <p>Here’s a quick look at what’s included in your purchase:</p>
-    <div class="carousel-container">
-      <div class="carousel-track">
-        <div class="carousel-item">
-          <img src="images/essay-nav.png" alt="Preview 1" class="carousel-image">
-          <p class="carousel-caption">Navigation</p>
-        </div>
-        <div class="carousel-item">
-          <img src="images/essay-thesis.png" alt="Preview 2" class="carousel-image">
-          <p class="carousel-caption">Thesis Page</p>
-        </div>
-        <div class="carousel-item">
-          <img src="images/essay-evidence.png" alt="Preview 3" class="carousel-image">
-          <p class="carousel-caption">Evidence Page</p>
-        </div>
-        <div class="carousel-item">
-          <img src="images/essay-evidence-2.png" alt="Preview 4" class="carousel-image">
-          <p class="carousel-caption">Evidence Writing Coach</p>
-        </div>
-        <div class="carousel-item">
-          <img src="images/essay-introduction.png" alt="Preview 5" class="carousel-image">
-          <p class="carousel-caption">Introduction</p>
-        </div>
-        <div class="carousel-item">
-          <img src="images/essay-bp1.png" alt="Preview 6" class="carousel-image">
-          <p class="carousel-caption">Body Paragraph One</p>
-        </div>
-        <div class="carousel-item">
-          <img src="images/essay-thesis-done.png" alt="Preview 7" class="carousel-image">
-          <p class="carousel-caption">Completed Thesis</p>
-        </div>
-        <div class="carousel-item">
-          <img src="images/essay-ef-menu.png" alt="Preview 8" class="carousel-image">
-          <p class="carousel-caption">Evidence First Mode</p>
-        </div>
-        <div class="carousel-item">
-          <img src="images/essay-outline.png" alt="Preview 9" class="carousel-image">
-          <p class="carousel-caption">Essay Outline</p>
-        </div>
-        <div class="carousel-item">
-          <img src="images/essay-bp3.png" alt="Preview 10" class="carousel-image">
-          <p class="carousel-caption">Body Paragraph 3</p>
-        </div>
-        <div class="carousel-item">
-          <img src="images/essay-conclusion1.png" alt="Preview 11" class="carousel-image">
-          <p class="carousel-caption">Conclusion</p>
-        </div>
-        <div class="carousel-item">
-          <img src="images/essay-conclusion2.png" alt="Preview 12" class="carousel-image">
-          <p class="carousel-caption">Conclusion2</p>
-        </div>
-        <div class="carousel-item">
-          <img src="images/essay-final.png" alt="Preview 13" class="carousel-image">
-          <p class="carousel-caption">Final Essay</p>
-        </div>
-        <div class="carousel-item">
-          <img src="images/writing-coach.png" alt="Preview 14" class="carousel-image">
-          <p class="carousel-caption">Writing Coach Preview</p>
-        </div>
-        <div class="carousel-item">
-          <img src="images/writing-coach-2.png" alt="Preview 15" class="carousel-image">
-          <p class="carousel-caption">Writing Coach Preview 2</p>
-        </div>
-        <div class="carousel-item">
-          <img src="images/teacher-log.png" alt="Preview 16" class="carousel-image">
-          <p class="carousel-caption">Teacher Log</p>
-        </div>
-        <div class="carousel-item">
-          <img src="images/slides.png" alt="Preview 17" class="carousel-image">
-          <p class="carousel-caption">Lesson Slides</p>
-        </div>
-        <div class="carousel-item">
-          <img src="images/cross-curricular-integration.png" alt="Preview 18" class="carousel-image">
-          <p class="carousel-caption">Cross-Curricular Slides</p>
-        </div>
-        <div class="carousel-item">
-          <img src="images/vocabulary-slides.png" alt="Preview 19" class="carousel-image">
-          <p class="carousel-caption">Lesson Vocabulary</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-
-  <!-- Features Section -->
-  <section id="features" class="features">
-    <h2>🎒 Designed with Students & Teachers in Mind</h2>
-    <div class="feature-grid">
-      <div class="feature-card">
-  <h3>🧠 Smart Writing Flow</h3>
-  <p>
-    From prompt to polished draft, this organizer helps students build real essays—while automatically connecting their ideas across sections:
-  </p>
-  <ul>
-    <li><strong>✨ Dynamic Thesis Builder:</strong> Students build a strong thesis step by step, and the tool automatically rewords and restates it in the conclusion.</li>
-    <li><strong>🔁 Auto-Populated Body Paragraphs:</strong> Student reasons and evidence are carried forward into structured paragraphs.</li>
-    <li><strong>📝 Final Essay Compilation:</strong> The tool automatically combines all parts into a full draft—ready for feedback, revision, or export.</li>
-  </ul>
-  <p>No more copy-paste frustration—just seamless, structured writing from start to finish.</p>
-</div>
-<div class="feature-card">
-  <h3>🧑‍💻 Writing Coach</h3>
-  <p>
-    This built-in coach provides instant feedback to help students catch and fix common writing issues as they go:
-  </p>
-  <ul>
-    <li><strong>🔍 Grammar & Mechanics:</strong> Highlights errors like sentence fragments, run-ons, first and second-person pronouns, contractions, informal language and double negatives—encouraging clean, academic writing.</li>
-    <li><strong>💬 Clarity & Style:</strong> Detects off-topic responses, repetition, filler words, and awkward phrasing—pushing students to think clearly and revise with intention.</li>
-    <li><strong>🔗 Structure Support:</strong> Flags missing transitions, missing quotation marks, weak evidence explanations, and structure issues without ever writing the content for the student.</li>
-  </ul>
-  <p>Students get specific, supportive guidance—building stronger, more independent writers with every section.</p>
-</div>
-<div class="feature-card">
-  <h3>🛡️ Academic Integrity Checks</h3>
-  <p>
-    This tool includes features designed to support authentic student work and discourage misuse of AI:
-  </p>
-  <ul>
-    <li><strong>📜 Edit History Logs:</strong> Tracks writing sessions and timestamps for each section, making it easier to spot copying, pasting, or AI-assisted writing.</li>
-    <li><strong>🕵️ Teacher Oversight:</strong> Helps teachers monitor progress and verify that students are engaging meaningfully with their writing tasks.</li>
-    <li><strong>✅ Encourages Authenticity:</strong> Creates a transparent writing process that rewards effort, revision, and growth over shortcuts.</li>
-  </ul>
-  <p>Built with accountability in mind, this feature promotes honest effort and helps uphold academic standards in any classroom setting.</p>
-</div>
-      <div class="feature-card"><h3>💡 Sentence Starters</h3><p>Click-to-insert transitions, hooks, and evidence starters support all writers.</p></div>
-      <div class="feature-card"><h3>🎧 Read Aloud & Language Supports</h3><p>Toggle voice and language options for audio directions and section content.</p></div>
-      <div class="feature-card"><h3>👩‍🏫 Teacher Tips</h3><p>Built-in guidance for every section—just like having a teacher right there.</p></div>
-      <div class="feature-card"><h3>📥 Save & Resume</h3><p><strong>Download and upload progress</strong> with ease—no sign-in required. Supports <strong>local storage</strong> or <strong>Google Drive integration</strong> when enabled.</p></div>
-      <div class="feature-card"><h3>🧠 Evidence-First Mode</h3><p>Supports non-linear thinkers by letting them start with what they know.</p></div>
-      <div class="feature-card"><h3>📚 Concrete Examples</h3><p>Each section includes modeled samples and writing templates for clarity.</p></div>
-      <div class="feature-card"><h3>🔤 Dyslexia-Friendly Font</h3><p>Toggle-friendly font option designed for readability and accessibility.</p></div>
-      <div class="feature-card"><h3>📝 Final Essay Preview</h3><p>As students complete each section, their writing is automatically assembled into a cohesive final draft—perfect for review, reflection, or revision.</p></div>
-      <div class="feature-card"><h3>🎯 Progress & Encouragement</h3><p>Students can see their progress as they go with a dynamic progress bar that tracks each section. Celebratory confetti and positive messages keep students motivated and excited to keep writing!</p></div>
-    </div>
-  </section>
-
-  <!-- Carousel Preview -->
-<section id="tool-preview">
-    <h2>🔍 Take a Peek Inside</h2>
   <div class="video-grid">
-      <div class="video-card">
-        <video controls src="videos/writing-coach.mp4"></video>
-        <p class="video-caption">Writing Coach</p>
+
+    <!-- Video 1 -->
+    <div class="video-card">
+      <div class="responsive-video-wrapper">
+        <iframe src="https://www.youtube.com/embed/Kc6zL0Jhf2o?si=1zqje8h54aKox3NI"
+                title="Argumentative Essay Overview"
+                frameborder="0"
+                allowfullscreen
+                class="responsive-video"></iframe>
       </div>
-      <div class="video-card">
-        <video controls src="videos/progress-tracking.mp4"></video>
-        <p class="video-caption">Progress Tracking Log</p>
+      <p class="video-caption">Argumentative Essay Overview</p>
+      <p class="info"><strong>Perfect for:</strong> Middle school ELA, high school ELA, resource/inclusion classes, writing intervention groups, or any teacher who wants to scaffold argumentative writing with confidence.</p>
+    </div>
+
+    <!-- Video 2 -->
+    <div class="video-card">
+      <div class="responsive-video-wrapper">
+        <iframe src="https://www.youtube.com/embed/VDW_i1oqg00"
+                title="Opinion Overview Video"
+                frameborder="0"
+                allowfullscreen
+                class="responsive-video"></iframe>
       </div>
-      <div class="video-card">
-        <video controls src="videos/evidence-first.mp4"></video>
-        <p class="video-caption">Evidence First Mode</p>
+      <p class="video-caption">Opinion Essay Overview</p>
+      <p class="info"><strong>Perfect for:</strong> Designed for elementary ELA, resource and inclusion groups, writing intervention support, or any teacher who wants strong, clear scaffolds for opinion writing.</p>
+    </div>
+
+    <!-- Video 3 -->
+    <div class="video-card">
+      <div class="responsive-video-wrapper">
+        <iframe src="https://www.youtube.com/embed/ZveqWEjHtko"
+                title="Conclusion Builder Overview"
+                frameborder="0"
+                allowfullscreen
+                class="responsive-video"></iframe>
       </div>
-      <div class="video-card">
-        <video controls src="videos/teacher-tips.mp4"></video>
-        <p class="video-caption">Teacher Tips</p>
+      <p class="video-caption">Conclusion Builder Overview</p>
+      <p class="info"><strong>Perfect for:</strong> Providing a guided writing sidebar that helps students compose strong, focused concluding paragraphs inside Google Docs.</p>
+    </div>
+
+    <!-- Video 4 -->
+    <div class="video-card">
+      <div class="responsive-video-wrapper">
+        <iframe src="https://www.youtube.com/embed/3KVuITPYb1g"
+                title="Reading Type Overview Video"
+                frameborder="0"
+                allowfullscreen
+                class="responsive-video"></iframe>
       </div>
-        <!-- Add more videos if needed -->
+      <p class="video-caption">Reading Question-Type Overview</p>
+      <p class="info"><strong>Perfect for:</strong> Giving students full practice with passages, MCQs, select-all, drag-and-drop order, matching, and highlight-to-answer questions.</p>
+    </div>
+
   </div>
 </section>
+
 
 <!-- Testimonials -->
 <section id="testimonials">
@@ -368,57 +274,17 @@ async function verifyCode() {
   </div>
 </section>
 
-<!--Tools-->
-<section id="tools" class="tools-section">
-  <h2 class="tools-heading">💼 Writing Tools Available</h2>
-  <div class="tools-table-wrapper">
-    <table class="tools-table">
-      <thead>
-        <tr>
-          <th>Tool</th>
-          <th>Description</th>
-          <th>Grades</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Argumentative Essay Organizer</td>
-          <td>Step-by-step scaffolding for structured argument writing</td>
-          <td>4–12</td>
-        </tr>
-        <tr>
-          <td>Opinion Essay Organizer</td>
-          <td>Friendly support for early opinion writing</td>
-          <td>3–6</td>
-        </tr>
-      <td><a href="/conclusion-builder.html" target="_blank" rel="noopener noreferrer">
-    Conclusion Builder
-  </a></td>
-          <td>Helps students write strong, focused final paragraphs directly inside Google Docs.</td>
-          <td>5-12</td>
-        </tr>
-        <td><a href="/reading-practice/" target="_blank" rel="noopener noreferrer">
-    Reading Test-Style Question Trainer
-  </a></td>
-          <td>Interactive passages + state-style questions</td>
-          <td>5-12</td>
-        </tr>      
-        <tr>
-          <td><em>(More coming soon!)</em></td>
-          <td colspan="2">Informative, Narrative, and more...</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</section>
+<!-- Purchase Section -->
+<section id="purchase" class="purchase-section">
+  <h2>🛒 Writing Tools & Access Options</h2>
+  <p>Get instant access to powerful, teacher-made tools and ready-to-use classroom resources.</p>
 
-  <!-- Purchase Section -->
-  <section id="purchase" class="purchase-section">
-    <h2>🛒 Purchase the Organizer</h2>
-    <p>Get instant access to the Ultimate Argumentative Essay Organizer and classroom materials.</p>
-   <div class="purchase-row"> 
-    <div class="purchase-box">
-      <h3>📦 Argumentative Graphic Organizer:</h3>
+  <div class="purchase-grid">
+
+    <!-- Argumentative Organizer -->
+    <article class="purchase-card">
+      <img src="images/social-image.png" alt="Argumentative Organizer" class="purchase-image">
+      <h3>📦 Argumentative Graphic Organizer</h3>
       <ul>
         <li>✅ Interactive Argumentative Digital Organizer</li>
         <li>✅ 6–10 Day Lesson Plan</li>
@@ -426,15 +292,19 @@ async function verifyCode() {
         <li>✅ Personal Classroom License</li>
         <li><i>No Subscription Required</i></li>
       </ul>
-      <p class="price-tag">$15 – One Year of Access</p>
-    <a href="https://payhip.com/b/HFp7R" target="_blank" class="purchase-button">
-      💳 Get the Full Version – $15
-    </a>
-      <p class="secure-note">🔒 Secure checkout via Payhip</p>
-    </div>
+      <div class="purchase-footer">
+        <p class="price-tag">$15 – One Year of Access</p>
+        <a href="https://payhip.com/b/HFp7R" target="_blank" class="purchase-button">
+          💳 Get the Full Version – $15
+        </a>
+        <p class="secure-note">🔒 Secure checkout via Payhip</p>
+      </div>
+    </article>
 
-    <div class="purchase-box">
-      <h3>📦 Opinion Graphic Organizer:</h3>
+    <!-- Opinion Organizer -->
+    <article class="purchase-card">
+      <img src="images/opinion-social-image.png" alt="Opinion Organizer" class="purchase-image">
+      <h3>📦 Opinion Graphic Organizer</h3>
       <ul>
         <li>✅ Interactive Opinion Digital Organizer</li>
         <li>✅ 6–10 Day Lesson Plan</li>
@@ -442,85 +312,147 @@ async function verifyCode() {
         <li>✅ Personal Classroom License</li>
         <li><i>No Subscription Required</i></li>
       </ul>
-      <p class="price-tag">$15 – One Year of Access</p>
-    <a href="https://payhip.com/b/uVWqM" target="_blank" class="purchase-button">
-      💳 Get the Full Version – $15
-    </a>
-      <p class="secure-note">🔒 Secure checkout via Payhip</p>
-    </div>
-<div class="purchase-box">
-  <h3>📝 Conclusion Builder (Google Docs Add-On):</h3>
-  <ul>
-    <li>✅ Step-by-step guided conclusion writing</li>
-    <li>✅ Sidebar insert directly into Google Docs</li>
-    <li>✅ Works with *any* essay or prompt</li>
-    <li>✅ Perfect for scaffolded writing support</li>
-    <li><i>Personal Classroom License</i></li>
-  </ul>
-  <p class="price-tag">$5 – One time purchase</p>
-
-  <a href="https://payhip.com/b/CuTJz" target="_blank" class="purchase-button">
-    💳 Get the Conclusion Builder – $5
-  </a>
-
-  <p class="secure-note">🔒 Secure checkout via Payhip</p>
-</div>
-
-    <div class="purchase-box district-box">
-  <h3>🏫 District Access</h3>
-  <ul>
-    <li>✔️ One-year access per teacher</li>
-    <li>✔️ Includes full lesson plans, slides, and support</li>
-    <li>✔️ License tracking and onboarding help</li>
-  </ul>
-  <p class="price-tag">Custom Pricing – Based on Teacher Count</p>
- <!-- <a href="https://payhip.com/b/qfXr7" target="_blank" class="purchase-button"> 
-    🏫 Purchase for Your District
-  </a> -->
-  <p class="secure-note">💬 <a href="#contact">Contact us</a> for a custom quote.</p>
-</div>
-</div>
-<div class="video-wrapper">
-  <h3>🎥 Features in Action</h3>
-  <iframe src="https://www.youtube.com/embed/caqJ3iGGpow?si=F-SSyDRJ7yNvYAFW"
-          title="District Overview Video"
-          frameborder="0" 
-          allowfullscreen 
-          class="responsive-video">
-  </iframe>
-</div>
-
-
-    <h2 style="margin-top: 4rem;">📦 What's Included</h2>
-    <div id="included-grid" class="whats-included-section">
-      <div class="feature-card included-card">
-        <h3>📁 Digital Organizer Tool</h3>
-        <p>Interactive essay builder with customizable structure and support tools.</p>
-        <div class="social-image">
-        <img src="images/social-image.png" alt="Made by Maggie Logo" class="included-image" />
-        <img src="images/opinion-social-image.png" alt="Opinion Organizer image" class="included-image" />
-        </div>
+      <div class="purchase-footer">
+        <p class="price-tag">$15 – One Year of Access</p>
+        <a href="https://payhip.com/b/uVWqM" target="_blank" class="purchase-button">
+          💳 Get the Full Version – $15
+        </a>
+        <p class="secure-note">🔒 Secure checkout via Payhip</p>
       </div>
-      <div class="feature-card included-card">
-        <h3>📄 Lesson Plan + Slides</h3>
-        <p>Editable resources for teaching argumentative writing over 6–10 days.</p>
-        <p class="subtext">🔐 <strong>Access these files after entering your access code inside the Organizer.</strong> You’ll also receive an email with the download link after purchase.</p>
+    </article>
+
+    <!-- Conclusion Builder -->
+    <article class="purchase-card">
+      <img src="images/conclusion-builder-preview.png" alt="Conclusion Builder" class="purchase-image">
+      <h3>📝 Conclusion Builder (Google Docs Add-On)</h3>
+      <ul>
+        <li>✅ Step-by-step guided conclusion writing</li>
+        <li>✅ Sidebar directly inside Google Docs</li>
+        <li>✅ Works with <em>any</em> essay or prompt</li>
+        <li>✅ Perfect for scaffolded writing support</li>
+        <li><i>Personal Classroom License</i></li>
+      </ul>
+      <div class="purchase-footer">
+        <p class="price-tag">$5 – One-time purchase</p>
+        <a href="https://payhip.com/b/CuTJz" target="_blank" class="purchase-button">
+          💳 Get the Conclusion Builder – $5
+        </a>
+        <p class="secure-note">🔒 Secure checkout via Payhip</p>
+      </div>
+    </article>
+    <!-- Reading Question-Type Trainer -->
+<article class="purchase-card reading-card">
+  <!-- Card image (update the file name to your actual PNG) -->
+  <img src="images/reading-type-logo.png"
+       alt="Reading Question-Type Trainer"
+       class="purchase-image">
+
+  <h3>📚 Reading Question-Type Trainer</h3>
+
+  <ul>
+    <li>✅ Interactive passages with state-style questions</li>
+    <li>✅ Multiple-choice & select-all-that-apply</li>
+    <li>✅ Drag-and-drop order & matching questions</li>
+    <li>✅ Highlight-to-answer text evidence practice</li>
+    <li>✅ Perfect for test prep and small-group instruction</li>
+  </ul>
+
+  <div class="purchase-footer">
+    <!-- Edit this line with your actual price -->
+    <p class="price-tag">$10 – One Year of Access</p>
+
+    <!-- Replace the href with your real Payhip link -->
+    <a href="https://payhip.com/your-reading-trainer-link"
+       target="_blank"
+       class="purchase-button">
+      💳 Get the Reading Trainer
+    </a>
+
+    <p class="secure-note">🔒 Secure checkout via Payhip</p>
+  </div>
+</article>
+    <!-- District Access -->
+    <article class="purchase-card district-card">
+      <img src="images/district-card.png" alt="District Access" class="purchase-image">
+      <h3>🏫 District Access</h3>
+      <ul>
+        <li>✔️ One-year access per teacher</li>
+        <li>✔️ Includes full lesson plans, slides, and support</li>
+        <li>✔️ License tracking and onboarding help</li>
+      </ul>
+      <div class="purchase-footer">
+        <p class="price-tag">Custom Pricing – Based on Teacher Count</p>
+        <a href="#contact" class="purchase-button">
+          💬 Request a District Quote
+        </a>
+        <p class="secure-note">We’ll follow up with a custom proposal.</p>
+      </div>
+    </article>
+
+    <!-- Free Demo -->
+    <article class="purchase-card demo-card">
+      <img src="images/demo-argumentative-card.png" alt="Free Argumentative Demo" class="purchase-image">
+      <h3>🎁 Free Argumentative Demo</h3>
+      <ul>
+        <li>✅ Read-aloud accessibility (English only)</li>
+        <li>✅ Dyslexia-friendly font</li>
+        <li>✅ One fully interactive body paragraph</li>
+        <li>✅ Evidence-First Mode & Thesis Builder</li>
+        <li>🚫 Writing Coach & Google Drive are disabled</li>
+      </ul>
+      <div class="purchase-footer">
+        <p class="price-tag">Free – No login or sign-up</p>
+        <a href="./argumentative-organizer-free/index.html" class="purchase-button">
+          🚀 Try the Free Version
+        </a>
+        <p class="secure-note">Preview the organizer before you buy.</p>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<section id="included" class="included-section">
+  <h2>📦 What's Included</h2>
+
+  <div class="included-card">
+    <h3>📄 Lesson Plan + Slides</h3>
+    <p>Editable resources for teaching argumentative writing over 6–10 days.</p>
+    <p class="subtext">
+      🔐 <strong>Access these files after entering your access code inside the Organizer.</strong>
+      You’ll also receive an email with the download link after purchase.
+    </p>
 
     <div class="access-wrapper">
-      <section id="drive-access-gate">
-        <label for="drive-access-code">🔐 Enter Access Code for Teacher Materials:</label>
-        <input type="text" id="drive-access-code" class="access-code-input" placeholder="e.g. TEACH2025" />
-        <button class="cta-button" onclick="verifyDriveCode()">✅ Access Resources</button>
-        <p id="drive-error-msg" style="color: red; display: none;">
-          ❌ That code didn’t work. Double-check for typos or <a href="#purchase" style="color: #9c6ded; text-decoration: underline;">get full access here</a>.
-        </p>
+      <label for="drive-access-code" class="access-label">
+        🔐 Enter Access Code for Teacher Materials:
+      </label>
 
-        <!-- Hidden drive link shown after successful code entry -->
-        <div id="drive-link-container" style="display: none; margin-top: 1rem;">
-          ✅ Access granted! <a id="drive-link" href="#" target="_blank">Click here to open the teacher resources folder</a>
-        </div>
-      </section>
+      <div class="access-input-row">
+        <input
+          type="text"
+          id="drive-access-code"
+          class="access-code-input"
+          placeholder="e.g. TEACH2025"
+        />
+        <button class="cta-button access-btn" onclick="verifyDriveCode()">
+          Access Resources
+        </button>
+      </div>
+
+      <p id="drive-error-msg" class="access-error">
+        ❌ That code didn’t work. Double-check for typos or
+        <a href="#purchase" class="access-link">get full access here</a>.
+      </p>
+
+      <div id="drive-link-container" class="access-success">
+        ✅ Access granted!
+        <a id="drive-link" href="#" target="_blank">Open Teacher Resources Folder</a>
+      </div>
     </div>
+  </div>
+</section>
+
 
 <script>
 async function verifyDriveCode() {
@@ -580,7 +512,7 @@ async function verifyDriveCode() {
   </div>
   <div class="faq-item">
     <h3>🗓️ How long does access last?</h3>
-    <p>Your license is valid for one full school year. You'll receive all updates during that time, 
+    <p>For the Graphic Organizers-Your license is valid for one full school year. You'll receive all updates during that time, 
       and new access codes will be issued each August.</p>
   </div>
   <div class="faq-item">

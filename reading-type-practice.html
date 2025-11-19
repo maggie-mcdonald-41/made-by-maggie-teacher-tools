@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reading Test-Style Question Trainer | Made by Maggie</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+
+  <!-- Use your existing site stylesheet -->
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    :root{
+      --deep-teal:#004860; --bright-teal:#05C1B8; --light-teal:#84EBE6;
+      --golden:#FFD466; --peach:#FF8F85; --light-pink:#FFA69E;
+      --chalk:#F5FDFF; --violet:#2a1933;
+    }
+
+    *{box-sizing:border-box}
+
+    body{
+      margin:0;
+      font-family:"Poppins", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:#fff;
+      color:#333;
+    }
+
+    /* Simple top nav (from your outline) */
+    .topbar{
+      background:var(--deep-teal); color:#fff; padding:.75rem 1rem;
+      display:flex; justify-content:space-between; align-items:center;
+    }
+    .topbar a{color:#fff; text-decoration:none; font-weight:600}
+    .topbar a:hover{color:var(--golden)}
+
+    /* HERO */
+    .hero{
+      padding:3rem 1rem 2.5rem;
+      background: linear-gradient(90deg, var(--light-teal), var(--golden), var(--light-pink));
+      text-align:center;
+      color:#111;
+    }
+    .hero h1{
+      margin:0 0 .5rem;
+      font-size:clamp(1.8rem, 4.5vw, 2.6rem);
+      color:#222;
+      text-shadow:0 1px 0 rgba(255,255,255,.6);
+    }
+    .hero p{
+      margin:.5rem auto 0;
+      max-width:900px;
+      font-size:clamp(1rem, 2.2vw, 1.25rem);
+      line-height:1.6;
+    }
+
+    .cta-row{
+      margin-top:1.25rem;
+      display:flex;
+      gap:.75rem;
+      justify-content:center;
+      flex-wrap:wrap;
+    }
+
+    /* BUTTONS */
+    .btn{
+      display:inline-block;
+      padding:.75rem 1.1rem;
+      border-radius:12px;
+      font-weight:700;
+      text-decoration:none;
+      box-shadow:0 4px 10px rgba(0,0,0,.08);
+      transition:.2s transform, .2s background;
+    }
+    .btn-primary{background:#9c6ded; color:#fff}
+    .btn-primary:hover{background:#0AD1CC; transform:translateY(-2px)}
+    .btn-ghost{background:#fff; color:#3d3d3d; border:2px solid #3d3d3d}
+    .btn-ghost:hover{background:#3d3d3d; color:#fff}
+
+    /* Sections */
+    .section{
+      padding:2.25rem 1rem;
+      max-width:1200px;
+      margin:0 auto;
+    }
+    .section h2{
+      text-align:center;
+      color:var(--deep-teal);
+      font-size:clamp(1.4rem, 3.5vw, 2rem);
+      margin:0 0 1rem;
+    }
+
+    /* Screenshots grid & card styles (unchanged from outline) */
+    .features { padding:2rem 1rem; }
+    #screenshots { scroll-margin-top:90px; }
+    .screenshot-grid{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:1rem;
+      max-width:1100px;
+      margin:1rem auto 0;
+    }
+    .screenshot-grid figure{
+      margin:0;
+      background:#fff;
+      border-left:6px solid var(--bright-teal);
+      border-radius:16px;
+      padding:12px;
+      box-shadow:0 6px 18px rgba(0,0,0,.06);
+    }
+    .screenshot-grid img{
+      width:100%;
+      height:auto;
+      aspect-ratio: 4 / 3;
+      object-fit:contain;
+      background:#eee;
+      border-radius:10px;
+      display:block;
+    }
+    .screenshot-grid figcaption{
+      margin:.5rem .25rem 0;
+      font-weight:700;
+      text-align:center;
+      color:#222;
+    }
+    @media (max-width: 900px){
+      .screenshot-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 600px){
+      .screenshot-grid{ grid-template-columns: 1fr; }
+    }
+
+    /* FEATURES anchor target (for your menu jump link) */
+    #features{scroll-margin-top:90px}
+
+    /* INFO BOX */
+    .verify{
+      background:#f9f9f9;
+      border-left:6px solid var(--bright-teal);
+      border-radius:14px;
+      padding:1.25rem;
+      margin-top:1.5rem;
+    }
+    .verify h3{margin:.2rem 0 .6rem; color:#222; font-size:1.15rem}
+    .verify ul{margin:.25rem 0 0 1.25rem}
+    .verify li{margin:.35rem 0}
+
+    /* Footer-ish helper from original */
+    .foot{
+      width: 100vw;
+      margin-left: 50%;
+      transform: translateX(-50%);
+    }
+
+    /* Helper to make big images shrink nicely */
+    .contain img{object-fit:contain}
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="main-nav">
+    <div class="nav-container">
+      <a href="https://madebymaggie.org" class="nav-logo">📘 Made by Maggie</a>
+
+      <button class="nav-toggle" onclick="toggleNav()">☰</button>
+
+      <ul class="nav-links">
+        <li><a href="#screenshots">Preview</a></li>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#purchase">Purchase</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Hero / main content wrapper (matches your original structure) -->
+  <header class="hero" style="background: linear-gradient(90deg, #84EBEE, #FFD466, #FFA69E);">
+    <h1>Reading Test-Style Question Trainer</h1>
+    <p class="hero-subtext">
+      Give students a low-stress way to practice the exact question types they’ll see on state tests:
+      side-by-side passages, multi-select questions, drag-and-drop ordering, matching, and “click to highlight” text evidence. All in one clean, kid-friendly practice page.
+    </p>
+    <br/>
+
+    <!-- Screenshots block -->
+    <section class="features" id="screenshots">
+      <h2>Tool Preview</h2>
+      <div class="screenshot-grid">
+        <figure>
+          <img src="/images/reading-trainer-questions.png" alt="Two reading passages with tabs and highlight toolbar">
+          <figcaption>Passage View + Highlighting</figcaption>
+        </figure>
+        <figure>
+          <img src="/images/reading-type-logo.png" alt="Multiple choice and multi-select questions next to the passage">
+          <figcaption>Question Pane</figcaption>
+        </figure>
+        <figure>
+          <img src="/images/reading-trainer-dragdrop.png" alt="Drag and drop tiles for chronological order and matching questions">
+          <figcaption>Drag &amp; Drop Practice</figcaption>
+        </figure>
+      </div>
+
+      <div class="doc-meta" style="max-width:900px; margin:1.75rem auto 0; text-align:left; font-size:0.98rem; line-height:1.6;">
+        <br/>
+        <strong>Where it runs:</strong> Right in your browser on <span class="kbd">madebymaggie.org</span> — no logins required for students.<br/>
+        <strong>Best for:</strong> Upper elementary and middle grades who need test-style practice without the test-style stress.<br/>
+        <strong>What it does:</strong> Students read passages, answer a mix of question types (MCQ, multi-select, chronological order, matching, and highlight-in-text), and get instant feedback on each question.<br/>
+        <strong>Teacher-friendly:</strong> Clean layout, kid-ready colors, and built with online learners in mind — perfect for modeling live, small group practice, or independent centers.
+      </div>
+    </section>
+
+    <!-- Video walkthrough (kept same structure / padding from outline) -->
+    <section id="video-instruction" 
+      style="
+        width:100%;
+        padding:3rem 0;
+        background: linear-gradient(90deg, #84EBE6, #FFD466, #FFA69E);
+        text-align:center;
+      ">
+      <h2 style="
+        font-size:2rem;
+        margin-bottom:1.5rem;
+        color:#004860;
+        font-weight:800;
+      ">
+        How to Use the Reading Test-Style Question Trainer
+      </h2>
+
+      <div style="
+        width:100%;
+        max-width:1000px;
+        margin:0 auto;
+      ">
+        <div style="
+          position:relative;
+          width:100%;
+          padding-bottom:56.25%; /* 16:9 ratio */
+          height:0;
+          overflow:hidden;
+          border-radius:16px;
+          box-shadow:0 6px 20px rgba(0,0,0,0.18);
+        ">
+          <iframe 
+            src="https://www.youtube.com/embed/3KVuITPYb1g"
+            title="Reading Test-Style Question Trainer – Overview"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+            style="
+              position:absolute;
+              top:0; left:0;
+              width:100%; height:100%;
+              border-radius:16px;
+            ">
+          </iframe>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features / info section -->
+    <section class="features" id="features">
+      <h2>What Students Can Practice</h2>
+      <div class="verify">
+        <h3>Built around common test-style reading questions:</h3>
+        <ul>
+          <li><strong>Passage tabs:</strong> Flip between two passages without losing your place.</li>
+          <li><strong>Highlight to answer:</strong> Click sentences in the passage to select text evidence.</li>
+          <li><strong>Multiple choice &amp; multi-select:</strong> A–D choices plus “select all that apply.”</li>
+          <li><strong>Chronological order:</strong> Drag tiles to put events in the correct order.</li>
+          <li><strong>Matching:</strong> Drag and drop pairs (like claim ↔ evidence or term ↔ definition).</li>
+          <li><strong>Drop-down:</strong> Drop down and select the correct answer.</li>
+          <li><strong>Test-taking skills:</strong> Annotate key terms and sentences, mark off incorrect answers.</li>
+          <li><strong>Student-friendly feedback:</strong> Check answers, see which ones need revision, and try again.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Data / privacy -->
+    <section class="features" id="privacy">
+      <h2>Data Use &amp; Student Privacy</h2>
+      <p>
+        This Reading Test-Style Question Trainer runs entirely in the browser. Student highlighting and answers live in the page while it’s open and are not sent to Made by Maggie servers.
+      </p>
+      <p>
+        For more, see our <a href="/privacy.html">Privacy Policy</a> and <a href="/terms.html">Terms of Service</a>.
+      </p>
+    </section>
+
+    <!-- Support -->
+    <section class="features" id="contact">
+      <h2>Support</h2>
+      <p>
+        Have questions about how to use this reading trainer with your students, or interested in a school/district license?
+        Reach out through the <a href="/#contact">Made by Maggie contact form</a> and I’ll be happy to help.
+      </p>
+    </section>
+
+    <!-- Purchase / access info -->
+    <section class="features" id="purchase">
+      <h2>Classroom &amp; School Access</h2>
+      <div style="text-align:center; margin:2.5rem 0; max-width:700px; margin-inline:auto;">
+
+        <p style="
+          font-size:1.05rem;
+          margin-bottom:0.75rem;
+          color:#333;
+        ">
+          The Reading Test-Style Question Trainer is being finalized for teacher use.  
+          If you’d like early access or to use it with your team, get in touch and I’ll send details.
+        </p>
+
+        <a href="/#contact" 
+           style="
+             display:inline-block;
+             background:#9c6ded;
+             color:#fff;
+             padding:0.9rem 1.6rem;
+             font-size:1.05rem;
+             font-weight:700;
+             border-radius:14px;
+             text-decoration:none;
+             box-shadow:0 4px 10px rgba(0,0,0,.12);
+             transition: all .25s ease;
+           "
+           onmouseover="this.style.background='#0AD1CC'; this.style.transform='scale(1.05)'"
+           onmouseout="this.style.background='#9c6ded'; this.style.transform='scale(1)'"
+        >
+          📩 Ask About Classroom Access
+        </a>
+
+        <p style="
+          font-size:0.95rem;
+          margin-top:0.75rem;
+          color:#555;
+        ">
+          Perfect for modeling strategies live, small group practice, intervention blocks, and independent online practice.
+        </p>
+
+      </div>
+    </section>
+
+  </header>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div style="text-align:center; margin:3rem 0 2rem;">
+      <img 
+        src="/images/logo-3.png" 
+        alt="Made by Maggie Teacher Tools logo"
+        style="max-width:180px; width:100%; height:auto; opacity:0.95;"
+      />
+    </div>
+    © <span id="y"></span> Made by Maggie | Reading Test-Style Question Trainer | Made for teachers, by a teacher
+  </footer>
+
+  <script>
+    document.getElementById('y').textContent = new Date().getFullYear();
+  </script>
+
+</body>
+</html>
