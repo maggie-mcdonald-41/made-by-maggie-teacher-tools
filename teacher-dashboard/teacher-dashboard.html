@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Reading Practice – Teacher Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="reading-practice/styles.css" />
+  <style>
+    /* Dashboard-specific tweaks layered on top of styles.css */
+/* Smaller top chart */
+.dashboard-charts > .dash-panel .chart-wrapper {
+  max-height: 200px; /* was 260px */
+}
+
+
+    .dashboard-shell {
+      max-width: 1200px;
+      margin: 1.5rem auto;
+      padding: 0 1rem 2rem;
+    }
+
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+      background: var(--bg-card);
+      border-bottom: 2px solid var(--gray-light);
+      border-radius: 12px 12px 0 0;
+    }
+
+    .dashboard-title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+
+    .dashboard-title {
+      margin: 0;
+      font-size: 1.4rem;
+    }
+
+    .dashboard-subtitle {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--gray-mid);
+    }
+
+    .pill-session {
+      background: rgba(0,168,181,0.08);
+      color: var(--teal-dark);
+      border-radius: 999px;
+      padding: 0.15rem 0.6rem;
+      font-size: 0.75rem;
+      border: 1px solid rgba(0,168,181,0.35);
+    }
+
+    /* ===== MAIN LAYOUT: SIDEBAR + CONTENT ===== */
+
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 0.8rem;
+      margin-top: 0.8rem;
+    }
+
+    @media (max-width: 900px) {
+      .dashboard-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ===== LEFT SIDEBAR: SESSION HISTORY ===== */
+
+    .history-sidebar {
+      background: var(--bg-card);
+      border-radius: 0 0 0 18px;
+      border: 1px solid #f0e7ff;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: width 0.2s ease, min-width 0.2s ease;
+      width: 260px;
+    }
+
+    @media (max-width: 900px) {
+      .history-sidebar {
+        width: 100%;
+      }
+    }
+
+    .history-sidebar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.4rem 0.5rem;
+      border-bottom: 1px solid var(--gray-light);
+      background: #f9fbff;
+    }
+
+    .history-sidebar-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .history-sidebar-toggle {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 0.8rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      color: var(--gray-mid);
+      padding: 0.2rem 0.4rem;
+      border-radius: 999px;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .history-sidebar-toggle:hover {
+      background: rgba(0,168,181,0.08);
+      color: var(--teal-dark);
+    }
+
+    .history-sidebar-body {
+      padding: 0.45rem 0.5rem 0.6rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .history-help {
+      font-size: 0.78rem;
+      color: var(--gray-mid);
+    }
+
+    .history-panel {
+      border-radius: 8px;
+      border: 1px solid var(--gray-light);
+      background: #f9fbff;
+      padding: 0.35rem 0.45rem;
+      max-height: 260px;
+      overflow-y: auto;
+    }
+
+    .history-empty {
+      margin: 0.2rem 0;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .history-item {
+      width: 100%;
+      text-align: left;
+      border-radius: 9px;
+      border: 1px solid var(--gray-light);
+      background: #ffffff;
+      padding: 0.3rem 0.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      font-size: 0.82rem;
+      transition: 0.15s ease;
+    }
+
+    .history-item:hover {
+      border-color: rgba(0,168,181,0.5);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+
+    .history-main {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+
+    .history-title {
+      font-weight: 700;
+      font-size: 0.86rem;
+    }
+
+    .history-meta {
+      font-size: 0.75rem;
+      color: var(--gray-mid);
+    }
+
+    .history-pill {
+      border-radius: 999px;
+      padding: 0.1rem 0.5rem;
+      font-size: 0.75rem;
+      border: 1px solid rgba(0,168,181,0.35);
+      background: rgba(0,168,181,0.08);
+      color: var(--teal-dark);
+      white-space: nowrap;
+    }
+
+    /* Collapsed state (desktop only) */
+    @media (min-width: 901px) {
+      .history-sidebar.collapsed {
+        width: 42px;
+        min-width: 42px;
+      }
+
+      .history-sidebar.collapsed .history-sidebar-body,
+      .history-sidebar.collapsed .history-sidebar-title {
+        display: none;
+      }
+
+      .history-sidebar.collapsed .history-sidebar-header {
+        justify-content: center;
+      }
+    }
+
+    /* ===== RIGHT MAIN DASHBOARD CONTENT ===== */
+
+    .dashboard-main {
+      background: var(--bg-card);
+      border-radius: 0 0 18px 18px;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid #f0e7ff;
+      padding: 1rem 1.25rem 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .dashboard-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: flex-end;
+      margin-bottom: 1rem;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      min-width: 160px;
+    }
+
+    .filter-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--gray-mid);
+    }
+
+    .filter-input {
+      padding: 0.35rem 0.6rem;
+      border-radius: 8px;
+      border: 1px solid var(--gray-light);
+      font-size: 0.9rem;
+    }
+
+    .btn-small {
+      font-size: 0.85rem;
+      padding: 0.35rem 0.8rem;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .btn-primary-small {
+      background: linear-gradient(135deg, var(--teal), var(--pink));
+      color: #fff;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+    }
+
+    .btn-primary-small:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .btn-secondary-small {
+      background: #f5f6ff;
+      color: var(--navy);
+      border: 1px solid var(--gray-light);
+    }
+
+    .btn-secondary-small:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .dashboard-summary-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .dashboard-view-summary {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+      font-size: 0.8rem;
+      color: var(--gray-mid);
+    }
+
+    .dashboard-view-summary-text {
+      margin: 0;
+    }
+
+    .summary-card {
+      border-radius: 12px;
+      border: 1px solid var(--gray-light);
+      background: #f9fbff;
+      padding: 0.6rem 0.7rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .summary-label {
+      font-size: 0.8rem;
+      color: var(--gray-mid);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .summary-value {
+      font-size: 1.6rem;
+      font-weight: 800;
+    }
+
+    .summary-subtext {
+      font-size: 0.8rem;
+      color: var(--gray-mid);
+    }
+
+    .dashboard-sections {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+      gap: 1rem;
+    }
+
+    @media (max-width: 900px) {
+      .dashboard-sections {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .dash-panel {
+      border-radius: 12px;
+      border: 1px solid var(--gray-light);
+      background: #f9fbff;
+      padding: 0.6rem 0.7rem;
+      min-height: 160px;
+    }
+
+    .dash-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.3rem;
+      gap: 0.5rem;
+    }
+
+    .dash-panel-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .dash-panel-subtitle {
+      font-size: 0.8rem;
+      color: var(--gray-mid);
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      max-height: 360px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    th,
+    td {
+      padding: 0.35rem 0.4rem;
+      text-align: left;
+      border-bottom: 1px solid var(--gray-light);
+      vertical-align: top;
+    }
+
+    th {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--gray-mid);
+      background: rgba(0, 168, 181, 0.04);
+    }
+
+    tr:nth-child(even) td {
+      background: rgba(0, 0, 0, 0.01);
+    }
+
+    #attempts-table-body tr {
+      cursor: pointer;
+      transition: background 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    #attempts-table-body tr:hover {
+      background: rgba(132, 235, 230, 0.12); /* soft teal wash */
+    }
+
+    #attempts-table-body tr.is-selected-student {
+      outline: 2px solid var(--teal-dark);
+      background: rgba(5, 193, 184, 0.08);
+      box-shadow: 0 0 0 1px rgba(5, 193, 184, 0.18);
+    }
+
+
+    .tag {
+      display: inline-flex;
+      border-radius: 999px;
+      padding: 0.05rem 0.45rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      background: rgba(0,168,181,0.08);
+      color: var(--teal-dark);
+      border: 1px solid rgba(0,168,181,0.3);
+    }
+
+    .tag-low {
+      background: rgba(255,93,82,0.1);
+      color: var(--danger);
+      border-color: rgba(255,93,82,0.4);
+    }
+
+    .tag-mid {
+      background: rgba(255,184,0,0.12);
+      color: #9a6a00;
+      border-color: rgba(255,184,0,0.5);
+    }
+
+    .muted {
+      color: var(--gray-mid);
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="dashboard-shell">
+  <header class="dashboard-header">
+    <div class="dashboard-title-group">
+      <h1 class="dashboard-title">Reading Practice Teacher Dashboard</h1>
+      <p class="dashboard-subtitle">
+        View student attempts by session code and see strengths and needs by skill.
+      </p>
+    </div>
+
+    <div class="dashboard-header-right">
+      <span class="pill-session" id="current-session-pill">
+        Session: none loaded
+      </span>
+
+      <button
+        id="teacher-signin-btn"
+        class="btn-small btn-secondary-small"
+        type="button"
+      >
+        Sign in with Google
+      </button>
+
+      <button
+        id="teacher-signout-btn"
+        class="btn-small btn-secondary-small"
+        type="button"
+        style="display: none;"
+      >
+        Sign out
+      </button>
+    </div>
+  </header>
+
+  <div class="dashboard-layout">
+    <!-- LEFT: Session History Sidebar -->
+    <aside class="history-sidebar" id="history-sidebar">
+      <div class="history-sidebar-header">
+        <span class="history-sidebar-title">Session History</span>
+        <button id="history-sidebar-toggle" class="history-sidebar-toggle">
+          ⮜ Collapse
+        </button>
+      </div>
+      <div class="history-sidebar-body">
+        <p class="history-help">
+          Click a past session to reload its data. Saved only on this device.
+        </p>
+        <div class="history-panel">
+          <div id="history-list" class="history-list">
+            <!-- filled by JS -->
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- RIGHT: Main Dashboard Content -->
+    <main class="dashboard-main">
+      <!-- Filters -->
+      <section class="dashboard-filters">
+        <!-- A. SESSION CODE (TEACHER-TYPED) -->
+        <div class="filter-group" style="min-width: 220px;">
+          <label for="filter-session" class="filter-label">
+            Name this Practice Session
+          </label>
+          <input
+            id="filter-session"
+            type="text"
+            class="filter-input"
+            placeholder="e.g. 6A-STARTTIME-DEC2"
+          />
+          <span class="muted" style="margin-top: 0.25rem;">
+            Use something you’ll recognize later (class + topic + date).
+          </span>
+        </div>
+
+        <!-- B. START SESSION BUTTON -->
+        <div class="filter-group" style="min-width: 200px;">
+          <label class="filter-label">&nbsp;</label>
+          <button
+            id="start-session-btn"
+            class="btn-small btn-primary-small"
+            type="button"
+          >
+            ➕ Start New Session
+          </button>
+          <span class="muted" style="margin-top: 0.25rem;">
+            Click to generate the student link below.
+          </span>
+        </div>
+
+        <!-- C. STUDENT LINK (READ-ONLY) -->
+        <div class="filter-group" style="flex: 1; min-width: 280px;">
+          <label for="current-session-link" class="filter-label">
+            Student Link for This Session
+          </label>
+
+          <div class="copy-link-row">
+            <input
+              id="current-session-link"
+              type="text"
+              class="filter-input"
+              placeholder="Start a session to generate"
+              readonly
+            />
+            <button
+              id="copy-session-link-btn"
+              class="btn-small btn-secondary-small"
+              type="button"
+            >
+              Copy
+            </button>
+          </div>
+
+          <span class="muted" id="copy-link-status" style="display: none;">
+            Copied!
+          </span>
+        </div>
+
+        <!-- D. OPTIONAL CLASS FILTER -->
+        <div class="filter-group">
+          <label for="filter-class" class="filter-label">Filter by Class (optional)</label>
+          <input
+            id="filter-class"
+            type="text"
+            class="filter-input"
+            placeholder="e.g. 6A, 7B"
+          />
+        </div>
+
+        <!-- E. LOAD ATTEMPTS -->
+        <div class="filter-group" style="min-width: 180px;">
+          <label class="filter-label">&nbsp;</label>
+          <button
+            id="load-attempts-btn"
+            class="btn-small btn-secondary-small"
+            type="button"
+          >
+            📥 Load Attempts
+          </button>
+        </div>
+
+        <!-- F. CSV DOWNLOAD -->
+        <div class="filter-group" style="min-width: 180px;">
+          <label class="filter-label">&nbsp;</label>
+          <button
+            id="download-csv"
+            class="btn-small btn-secondary-small"
+            type="button"
+            disabled
+          >
+            ⬇ CSV Export
+          </button>
+        </div>
+
+        <!-- G. CLEAR FILTERS -->
+        <div class="filter-group" style="min-width: 150px;">
+          <label class="filter-label">&nbsp;</label>
+          <button
+            id="clear-filters-btn"
+            class="btn-small btn-secondary-small"
+            type="button"
+          >
+            🔄 Clear Filters
+          </button>
+        </div>
+
+          <!-- H. EXPORT PDF -->
+  <div class="filter-group" style="min-width: 170px;">
+    <label class="filter-label">&nbsp;</label>
+    <button id="export-pdf-btn" class="btn-small btn-secondary-small" type="button">
+      📄 Export Summary PDF
+    </button>
+  </div>
+
+        <span class="muted" id="load-status">
+          No data loaded yet. Type a session code, click “Start New Session” to get
+          the student link, then use “Load Attempts” after students finish.
+          CSV export will include exactly the attempts currently shown in the table.
+        </span>
+      </section>
+
+      <!-- BIG SUMMARY (make this feel “largest”) -->
+      <section class="dashboard-summary-row">
+        <article class="summary-card">
+          <div class="summary-label">Attempts</div>
+          <div class="summary-value" id="summary-total-attempts">0</div>
+          <div class="summary-subtext">
+            <span id="summary-unique-students">0 students</span>
+          </div>
+        </article>
+
+        <article class="summary-card">
+          <div class="summary-label">Overall Accuracy</div>
+          <div class="summary-value" id="summary-accuracy">—</div>
+          <div class="summary-subtext" id="summary-correct-tally">
+            0 of 0 questions correct
+          </div>
+        </article>
+
+        <article class="summary-card">
+          <div class="summary-label">Average per Attempt</div>
+          <div class="summary-value">
+            <span id="summary-avg-questions">0.0</span> Qs
+          </div>
+          <div class="summary-subtext">
+            <span id="summary-avg-correct">0.0 correct on average</span>
+          </div>
+        </article>
+      </section>
+
+      <!-- Session-level quick tags -->
+      <section class="session-tags-row">
+        <div class="session-tag">
+          Most missed skill:
+          <span id="summary-most-missed-skill">—</span>
+        </div>
+        <div class="session-tag">
+          Most missed question type:
+          <span id="summary-most-missed-type">—</span>
+        </div>
+      </section>
+
+
+      <!-- Current view summary (session/class/student overlay) -->
+      <section class="dashboard-view-summary">
+        <p id="current-view-summary" class="dashboard-view-summary-text">
+          Viewing: all sessions · All classes · Student overlay: none (click a row to compare)
+        </p>
+        <button
+          id="clear-student-overlay-btn"
+          class="btn-small btn-secondary-small"
+          type="button"
+        >
+          Remove Student Overlay
+        </button>
+      </section>
+
+<!-- CHARTS: Score Distribution full-width, others below -->
+<section class="dashboard-charts">
+  <!-- Full-width Score Distribution -->
+  <article class="dash-panel">
+    <header class="dash-panel-header">
+      <h2 class="dash-panel-title">Score Distribution</h2>
+      <p class="dash-panel-subtitle">
+        How many attempts fall into each score band.
+      </p>
+    </header>
+    <div class="chart-wrapper">
+      <canvas
+        id="chart-score-bands"
+        aria-label="Score distribution bar chart"
+        role="img"
+      ></canvas>
+    </div>
+  </article>
+
+  <!-- Row: Question Type + Skill Accuracy -->
+  <section class="dashboard-charts-row">
+    <!-- Question Type Accuracy -->
+    <article class="dash-panel">
+      <header class="dash-panel-header">
+        <h2 class="dash-panel-title">Performance by Question Type</h2>
+        <p class="dash-panel-subtitle">
+          Accuracy across multiple-choice, select-all, drag &amp; drop, and more.
+        </p>
+      </header>
+      <div class="chart-wrapper">
+        <canvas
+          id="chart-type-accuracy"
+          aria-label="Question type accuracy bar chart"
+          role="img"
+        ></canvas>
+      </div>
+    </article>
+
+    <!-- Skill Accuracy -->
+    <article class="dash-panel">
+      <header class="dash-panel-header">
+        <h2 class="dash-panel-title">Performance by Skill (Chart)</h2>
+        <p class="dash-panel-subtitle">
+          Class vs selected student by skill tag.
+        </p>
+      </header>
+      <div class="chart-wrapper">
+        <canvas
+          id="chart-skill-accuracy"
+          aria-label="Skill accuracy bar chart"
+          role="img"
+        ></canvas>
+      </div>
+    </article>
+  </section>
+</section>
+
+
+      <!-- DETAILS: tables underneath charts -->
+      <section class="dashboard-sections">
+        <!-- Student Attempts table -->
+        <article class="dash-panel">
+          <header class="dash-panel-header">
+            <h2 class="dash-panel-title">Student Attempts</h2>
+            <p class="dash-panel-subtitle" id="attempts-subtitle">
+              No attempts loaded yet.
+            </p>
+          </header>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Class</th>
+                  <th>Session</th>
+                  <th>Score</th>
+                  <th>Accuracy</th>
+                  <th>Started</th>
+                  <th>Finished</th>
+                </tr>
+              </thead>
+              <tbody id="attempts-table-body">
+                <!-- Filled by JS -->
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <!-- Skill Performance table -->
+        <article class="dash-panel">
+          <header class="dash-panel-header">
+            <h2 class="dash-panel-title">Performance by Skill (Table)</h2>
+            <p class="dash-panel-subtitle">
+              Based on all attempts currently loaded.
+            </p>
+          </header>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Skill tag</th>
+                  <th>Correct</th>
+                  <th>Total</th>
+                  <th>Accuracy</th>
+                </tr>
+              </thead>
+              <tbody id="skills-table-body">
+                <!-- Filled by JS -->
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+                <!-- Skill Heat Map (Students × Skills) -->
+        <article class="dash-panel">
+          <header class="dash-panel-header">
+            <h2 class="dash-panel-title">Skill Heat Map (Students × Skills)</h2>
+            <p class="dash-panel-subtitle">
+              Darker cells show lower accuracy; lighter cells show stronger skills.
+            </p>
+          </header>
+
+          <div class="table-wrapper heatmap-table-wrapper">
+            <table class="heatmap-table">
+              <thead id="skill-heatmap-head">
+                <!-- Filled by JS -->
+              </thead>
+              <tbody id="skill-heatmap-body">
+                <!-- Filled by JS -->
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+            <!-- Student detail drawer -->
+      <aside id="student-detail-panel" class="student-detail-panel">
+        <div class="student-detail-header">
+          <div>
+            <h2 class="student-detail-title">
+              Student Detail
+            </h2>
+            <p class="student-detail-subtitle" id="student-detail-name">
+              No student selected. Click a row in the table.
+            </p>
+          </div>
+          <button
+            id="student-detail-close"
+            class="btn-small btn-secondary-small"
+            type="button"
+          >
+            ✕ Close
+          </button>
+        </div>
+
+        <div class="student-detail-body">
+          <div class="student-detail-summary">
+            <p id="student-detail-overall">
+              Overall accuracy for this session: —.
+            </p>
+            <p id="student-detail-attempts">
+              Attempts counted: —.
+            </p>
+          </div>
+
+          <div class="student-detail-columns">
+            <div class="student-detail-column">
+              <h3 class="student-detail-column-title">Skills to strengthen</h3>
+              <ul id="student-detail-needs-work" class="student-detail-list">
+                <li class="muted">Not enough data yet.</li>
+              </ul>
+            </div>
+            <div class="student-detail-column">
+              <h3 class="student-detail-column-title">Skills they’re strong in</h3>
+              <ul id="student-detail-strengths" class="student-detail-list">
+                <li class="muted">Not enough data yet.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+    </main>
+  </div>
+
+  <footer class="app-footer">
+    © 2025 Maggie McDonald | Built for teachers, by a teacher.
+  </footer>
+</div>
+<!-- Google Identity + shared auth wrapper -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="reading-google-auth.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="teacher-dashboard.js"></script>
+
+</body>
+</html>

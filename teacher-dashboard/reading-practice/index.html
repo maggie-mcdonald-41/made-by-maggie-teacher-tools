@@ -1,0 +1,270 @@
+<!-- reading-practice ---- index.html start -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Reading Test-Style Question Trainer | Made by Maggie</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Brand-ish Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="reading-google-auth.js"></script>
+
+<!-- Session Info Bar -->
+<section class="rp-session-bar">
+  <div class="rp-session-group">
+    <label for="rp-student-name">Student Name</label>
+    <input
+      id="rp-student-name"
+      type="text"
+      placeholder="First name + last initial"
+    />
+  </div>
+
+  <div class="rp-session-group">
+    <label for="rp-class-code">Class / Period</label>
+    <input
+      id="rp-class-code"
+      type="text"
+      placeholder="e.g. 6A, 6B, Per 3"
+    />
+  </div>
+
+  <div class="rp-session-group">
+    <label for="rp-session-code">Session Code</label>
+    <input
+      id="rp-session-code"
+      type="text"
+      placeholder="Your teacher will give you this"
+    />
+  </div>
+
+  <div class="rp-session-actions">
+    <button id="rp-start-session" class="btn primary" type="button">
+      Start Session
+    </button>
+
+    <button id="rp-google-signin" class="btn subtle" type="button">
+      Sign in with Google (optional)
+    </button>
+
+    <p id="rp-session-status" class="rp-session-status">
+      Enter your name, class, and session code, then click <strong>Start Session</strong>.
+    </p>
+    <p id="rp-auth-status" class="rp-session-status" style="font-size:0.8rem;">
+      Google sign-in saves your progress across devices. Local saving is also enabled.
+    </p>
+  </div>
+</section>
+
+
+<!-- PAGE HEADER -->
+<header class="app-header">
+
+  <!-- Left Side: Logo + Title -->
+  <div class="app-title-group with-logo">
+    <img src="../images/your-logo.png" alt="Made by Maggie Logo" class="app-logo">
+
+    <div class="title-text">
+      <h1 class="main-title">Reading Test-Style Question Trainer</h1>
+      <p class="app-subtitle">Made by Maggie Teaching Tools · Test-Style Practice</p>
+    </div>
+
+    <span class="app-pill">Practice</span>
+  </div>
+
+  <!-- Right Side: Dark Mode Toggle -->
+  <div class="header-right">
+    <label class="theme-switch">
+      <input type="checkbox" id="theme-toggle" />
+      <span class="theme-slider"></span>
+      <span class="theme-label">Dark Mode</span>
+    </label>
+  </div>
+
+</header>
+
+
+</head>
+
+<body>
+  <div class="app-shell">
+    <main class="rp-layout">
+      <!-- LEFT: PASSAGE PANEL -->
+      <section class="passage-panel" aria-label="Reading passages">
+        <div class="passage-tabs" role="tablist">
+          <button class="passage-tab active" data-passage="1" role="tab" aria-selected="true">
+            Passage 1
+          </button>
+          <button class="passage-tab" data-passage="2" role="tab" aria-selected="false">
+            Passage 2
+          </button>
+        </div>
+      <!-- NEW: Passage Highlight Tools -->
+      <div class="highlight-toolbar" id="passage-highlight-toolbar" aria-label="Passage highlighting tools">
+        <span class="highlight-label">Passage highlighter:</span>
+        <button type="button" class="hl-color-btn active" data-color="yellow" aria-label="Yellow highlighter"></button>
+        <button type="button" class="hl-color-btn" data-color="green" aria-label="Green highlighter"></button>
+        <button type="button" class="hl-color-btn" data-color="blue" aria-label="Blue highlighter"></button>
+        <button type="button" class="hl-color-btn" data-color="pink" aria-label="Pink highlighter"></button>
+      </div>
+    <button id="clear-passage-highlights" class="btn subtle">
+      Clear Passage Highlights
+    </button>
+        <div class="passage-scroll">
+          <!-- Passage 1 -->
+          <article id="passage-1" class="passage active" data-passage="1">
+            <h2 class="passage-title">Later Start Times Improve Student Health</h2>
+
+            <p> <span class="para-num">1</span>
+              Should our school do more to help students stay healthy and focused? I believe the best solution is to start school later in the morning. Research shows that students who get more sleep perform better in class, feel happier, and make healthier choices throughout the day. A later start time would benefit everyone.
+            </p>
+
+            <p> <span class="para-num">2</span>
+              First of all, students need more sleep than they are currently getting. According to the American Academy of Pediatrics, middle-school students need between 9 and 12 hours of sleep per night, but most get far less. When school starts at 7:30 a.m., many students wake up between 5:30 and 6:00 a.m. This early schedule makes it almost impossible to get enough rest. Schools that pushed their start time to 8:30 a.m. reported an increase in average student sleep by nearly one hour.
+            </p>
+
+            <p> <span class="para-num">3</span>
+              In addition, students who sleep more are healthier. The National Sleep Foundation conducted a study in 2019 comparing schools with 7:30 a.m. start times to schools with 8:30 a.m. start times. The study found that students at later-start schools had fewer headaches, fewer nurse visits, and reported higher energy levels. The percentage of students who reported feeling “very tired” during the school day dropped from 56% to 31%.
+            </p>
+
+            <!-- Graph placeholder for Passage 1 -->
+            <figure class="graph-placeholder">
+              <img src="../images/placeholder-start-time-graph.png"
+                   alt="Bar graph comparing percentage of students reporting daytime tiredness: 56% at 7:30 a.m. start, 31% at 8:30 a.m. start.">
+              <figcaption>
+                Bar graph comparing the percentage of students who report feeling very tired at different school start times.
+              </figcaption>
+            </figure>
+
+            <p> <span class="para-num">4</span>
+              Another benefit of starting school later is improved attendance. When students are extremely tired, they are more likely to oversleep or miss school altogether. One district in Colorado saw chronic absenteeism drop by 12% after pushing back its start time. Better attendance means better learning, stronger grades, and more classroom participation.
+            </p>
+
+            <p> <span class="para-num">5</span>
+              Furthermore, later start times lead to safer travel in the mornings. Students who bike or walk to school in the dark are more at risk for accidents. When school begins later, it’s brighter outside and visibility improves. Researchers at the University of Minnesota found that communities with later school start times saw a 16% decrease in morning car accidents involving teen drivers.
+            </p>
+
+            <p> <span class="para-num">6</span>
+              For all these reasons, I support shifting our school start time to 8:30 a.m. Students who get enough sleep will learn more, feel healthier, and stay safer. A later start time is a simple change that would make a big difference.
+            </p>
+          </article>
+
+        <!-- Passage 2 -->
+        <article id="passage-2" class="passage" data-passage="2">
+        <h2 class="passage-title">Earlier Start Times Support Family and Community Needs</h2>
+
+        <p> <span class="para-num">1</span>
+            Should our school consider keeping its current start time? I believe starting school earlier in the morning is better for families, teachers, and the community. While some people argue for pushing the start time later, earlier start times offer important benefits that help students stay organized, manage responsibilities, and stay connected to their families’ schedules.
+        </p>
+
+        <p> <span class="para-num">2</span>
+            To begin with, an earlier start time helps families plan their mornings. Many parents begin work between 7:00 and 8:00 a.m., so dropping off children earlier allows families to stay on the same routine. When school start times shift to 8:30 a.m., parents often struggle to find extra childcare or rearrange their jobs. A 2022 survey from the National Family Planning Council reported that <strong>48% of parents said a later school start would make their work schedule “significantly harder to manage,”</strong> while only <strong>23% said it would help</strong>.
+        </p>
+
+        <p> <span class="para-num">3</span>
+            Earlier start times also support important after-school activities. Students who participate in sports, band, robotics, or tutoring need enough time in the afternoon to finish practices and still complete homework. In districts that moved the start time to 8:30 a.m., practices often ran later into the evening, leaving students with less free time and later bedtimes. Many students reported feeling more rushed after school instead of less.
+        </p>
+
+        <!-- Graph/table placeholder for Passage 2 -->
+        <figure class="graph-placeholder">
+            <img src="../images/placeholder-activity-bargraph.png"
+                alt="Bar graph comparing after-school activity participation before and after later start times: 71% participation at 7:30 a.m. start vs. 54% at 8:30 a.m. start.">
+            <figcaption>
+            Bar graph comparing after-school activity participation:
+            <strong>71% participation</strong> at a 7:30 a.m. start vs. <strong>54% participation</strong> at an 8:30 a.m. start.
+            </figcaption>
+        </figure>
+
+        <p> <span class="para-num">4</span>
+            In addition, earlier start times give students more exposure to real-world routines. Most adult jobs begin in the early morning. Learning to wake up, prepare, and arrive on time helps students build responsibility and strong time-management skills. One high school in Ohio found that when they experimented with a later start, tardiness actually increased by 18% because students felt they had “more time” and used it poorly.
+        </p>
+
+        <p> <span class="para-num">5</span>
+            Another concern with later start times is transportation. Bus routes often serve multiple schools, so shifting one start time affects all others. Districts that changed to a later start reported longer bus rides, heavier traffic, and higher transportation costs. In some cases, younger elementary students were forced to begin even earlier to make the schedule work.
+        </p>
+
+        <p> <span class="para-num">6</span>
+            For all these reasons, I believe our school should keep its earlier start time. It supports working families, protects after-school activities, and helps students build lifelong habits. While sleep is important, earlier start times offer a balanced routine that works well for the entire community.
+        </p>
+        </article>
+        </div>
+      </section>
+
+      <!-- RIGHT: QUESTION PANEL -->
+      <section class="question-panel" aria-label="Question panel">
+<div class="question-header">
+  <div class="question-meta">
+    <span class="pill pill-progress" id="question-progress-pill">
+      Question <span id="question-number">1</span> of <span id="question-total">10</span>
+    </span>
+    <span id="question-type-label" class="question-type-label">Multiple Choice</span>
+  </div>
+  <div id="linked-passage-label" class="linked-passage-label">
+    <!-- Filled in by JS if a question is tied to a specific passage -->
+  </div>
+</div>
+
+<!-- NEW: scrollable question picker -->
+<div class="question-nav-strip" id="question-nav-strip" aria-label="Jump to question"></div>
+<!-- NEW: Question Tools Row -->
+<div class="question-tools-row">
+  <div class="highlight-toolbar" id="question-highlight-toolbar" aria-label="Question highlighting tools">
+    <span class="highlight-label">Question highlighter:</span>
+    <button type="button" class="hl-color-btn active" data-color="yellow" aria-label="Yellow highlighter"></button>
+    <button type="button" class="hl-color-btn" data-color="green" aria-label="Green highlighter"></button>
+    <button type="button" class="hl-color-btn" data-color="blue" aria-label="Blue highlighter"></button>
+    <button type="button" class="hl-color-btn" data-color="pink" aria-label="Pink highlighter"></button>
+  </div>
+  <button id="clear-question-highlights" class="btn subtle">
+  Clear Question Highlights
+</button>
+  <span class="question-tools-hint">
+    Tip: Shift-click or right-click an answer choice to cross it out.
+  </span>
+</div>
+
+        <div class="question-body">
+          <div id="question-stem" class="question-stem">
+            <!-- Filled by JS -->
+          </div>
+          <div id="question-instructions" class="question-instructions">
+            <!-- Filled by JS -->
+          </div>
+
+          <div id="question-options" class="question-options">
+            <!-- Filled by JS: choices, drag areas, highlight sentences, etc. -->
+          </div>
+
+          <div id="question-feedback" class="question-feedback" aria-live="polite">
+            <!-- Immediate feedback appears here -->
+          </div>
+        </div>
+
+        <div class="question-footer">
+          <button id="check-answer-btn" class="btn primary" disabled>
+            Check Answer
+          </button>
+          <button id="next-question-btn" class="btn secondary" disabled>
+            Next Question
+          </button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+<script src="reporting.js"></script>
+<script src="script.js"></script>
+
+</body>
+<footer class="app-footer">
+  © 2025 Maggie McDonald ☀️| Built for teachers, by a teacher.
+</footer>
+</html>
+
+  <!-- index.html end -->
