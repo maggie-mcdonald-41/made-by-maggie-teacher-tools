@@ -1,14 +1,13 @@
 // netlify/functions/getReadingAttempts.js
 // Returns reading practice attempts for a given session / class
 // in a format the teacher dashboard can use.
-
 const { getStore } = require("@netlify/blobs");
 
 exports.handler = async function (event, context) {
   if (event.httpMethod !== "GET") {
     return {
       statusCode: 405,
-      body: "Method Not Allowed"
+      body: "Method Not Allowed",
     };
   }
 
@@ -18,7 +17,6 @@ exports.handler = async function (event, context) {
     const classCodeRaw = (qs.classCode || "").trim();
 
     const store = getStore("reading-attempts");
-
 
     // List all attempts; optionally narrow by session prefix.
     // Keys look like: attempt-{sessionCode||"no-session"}-{attemptId}
@@ -65,41 +63,53 @@ exports.handler = async function (event, context) {
           ? data.numIncorrect
           : Math.max(0, totalQuestions - numCorrect);
 
-      const overallAccuracy = totalQuestions
-        ? numCorrect / totalQuestions
-        : 0;
+      const overallAccuracy = totalQuestions ? numCorrect / totalQuestions : 0;
 
       // Map perType/perSkill from reporting.js to byType/bySkill for dashboard
       const byType = data.perType || {};
       const bySkill = data.perSkill || {};
 
       attempts.push({
+        // identity fields
         attemptId: data.attemptId || blob.key,
-        studentName: data.studentName || "",
-        classCode,
+        timestamp: data.timestamp || null,
+        studentName: data.studentName || "Unknown Student",
         sessionCode,
-        startedAt: data.startedAt || data.finishedAt || data.storedAt || null,
-        finishedAt: data.finishedAt || data.storedAt || null,
+        classCode,
+
+        // scoring summary
         totalQuestions,
         numCorrect,
         numIncorrect,
-        accuracy: overallAccuracy,
+        overallAccuracy,
+
+        // more detailed breakdowns for charts
         byType,
-        bySkill
+        bySkill,
+
+        // keep raw questionResults if dashboard wants to drill in later
+        questionResults: data.questionResults || [],
       });
     }
 
+    // Sort newest first
+    attempts.sort((a, b) => {
+      const ta = a.timestamp ? Date.parse(a.timestamp) : 0;
+      const tb = b.timestamp ? Date.parse(b.timestamp) : 0;
+      return tb - ta;
+    });
+
     return {
       statusCode: 200,
-      body: JSON.stringify({ attempts })
+      body: JSON.stringify({ attempts }),
     };
   } catch (err) {
     console.error("[getReadingAttempts] Error:", err);
     return {
       statusCode: 500,
       body: JSON.stringify({
-        error: "Failed to load attempts."
-      })
+        error: "Failed to load attempts.",
+      }),
     };
   }
 };
