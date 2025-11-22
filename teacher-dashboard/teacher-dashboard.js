@@ -1311,7 +1311,7 @@ function buildStudentLink(sessionCode, classCode) {
   sessionInput.value = cleanSession;
   if (cleanClass) classInput.value = cleanClass;
 
-  const baseUrl = `${window.location.origin}/reading-practice/index.html`;
+  const baseUrl = `${window.location.origin}/teacher-dashboard/reading-practice/index.html`;
   const params = new URLSearchParams();
   params.set("session", cleanSession);
   if (cleanClass) {
