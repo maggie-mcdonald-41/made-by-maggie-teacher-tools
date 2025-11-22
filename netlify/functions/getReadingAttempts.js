@@ -2,6 +2,8 @@
 // Returns reading practice attempts for a given session / class
 // in a format the teacher dashboard can use.
 
+const { getStore } = require("@netlify/blobs");
+
 exports.handler = async function (event, context) {
   if (event.httpMethod !== "GET") {
     return {
@@ -15,8 +17,8 @@ exports.handler = async function (event, context) {
     const sessionCodeRaw = (qs.sessionCode || "").trim();
     const classCodeRaw = (qs.classCode || "").trim();
 
-    const { getStore } = await import("@netlify/blobs");
     const store = getStore("reading-attempts");
+
 
     // List all attempts; optionally narrow by session prefix.
     // Keys look like: attempt-{sessionCode||"no-session"}-{attemptId}
