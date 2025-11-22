@@ -1231,10 +1231,16 @@ async function loadAttempts() {
 
     const res = await fetch(
       `/.netlify/functions/getReadingAttempts?${params.toString()}`,
-      { method: "GET" }
+      {
+        method: "GET",
+        headers: {
+          "Accept": "application/json"
+        }
+      }
     );
 
     if (!res.ok) {
+      // This is where your 500 is coming from
       throw new Error(`Server error: ${res.status}`);
     }
 
@@ -1253,33 +1259,51 @@ async function loadAttempts() {
     }
   } catch (err) {
     console.error("[Dashboard] Error loading attempts, falling back to demo:", err);
-    // Fallback to demo data so the UI is never empty in dev
-    let attempts = DEMO_ATTEMPTS.slice();
+
+    // --------- SMART DEMO FALLBACK ---------
+    // Start with all demo attempts
+    const allDemo = DEMO_ATTEMPTS.slice();
 
     const sessionCodeRaw2 = sessionInput.value.trim();
     const classCodeRaw2 = classInput.value.trim();
 
+    let filtered = allDemo;
+
+    // Apply filters to demo data, if any
     if (sessionCodeRaw2) {
       const codeUpper = sessionCodeRaw2.toUpperCase();
-      attempts = attempts.filter(a =>
+      filtered = filtered.filter(a =>
         (a.sessionCode || "").toUpperCase() === codeUpper
       );
     }
 
     if (classCodeRaw2) {
       const classUpper = classCodeRaw2.toUpperCase();
-      attempts = attempts.filter(a =>
+      filtered = filtered.filter(a =>
         (a.classCode || "").toUpperCase() === classUpper
       );
     }
 
-    renderDashboard(attempts);
-    loadStatusEl.textContent =
-      "Could not reach the server. Showing demo data instead.";
+    let attemptsToShow = filtered;
+    let statusMessage = "Could not reach the server. Showing demo data instead.";
+
+    // If filters wipe everything out, show full demo so you still see samples
+    if (!attemptsToShow.length) {
+      attemptsToShow = allDemo;
+      statusMessage =
+        "Could not reach the server. Showing all demo data (no real attempts stored yet).";
+    } else if (sessionCodeRaw2 || classCodeRaw2) {
+      statusMessage =
+        "Could not reach the server. Showing demo data filtered by your choices.";
+    }
+
+    renderDashboard(attemptsToShow);
+    loadStatusEl.textContent = statusMessage;
   } finally {
     loadBtn.disabled = false;
   }
 }
+
 
 async function exportDashboardPDF() {
   try {
