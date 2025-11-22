@@ -814,7 +814,7 @@ let answeredQuestions = new Array(questions.length).fill(false);
 
 // DOM references
 const questionNumberEl = document.getElementById("question-number");
-const questionTotalEl = document.getElementById("question-total");
+//const questionTotalEl = document.getElementById("question-total");
 const questionTypeLabelEl = document.getElementById("question-type-label");
 const linkedPassageLabelEl = document.getElementById("linked-passage-label");
 const questionStemEl = document.getElementById("question-stem");
@@ -1170,8 +1170,16 @@ function markQuestionAnswered() {
   updateQuestionNavStrip();
 }
 
-questionTotalEl.textContent = questions.length.toString();
+const questionTotalEl = document.getElementById("question-total");
+
+// Only update the total if that element exists on this page
+if (questionTotalEl) {
+  questionTotalEl.textContent = questions.length.toString();
+}
+
+// Safe even if the strip doesn’t exist (function exits early)
 initQuestionNavStrip();
+
 
 // ====== MEDIA RENDERING (audio / video) ======
 function renderMediaIfPresent(q) {

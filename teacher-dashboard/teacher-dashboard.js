@@ -106,6 +106,9 @@ const sessionPill = document.getElementById("current-session-pill");
 const sessionLinkInput = document.getElementById("current-session-link");
 const copySessionLinkBtn = document.getElementById("copy-session-link-btn");
 const copyLinkStatusEl = document.getElementById("copy-link-status");
+const coTeacherLinkInput = document.getElementById("co-teacher-dashboard-link");
+const copyCoTeacherLinkBtn = document.getElementById("copy-co-teacher-link-btn");
+const copyCoTeacherStatusEl = document.getElementById("copy-co-teacher-status");
 
 // One CSV button
 const downloadCsvBtn = document.getElementById("download-csv");
@@ -1321,20 +1324,68 @@ function buildStudentLink(sessionCode, classCode) {
   return `${baseUrl}?${params.toString()}`;
 }
 
+function buildCoTeacherLink(sessionCode, classCode) {
+  const cleanSession = sessionCode.trim().toUpperCase();
+  const cleanClass = (classCode || "").trim();
+
+  if (!cleanSession) {
+    if (coTeacherLinkInput) {
+      coTeacherLinkInput.value = "";
+    }
+    return "";
+  }
+
+  const baseUrl = `${window.location.origin}/teacher-dashboard/teacher-dashboard.html`;
+
+  const params = new URLSearchParams();
+  params.set("sessionCode", cleanSession);
+  if (cleanClass) {
+    params.set("classCode", cleanClass);
+  }
+
+  const link = `${baseUrl}?${params.toString()}`;
+
+  if (coTeacherLinkInput) {
+    coTeacherLinkInput.value = link;
+  }
+
+  // remember it for restore-on-refresh
+  try {
+    window.localStorage.setItem("rp_lastCoTeacherLink", link);
+  } catch (e) {
+    // non-fatal
+  }
+
+  return link;
+}
+
+
 function startNewSession() {
   const rawSession = sessionInput.value.trim();
   const rawClass = classInput.value.trim();
 
   if (!rawSession) {
-    alert("Type a Session Code first (for example: 6A-STARTTIME-DEC2), then click Start New Session.");
+    alert(
+      "Type a Session Code first (for example: 6A-STARTTIME-DEC2), then click Start New Session."
+    );
     sessionInput.focus();
     return;
   }
 
-  const link = buildStudentLink(rawSession, rawClass);
+  // Build both links: student practice link + co-teacher dashboard link
+  const studentLink = buildStudentLink(rawSession, rawClass);
+  const coLink = buildCoTeacherLink(rawSession, rawClass);
 
+  // Show the student link in its box
   if (sessionLinkInput) {
-    sessionLinkInput.value = link;
+    sessionLinkInput.value = studentLink;
+  }
+
+  // (Optional) if you want to also show the co-teacher link here
+  // make sure coTeacherLinkInput is defined at the top:
+  // const coTeacherLinkInput = document.getElementById("co-teacher-dashboard-link");
+  if (typeof coTeacherLinkInput !== "undefined" && coTeacherLinkInput) {
+    coTeacherLinkInput.value = coLink;
   }
 
   // Update pill to match the new session
@@ -1343,19 +1394,22 @@ function startNewSession() {
 
   // Little helper text
   if (copyLinkStatusEl) {
-    copyLinkStatusEl.textContent = "Link ready. Click Copy to share with students.";
+    copyLinkStatusEl.textContent =
+      "Link ready. Click Copy to share with students.";
     copyLinkStatusEl.style.display = "inline";
   }
 
-  // Optionally remember this session in localStorage for convenience
+  // Remember this session in localStorage for convenience
   try {
     window.localStorage.setItem("rp_lastSessionCode", normalizedSession);
     window.localStorage.setItem("rp_lastSessionClass", rawClass || "");
-    window.localStorage.setItem("rp_lastSessionLink", link);
+    window.localStorage.setItem("rp_lastSessionLink", studentLink);
+    // Note: rp_lastCoTeacherLink is already saved inside buildCoTeacherLink()
   } catch (e) {
     // non-fatal
   }
 }
+
 
 function copySessionLink() {
   if (!sessionLinkInput || !sessionLinkInput.value) {
@@ -1394,6 +1448,44 @@ function copySessionLink() {
     }
   }
 }
+
+function copyCoTeacherLink() {
+  if (!coTeacherLinkInput || !coTeacherLinkInput.value) {
+    alert("No co-teacher link yet. Start a new session first.");
+    return;
+  }
+
+  const text = coTeacherLinkInput.value;
+
+  const showCopied = (message = "Copied!") => {
+    if (!copyCoTeacherStatusEl) return;
+    copyCoTeacherStatusEl.textContent = message;
+    copyCoTeacherStatusEl.style.display = "inline";
+    setTimeout(() => {
+      copyCoTeacherStatusEl.style.display = "none";
+    }, 1800);
+  };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => showCopied("Copied!"))
+      .catch(() => showCopied("Copied (fallback)."));
+  } else {
+    coTeacherLinkInput.select();
+    try {
+      document.execCommand("copy");
+      showCopied("Copied!");
+    } catch (e) {
+      console.warn("Copy failed:", e);
+      showCopied("Unable to copy");
+    } finally {
+      coTeacherLinkInput.setSelectionRange(0, 0);
+      coTeacherLinkInput.blur();
+    }
+  }
+}
+
 
 // ---------- AUTH WIRING ----------
 function requireTeacherSignedIn(action) {
@@ -1512,6 +1604,27 @@ if (window.RP_AUTH) {
   RP_AUTH.initGoogleAuth();
 }
 
+// Try to restore last Google user so buttons work after refresh
+(function restoreTeacherFromLocalStorage() {
+  try {
+    const raw = window.localStorage.getItem("rp_last_google_user");
+    if (!raw) return;
+
+    const parsed = JSON.parse(raw);
+    if (!parsed || !parsed.email) return;
+
+    teacherUser = parsed;
+
+    // Mirror the same UI changes as in onAuthChange
+    teacherSignInBtn.style.display = "none";
+    teacherSignOutBtn.style.display = "inline-flex";
+    teacherSignOutBtn.textContent = `Sign out (${teacherUser.email})`;
+  } catch (e) {
+    console.warn("[Dashboard] Could not restore teacher from localStorage:", e);
+  }
+})();
+
+
 // Sidebar collapse / expand
 historyToggleBtn.addEventListener("click", () => {
   const isCollapsed = historySidebar.classList.toggle("collapsed");
@@ -1525,6 +1638,12 @@ if (copySessionLinkBtn) {
     copySessionLink();
   });
 }
+if (copyCoTeacherLinkBtn) {
+  copyCoTeacherLinkBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    copyCoTeacherLink();
+  });
+}
 
 // ---------- INITIAL LOAD ----------
 // Load any saved filter prefs
@@ -1534,23 +1653,57 @@ loadDashboardPrefs();
 renderDashboard([]);
 renderSessionHistory(loadHistoryFromStorage());
 
+// Use URL ?sessionCode=&classCode= to pre-fill filters
+(function applyUrlFiltersOnLoad() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const urlSession = params.get("sessionCode") || params.get("session");
+    const urlClass = params.get("classCode") || params.get("class");
+
+    if (urlSession && sessionInput) {
+      sessionInput.value = urlSession;
+      sessionPill.textContent = `Session: ${urlSession}`;
+    }
+
+    if (urlClass && classInput) {
+      classInput.value = urlClass;
+    }
+
+    // Auto-load if a session was provided
+    if ((urlSession || urlClass) && typeof loadAttempts === "function") {
+      loadAttempts();
+    }
+  } catch (e) {
+    console.warn("[Dashboard] Could not parse URL filters:", e);
+  }
+})();
+
 // Optional: restore last session info into the UI on load
 (function restoreLastSession() {
   try {
     const lastCode = window.localStorage.getItem("rp_lastSessionCode");
     const lastClass = window.localStorage.getItem("rp_lastSessionClass");
     const lastLink = window.localStorage.getItem("rp_lastSessionLink");
-    if (lastCode) {
+    const lastCoLink = window.localStorage.getItem("rp_lastCoTeacherLink");
+
+    if (lastCode && sessionInput && !sessionInput.value) {
       sessionInput.value = lastCode;
       sessionPill.textContent = `Session: ${lastCode}`;
     }
-    if (lastClass) {
+
+    if (lastClass && classInput && !classInput.value) {
       classInput.value = lastClass;
     }
-    if (lastLink && sessionLinkInput) {
+
+    if (lastLink && sessionLinkInput && !sessionLinkInput.value) {
       sessionLinkInput.value = lastLink;
+    }
+
+    if (lastCoLink && coTeacherLinkInput && !coTeacherLinkInput.value) {
+      coTeacherLinkInput.value = lastCoLink;
     }
   } catch (e) {
     // ignore
   }
 })();
+
