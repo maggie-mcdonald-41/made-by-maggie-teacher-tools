@@ -8,43 +8,53 @@
   <style>
     /* Dashboard-specific tweaks layered on top of styles.css */
 /* Smaller top chart */
+body {
+  margin: 0;
+  font-family: "Nunito", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: radial-gradient(circle at top left, #FFE0D3 0, #FFFDF6 45%, #F5FDFF 100%);
+}
+
+body.dashboard-dark {
+  background: radial-gradient(circle at top left, #09141c 0, #101b26 45%, #020611 100%);
+}
+
 .dashboard-charts > .dash-panel .chart-wrapper {
   max-height: 200px; /* was 260px */
 }
 
+.dashboard-shell {
+  max-width: 1150px;
+  margin: 2rem auto 3rem;
+  background: var(--bg-card);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 72, 96, 0.12);
+  border: 1px solid rgba(0, 72, 96, 0.05);
+}
 
-    .dashboard-shell {
-      max-width: 1200px;
-      margin: 1.5rem auto;
-      padding: 0 1rem 2rem;
-    }
+:root[data-theme="dark"] .dashboard-shell {
+  background: rgba(8, 20, 30, 0.96);
+  border-color: rgba(133, 219, 255, 0.35);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.75);
+}
 
-    .dashboard-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 20px;
-      background: var(--bg-card);
-      border-bottom: 2px solid var(--gray-light);
-      border-radius: 12px 12px 0 0;
-    }
 
-    .dashboard-title-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.1rem;
-    }
+.dashboard-title-group h1 {
+  font-size: 1.25rem;
+  letter-spacing: 0.02em;
+  margin: 0 0 0.15rem;
+}
 
-    .dashboard-title {
-      margin: 0;
-      font-size: 1.4rem;
-    }
+.dashboard-title-group p {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  margin: 0;
+}
 
-    .dashboard-subtitle {
-      margin: 0;
-      font-size: 0.9rem;
-      color: var(--gray-mid);
-    }
+.dashboard-subtitle {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.95); /* <<< make it white instead of gray */
+}
 
     .pill-session {
       background: rgba(0,168,181,0.08);
@@ -450,6 +460,227 @@
       color: var(--gray-mid);
       font-size: 0.8rem;
     }
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  /* extra right padding so Dark Mode isn't on the corner */
+  padding: 18px 40px 18px 24px; /* top, right, bottom, left */
+  background: linear-gradient(90deg, var(--teal-dark), var(--teal));
+  color: #ffffff;
+  border-radius: 18px 18px 0 0;
+  box-sizing: border-box;
+}
+
+.dashboard-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+ flex-shrink: 0;
+}
+
+
+/* Theme toggle styles */
+.theme-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.theme-switch input {
+  display: none;
+}
+
+.theme-slider {
+  width: 34px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.theme-slider::before {
+  content: "";
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease;
+}
+
+.theme-switch input:checked + .theme-slider {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.9);
+}
+
+.theme-switch input:checked + .theme-slider::before {
+  transform: translateX(14px);
+}
+
+.theme-label {
+  color: #ffffff;
+  opacity: 0.9;
+  white-space: pre-wrap; 
+}
+ 
+
+/*===session tags ===*/
+  .session-tags-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.78rem;
+  }
+
+  .session-tag {
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    background: var(--bg-pill);
+    color: var(--navy);
+    border: 1px solid rgba(0, 0, 0, 0.03);
+    white-space: nowrap;
+  }
+
+  .session-tag span {
+    font-weight: 700;
+  }
+
+
+  /*===Student detail drawer ===*/
+    .student-detail-panel {
+    position: fixed;
+    right: 0;
+    top: 4.5rem; /* under main header */
+    bottom: 0;
+    width: 320px;
+    max-width: 90vw;
+    background: var(--bg-card);
+    box-shadow: -4px 0 12px rgba(0, 0, 0, 0.18);
+    border-left: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 0.75rem 0.9rem;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.22s ease-out;
+    z-index: 40;
+  }
+
+  .student-detail-panel.is-open {
+    transform: translateX(0%);
+  }
+
+  .student-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .student-detail-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 800;
+  }
+
+  .student-detail-subtitle {
+    margin: 0.1rem 0 0;
+    font-size: 0.78rem;
+    color: var(--gray-mid);
+  }
+
+  .student-detail-body {
+    overflow-y: auto;
+    padding-right: 0.2rem;
+  }
+
+  .student-detail-summary {
+    font-size: 0.8rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .student-detail-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  .student-detail-column-title {
+    margin: 0 0 0.25rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  .student-detail-list {
+    list-style: disc;
+    padding-left: 1.1rem;
+    margin: 0;
+    font-size: 0.78rem;
+  }
+
+
+  /*=== Skill heat map ===*/
+    .heatmap-table-wrapper {
+    overflow-x: auto;
+  }
+
+  .heatmap-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.78rem;
+  }
+
+  .heatmap-table th,
+  .heatmap-table td {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 0.35rem 0.4rem;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .heatmap-table th:first-child,
+  .heatmap-table td:first-child {
+    text-align: left;
+    position: sticky;
+    left: 0;
+    background: var(--bg-card);
+    z-index: 1;
+  }
+
+  .heat-empty {
+    color: var(--gray-mid);
+  }
+
+  /* Heat levels (always yes to color coding 🔥) */
+  .heat-low {
+    background: rgba(255, 143, 133, 0.25);   /* coral */
+    color: var(--violet);
+    font-weight: 700;
+  }
+
+  .heat-mid {
+    background: rgba(255, 212, 102, 0.25);   /* golden */
+    color: var(--violet);
+    font-weight: 600;
+  }
+
+  .heat-high {
+    background: rgba(132, 235, 230, 0.35);   /* teal */
+    color: var(--violet);
+    font-weight: 600;
+  }
+
   </style>
 </head>
 <body>
@@ -484,6 +715,12 @@
       >
         Sign out
       </button>
+
+      <label class="theme-switch">
+        <input type="checkbox" id="theme-toggle" />
+        <span class="theme-slider"></span>
+        <span class="theme-label">Dark Mode</span>
+      </label>
     </div>
   </header>
 
@@ -898,6 +1135,15 @@
               </ul>
             </div>
           </div>
+
+            <div class="student-detail-chart">
+    <h3 class="student-detail-column-title">Progress across attempts</h3>
+    <canvas id="student-detail-progress-chart" height="140"></canvas>
+    <p class="muted small">
+      Each point is an attempt for this session. Click legend items to show or hide lines.
+    </p>
+  </div>
+
         </div>
       </aside>
 
@@ -917,6 +1163,37 @@
 <script src="teacher-dashboard.js"></script>
 <script src="reading-practice/reporting.js" defer></script>
 <script src="reading-practice/script.js" defer></script>
+<script>
+  (function () {
+    const STORAGE_KEY = "mbm-theme";
+    const root = document.documentElement;
+    const toggle = document.getElementById("theme-toggle");
+
+    if (!toggle) return;
+
+    function applyTheme(theme) {
+      if (theme === "dark") {
+        root.setAttribute("data-theme", "dark");
+        document.body.classList.add("dashboard-dark");
+      } else {
+        root.removeAttribute("data-theme");
+        document.body.classList.remove("dashboard-dark");
+      }
+    }
+
+    // Initialize from saved setting (or default to light)
+    const saved = localStorage.getItem(STORAGE_KEY) || "light";
+    applyTheme(saved);
+    toggle.checked = saved === "dark";
+
+    // Update on change
+    toggle.addEventListener("change", () => {
+      const newTheme = toggle.checked ? "dark" : "light";
+      localStorage.setItem(STORAGE_KEY, newTheme);
+      applyTheme(newTheme);
+    });
+  })();
+</script>
 
 </body>
 </html>

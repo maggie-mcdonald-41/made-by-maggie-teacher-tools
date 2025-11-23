@@ -2,6 +2,13 @@
 
 const { getStore } = require("@netlify/blobs");
 
+function sanitizeFragment(value) {
+  return String(value || "")
+    .trim()
+    .replace(/[^\w\-]+/g, "_")
+    .slice(0, 64);
+}
+
 exports.handler = async function (event, context) {
   if (event.httpMethod !== "POST") {
     return {
@@ -19,24 +26,39 @@ exports.handler = async function (event, context) {
     if (!sessionCode || !studentKey) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ success: false, error: "Missing sessionCode or studentKey" })
+        body: JSON.stringify({
+          success: false,
+          error: "sessionCode and studentKey are required"
+        })
       };
     }
 
-    // FIXED: require instead of dynamic import
+    const safeSession = sanitizeFragment(sessionCode);
+    const safeStudentKey = sanitizeFragment(studentKey);
+
+    const key = `session/${safeSession}/${safeStudentKey}.json`;
     const store = getStore("reading-progress");
 
-    const key = `progress-${sessionCode}-${studentKey}`;
-
     const dataToStore = {
+      studentKey: safeStudentKey,
       sessionCode,
-      studentKey,
+
       studentName: payload.studentName || "",
       classCode: payload.classCode || "",
+
       startedAt: payload.startedAt || null,
-      lastSavedAt: new Date().toISOString(),
-      currentQuestionIndex: payload.currentQuestionIndex ?? null,
-      questionResults: Array.isArray(payload.questionResults) ? payload.questionResults : [],
+      lastSavedAt: payload.lastSavedAt || new Date().toISOString(),
+
+      currentQuestionIndex:
+        typeof payload.currentQuestionIndex === "number"
+          ? payload.currentQuestionIndex
+          : null,
+
+      questionResults: Array.isArray(payload.questionResults)
+        ? payload.questionResults
+        : [],
+
+      // Optional Google auth info
       user: payload.user || null
     };
 
@@ -50,7 +72,10 @@ exports.handler = async function (event, context) {
     console.error("[saveReadingProgress] Error:", err);
     return {
       statusCode: 500,
-      body: JSON.stringify({ success: false, error: "Failed to save progress" })
+      body: JSON.stringify({
+        success: false,
+        error: "Failed to save progress"
+      })
     };
   }
 };

@@ -2,6 +2,13 @@
 
 const { getStore } = require("@netlify/blobs");
 
+function sanitizeFragment(value) {
+  return String(value || "")
+    .trim()
+    .replace(/[^\w\-]+/g, "_")
+    .slice(0, 64);
+}
+
 exports.handler = async function (event, context) {
   if (event.httpMethod !== "POST") {
     return {
@@ -11,54 +18,69 @@ exports.handler = async function (event, context) {
   }
 
   try {
-    const summary = JSON.parse(event.body || "{}");
+    const body = JSON.parse(event.body || "{}");
 
-    const attemptId =
-      summary.attemptId ||
-      (typeof crypto !== "undefined" &&
-        crypto.randomUUID &&
-        crypto.randomUUID()) ||
-      String(Date.now());
+    const sessionCode = (body.sessionCode || "").trim();
+    const studentName = (body.studentName || "").trim();
+    const classCode = (body.classCode || "").trim();
 
-    const finishedAt = summary.finishedAt || new Date().toISOString();
-    const sessionCode = (summary.sessionCode || "").trim();
-    const classCode = (summary.classCode || "").trim();
-    const studentName = (summary.studentName || "").trim();
+    if (!sessionCode || !studentName) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          success: false,
+          error: "sessionCode and studentName are required"
+        })
+      };
+    }
 
-    console.log("[logReadingAttempt] New attempt:", {
-      attemptId,
-      studentName,
-      classCode,
-      sessionCode,
-      numCorrect: summary.numCorrect,
-      numIncorrect: summary.numIncorrect,
-      totalQuestions: summary.totalQuestions
-    });
+    const safeSession = sanitizeFragment(sessionCode);
+    const now = Date.now();
 
-    // FIXED: require instead of dynamic import
+    const attemptId = `${safeSession}_${now}`;
+    const key = `session/${safeSession}/${attemptId}.json`;
+
     const store = getStore("reading-attempts");
 
-    const key = `attempt-${sessionCode || "no-session"}-${attemptId}`;
-
-    await store.setJSON(key, {
-      ...summary,
+    // Normalize shape to what teacher-dashboard.js expects
+    const attempt = {
       attemptId,
-      finishedAt,
-      sessionCode,
-      classCode,
       studentName,
-      storedAt: new Date().toISOString()
-    });
+      classCode,
+      sessionCode,
+
+      numCorrect: Number(body.numCorrect || 0),
+      totalQuestions: Number(body.totalQuestions || 0),
+
+      // Per-skill + per-type breakdowns
+      bySkill: body.perSkill || {},
+      byType: body.perType || {},
+
+      // Timestamps
+      startedAt: body.startedAt || null,
+      finishedAt: body.finishedAt || new Date().toISOString(),
+
+      // Optional detailed results (not currently used by dashboard,
+      // but perfect for a future question-by-question progress view)
+      questionResults: Array.isArray(body.questionResults)
+        ? body.questionResults
+        : []
+    };
+
+    await store.setJSON(key, attempt);
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ success: true })
+      body: JSON.stringify({ success: true, attemptId })
     };
   } catch (err) {
     console.error("[logReadingAttempt] Error:", err);
     return {
       statusCode: 500,
-      body: JSON.stringify({ success: false, error: "Failed to store attempt" })
+      body: JSON.stringify({
+        success: false,
+        error: "Failed to store attempt"
+      })
     };
   }
 };

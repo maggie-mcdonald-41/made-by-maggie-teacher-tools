@@ -153,6 +153,7 @@ const skillsTableBody = document.getElementById("skills-table-body");
 let scoreBandsChart = null;
 let typeAccuracyChart = null;
 let skillAccuracyChart = null;
+let studentProgressChart = null;
 
 // Sidebar DOM
 const historySidebar = document.getElementById("history-sidebar");
@@ -785,12 +786,20 @@ function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelec
     studentDetailAttemptsEl.textContent = "Attempts counted: —.";
     studentDetailNeedsWorkEl.innerHTML = '<li class="muted">Not enough data yet.</li>';
     studentDetailStrengthsEl.innerHTML = '<li class="muted">Not enough data yet.</li>';
+
+    // NEW: clear progress chart if it exists
+    if (studentProgressChart) {
+      studentProgressChart.destroy();
+      studentProgressChart = null;
+    }
+
     return;
   }
 
   studentDetailPanel.classList.add("is-open");
   studentDetailNameEl.textContent = studentName;
 
+  // Overall stats across all attempts
   const totals = studentAttempts.reduce(
     (acc, a) => {
       acc.correct += a.numCorrect || 0;
@@ -810,6 +819,116 @@ function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelec
   studentDetailAttemptsEl.textContent =
     `Attempts counted: ${studentAttempts.length}.`;
 
+  // === NEW: Progress-over-time chart ===
+  const chartCanvas = document.getElementById("student-detail-progress-chart");
+  if (chartCanvas && typeof Chart !== "undefined") {
+    // Sort attempts by finishedAt/startedAt ascending
+    const sortedAttempts = studentAttempts
+      .slice()
+      .sort((a, b) => {
+        const aTime = (a.finishedAt || a.startedAt || "").toString();
+        const bTime = (b.finishedAt || b.startedAt || "").toString();
+        return aTime.localeCompare(bTime);
+      });
+
+    const labels = sortedAttempts.map((a, idx) => {
+      const when = a.finishedAt || a.startedAt;
+      const labelDate = when ? formatDate(when) : `Attempt ${idx + 1}`;
+      return `${idx + 1}. ${labelDate}`;
+    });
+
+    // Overall %
+    const overallData = sortedAttempts.map((a) => {
+      const total = a.totalQuestions || 0;
+      const correct = a.numCorrect || 0;
+      return total ? Math.round((correct / total) * 100) : 0;
+    });
+
+    // Aggregate skills to pick the top 2–3 for lines
+    const aggregateBySkill = {};
+    sortedAttempts.forEach((a) => {
+      const map = a.bySkill || {};
+      Object.entries(map).forEach(([skill, stats]) => {
+        if (!aggregateBySkill[skill]) {
+          aggregateBySkill[skill] = { correct: 0, total: 0 };
+        }
+        aggregateBySkill[skill].correct += stats.correct || 0;
+        aggregateBySkill[skill].total += stats.total || 0;
+      });
+    });
+
+    const topSkills = Object.entries(aggregateBySkill)
+      .sort((a, b) => (b[1].total || 0) - (a[1].total || 0))
+      .slice(0, 3)
+      .map(([name]) => name);
+
+    const datasets = [
+      {
+        label: "Overall %",
+        data: overallData,
+        borderWidth: 2,
+        tension: 0.25,
+        pointRadius: 4
+      }
+    ];
+
+    topSkills.forEach((skillName) => {
+      const series = sortedAttempts.map((a) => {
+        const s = (a.bySkill && a.bySkill[skillName]) || {
+          correct: 0,
+          total: 0
+        };
+        const total = s.total || 0;
+        const correct = s.correct || 0;
+        return total ? Math.round((correct / total) * 100) : 0;
+      });
+
+      datasets.push({
+        label: skillName,
+        data: series,
+        borderWidth: 1.5,
+        // leave colors to Chart.js theme; clickable legend still works
+        pointRadius: 3
+      });
+    });
+
+    if (studentProgressChart) {
+      studentProgressChart.data.labels = labels;
+      studentProgressChart.data.datasets = datasets;
+      studentProgressChart.update();
+    } else {
+      studentProgressChart = new Chart(chartCanvas, {
+        type: "line",
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100,
+              ticks: {
+                callback: (value) => `${value}%`
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              display: true,
+              onClick: (e, legendItem, legend) => {
+                const ci = legend.chart;
+                const index = legendItem.datasetIndex;
+                const meta = ci.getDatasetMeta(index);
+                meta.hidden = meta.hidden === null
+                  ? !ci.data.datasets[index].hidden
+                  : null;
+                ci.update();
+              }
+            }
+          }
+        }
+      });
+    }
+  }
   // Build per-skill list from skillTotalsSelected
   const entries = Object.entries(skillTotalsSelected || {});
   if (!entries.length) {

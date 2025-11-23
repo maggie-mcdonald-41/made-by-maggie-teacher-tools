@@ -12,38 +12,65 @@
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="styles.css" />
+</head>
 
+<body>
+  <div class="app-shell">
+    <!-- PAGE HEADER -->
+    <header class="app-header">
+      <!-- Left Side: Logo + Title -->
+      <div class="app-title-group with-logo">
+        <img src="../images/your-logo.png" alt="Made by Maggie Logo" class="app-logo">
 
-<!-- Session Info Bar -->
-<section class="rp-session-bar">
-  <div class="rp-session-group">
-    <label for="rp-student-name">Student Name</label>
-    <input
-      id="rp-student-name"
-      type="text"
-      placeholder="First name + last initial"
-    />
-  </div>
+        <div class="title-text">
+          <h1 class="main-title">Reading Test-Style Question Trainer</h1>
+          <p class="app-subtitle">Made by Maggie Teaching Tools · Test-Style Practice</p>
+        </div>
 
-  <div class="rp-session-group">
-    <label for="rp-class-code">Class / Period</label>
-    <input
-      id="rp-class-code"
-      type="text"
-      placeholder="e.g. 6A, 6B, Per 3"
-    />
-  </div>
+        <span class="app-pill">Practice</span>
+      </div>
 
-  <div class="rp-session-group">
-    <label for="rp-session-code">Session Code</label>
-    <input
-      id="rp-session-code"
-      type="text"
-      placeholder="Your teacher will give you this"
-    />
-  </div>
+      <!-- Right Side: Dark Mode Toggle -->
+      <div class="header-right">
+        <label class="theme-switch">
+          <input type="checkbox" id="theme-toggle" />
+          <span class="theme-slider"></span>
+          <span class="theme-label">Dark Mode</span>
+        </label>
+      </div>
+    </header>
 
-  <div class="rp-session-actions">
+    <!-- Session Info Bar (under the header) -->
+    <section class="rp-session-bar">
+      <div class="rp-session-group">
+        <label for="rp-student-name">Student Name</label>
+        <input
+          id="rp-student-name"
+          type="text"
+          placeholder="First name + last initial"
+        />
+      </div>
+
+      <div class="rp-session-group">
+        <label for="rp-class-code">Class / Period</label>
+        <input
+          id="rp-class-code"
+          type="text"
+          placeholder="e.g. 6A, 6B, Per 3"
+        />
+      </div>
+
+      <div class="rp-session-group">
+        <label for="rp-session-code">Session Code</label>
+        <input
+          id="rp-session-code"
+          type="text"
+          placeholder="Your teacher will give you this"
+        />
+      </div>
+
+<div class="rp-session-actions">
+  <div class="rp-session-buttons">
     <button id="rp-start-session" class="btn primary" type="button">
       Start Session
     </button>
@@ -51,48 +78,19 @@
     <button id="rp-google-signin" class="btn subtle" type="button">
       Sign in with Google (optional)
     </button>
-
-    <p id="rp-session-status" class="rp-session-status">
-      Enter your name, class, and session code, then click <strong>Start Session</strong>.
-    </p>
-    <p id="rp-auth-status" class="rp-session-status" style="font-size:0.8rem;">
-      Google sign-in saves your progress across devices. Local saving is also enabled.
-    </p>
-  </div>
-</section>
-
-
-<!-- PAGE HEADER -->
-<header class="app-header">
-
-  <!-- Left Side: Logo + Title -->
-  <div class="app-title-group with-logo">
-    <img src="../images/your-logo.png" alt="Made by Maggie Logo" class="app-logo">
-
-    <div class="title-text">
-      <h1 class="main-title">Reading Test-Style Question Trainer</h1>
-      <p class="app-subtitle">Made by Maggie Teaching Tools · Test-Style Practice</p>
-    </div>
-
-    <span class="app-pill">Practice</span>
   </div>
 
-  <!-- Right Side: Dark Mode Toggle -->
-  <div class="header-right">
-    <label class="theme-switch">
-      <input type="checkbox" id="theme-toggle" />
-      <span class="theme-slider"></span>
-      <span class="theme-label">Dark Mode</span>
-    </label>
-  </div>
-
-</header>
+  <p id="rp-session-status" class="rp-session-status">
+    Enter your name, class, and session code, then click <strong>Start Session</strong>.
+  </p>
+  <p id="rp-auth-status" class="rp-session-status" style="font-size:0.8rem;">
+    Google sign-in saves your progress across devices. Local saving is also enabled.
+  </p>
+</div>
 
 
-</head>
+    </section>
 
-<body>
-  <div class="app-shell">
     <main class="rp-layout">
       <!-- LEFT: PASSAGE PANEL -->
       <section class="passage-panel" aria-label="Reading passages">
@@ -260,10 +258,10 @@
 <script src="../reading-google-auth.js" defer></script>
 <script src="reporting.js" defer></script>
 <script src="script.js" defer></script>
-</body>
 <footer class="app-footer">
   © 2025 Maggie McDonald ☀️| Built for teachers, by a teacher.
 </footer>
+</body>
 </html>
 
   <!-- index.html end -->

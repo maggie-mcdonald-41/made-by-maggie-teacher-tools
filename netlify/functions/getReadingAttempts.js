@@ -1,85 +1,140 @@
 // netlify/functions/getReadingAttempts.js
-// GET /.netlify/functions/getReadingAttempts?sessionCode=...&classCode=...
 
 exports.handler = async function (event, context) {
   if (event.httpMethod !== "GET") {
     return {
       statusCode: 405,
-      body: "Method Not Allowed"
+      body: "Method Not Allowed",
     };
   }
 
   try {
-    const qs = event.queryStringParameters || {};
-    const rawSession = (qs.sessionCode || "").trim();
-    const rawClass = (qs.classCode || "").trim();
-
-    if (!rawSession) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          success: false,
-          error: "Missing sessionCode"
-        })
-      };
-    }
-
-    const sessionCode = rawSession.toUpperCase();
-    const classCode = rawClass.toUpperCase();
-
-    // ✅ ESM-friendly dynamic import (same pattern as your other functions)
     const { getStore } = await import("@netlify/blobs");
     const store = getStore("reading-attempts");
 
-    // Match whatever key pattern you're using in logReadingAttempt.js
-    const prefix = classCode
-      ? `attempt-${sessionCode}-${classCode}-`
-      : `attempt-${sessionCode}-`;
+    const params = event.queryStringParameters || {};
+    const rawSession = (params.sessionCode || "").trim();
+    const rawClass = (params.classCode || "").trim();
 
-    const { blobs } = await store.list({
-      limit: 500,
-      prefix
-    });
+    const sanitizeFragment = (value) =>
+      String(value || "")
+        .trim()
+        .replace(/[^\w\-]+/g, "_")
+        .slice(0, 64);
 
-    const attempts = [];
-    for (const blob of blobs) {
-      const data = await store.getJSON(blob.key);
-      if (!data) continue;
-      attempts.push({
-        attemptId: data.attemptId,
-        studentName: data.studentName || "Unknown",
-        classCode: data.classCode || "",
-        sessionCode: data.sessionCode || "",
-        finishedAt: data.finishedAt || data.storedAt || null,
-        numCorrect: data.numCorrect ?? null,
-        numIncorrect: data.numIncorrect ?? null,
-        totalQuestions: data.totalQuestions ?? null,
-        raw: data
-      });
+    let attemptsRaw = [];
+
+    if (rawSession) {
+      // Fetch ONLY attempts for this session
+      const safeSession = sanitizeFragment(rawSession);
+      const list = await store.list({ prefix: `session/${safeSession}/` });
+      const entries = list.blobs || list || [];
+
+      for (const item of entries) {
+        const data = await store.getJSON(item.key);
+        if (data) {
+          attemptsRaw.push({ key: item.key, data });
+        }
+      }
+    } else {
+      // No session filter -> fetch all (fine for your current scale)
+      const list = await store.list();
+      const entries = list.blobs || list || [];
+
+      for (const item of entries) {
+        if (!item.key.endsWith(".json")) continue;
+        const data = await store.getJSON(item.key);
+        if (data) {
+          attemptsRaw.push({ key: item.key, data });
+        }
+      }
     }
 
-    // Sort newest first
+    // Normalize shape for the dashboard:
+    let attempts = attemptsRaw.map(({ key, data }) => {
+      const totalQuestions = Number(
+        data.totalQuestions ?? data.numQuestions ?? 0
+      );
+      const numCorrect = Number(data.numCorrect ?? 0);
+      const numIncorrect = Number(
+        data.numIncorrect ?? (totalQuestions ? totalQuestions - numCorrect : 0)
+      );
+      const accuracy =
+        totalQuestions > 0
+          ? Math.round((numCorrect / totalQuestions) * 100)
+          : 0;
+
+      const bySkill = data.bySkill || data.perSkill || {};
+      const byType = data.byType || data.perType || {};
+
+      const sessionCode =
+        data.sessionCode ||
+        rawSession ||
+        (data.sessionInfo && data.sessionInfo.sessionCode) ||
+        "";
+      const classCode =
+        data.classCode ||
+        (data.sessionInfo && data.sessionInfo.classCode) ||
+        "";
+      const studentName =
+        data.studentName || (data.student && data.student.name) || "";
+
+      const startedAt =
+        data.startedAt ||
+        (data.sessionInfo && data.sessionInfo.startedAt) ||
+        null;
+      const finishedAt =
+        data.finishedAt ||
+        data.storedAt ||
+        (data.sessionInfo && data.sessionInfo.finishedAt) ||
+        null;
+
+      return {
+        attemptId: data.attemptId || key,
+        studentName,
+        classCode,
+        sessionCode,
+        startedAt,
+        finishedAt,
+        totalQuestions,
+        numCorrect,
+        numIncorrect,
+        accuracy,
+        bySkill,
+        byType,
+      };
+    });
+
+    // Optional filter: classCode
+    if (rawClass) {
+      const classUpper = rawClass.toUpperCase();
+      attempts = attempts.filter(
+        (a) => (a.classCode || "").toUpperCase() === classUpper
+      );
+    }
+
+    // Sort newest first (by finishedAt, then startedAt)
     attempts.sort((a, b) => {
-      const ta = a.finishedAt ? Date.parse(a.finishedAt) : 0;
-      const tb = b.finishedAt ? Date.parse(b.finishedAt) : 0;
-      return tb - ta;
+      const aTime = (a.finishedAt || a.startedAt || "").toString();
+      const bTime = (b.finishedAt || b.startedAt || "").toString();
+      return bTime.localeCompare(aTime);
     });
 
     return {
       statusCode: 200,
-      body: JSON.stringify({
-        success: true,
-        attempts
-      })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ success: true, attempts }),
     };
   } catch (err) {
-    console.error("[getReadingAttempts] Error:", err);
+    console.error("[getReadingAttempts] Fatal error:", err);
     return {
       statusCode: 500,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         success: false,
-        error: "Failed to load attempts"
-      })
+        error: err.message,
+        stack: err.stack,
+      }),
     };
   }
 };

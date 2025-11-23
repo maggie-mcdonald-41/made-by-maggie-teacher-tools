@@ -834,18 +834,6 @@ const sessionStatusEl = document.getElementById("rp-session-status");
 const passageScrollEl = document.querySelector(".passage-scroll");
 
 
-// Helper: read ?session= from URL
-function getSessionCodeFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  const code = params.get("session");
-  return code ? code.trim() : "";
-}
-
-function getClassCodeFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  const val = params.get("class");
-  return val ? val.trim() : "";
-}
 // ===== START SESSION BAR (student) =====
 
 // Read from URL
@@ -1230,6 +1218,16 @@ function renderMediaIfPresent(q) {
 
 // ====== RENDERING ======
 function renderQuestion() {
+    if (
+    !questionNumberEl ||
+    !questionTypeLabelEl ||
+    !questionStemEl ||
+    !questionInstructionsEl ||
+    !questionOptionsEl ||
+    !questionFeedbackEl
+  ) {
+    return;
+  }
   const q = questions[currentQuestionIndex];
   answered = false;
 
@@ -2476,21 +2474,22 @@ function renderRevise(q) {
 
 
 // ====== NAVIGATION ======
-nextQuestionBtn.addEventListener("click", () => {
-  if (currentQuestionIndex < questions.length - 1) {
-    currentQuestionIndex++;
-    renderQuestion();
-  } else {
-    // End of set
-    setFeedback("You’ve reached the end of this practice set. 🎉", true);
-    nextQuestionBtn.disabled = true;
+if (nextQuestionBtn) {
+  nextQuestionBtn.addEventListener("click", () => {
+    if (currentQuestionIndex < questions.length - 1) {
+      currentQuestionIndex++;
+      renderQuestion();
+    } else {
+      // End of set
+      setFeedback("You’ve reached the end of this practice set. 🎉", true);
 
-    // 🔹 REPORTING HOOK – send summary to Netlify/Google Sheet
-    if (window.RP_REPORT && typeof window.RP_REPORT.sendFinalReport === "function") {
-      window.RP_REPORT.sendFinalReport();
+      // 🔹 REPORTING HOOK – send summary to Netlify/Google Sheet
+      if (window.RP_REPORT && typeof window.RP_REPORT.sendFinalReport === "function") {
+        window.RP_REPORT.sendFinalReport();
+      }
     }
-  }
-});
+  });
+}
 
 
 // Passage tab clicks
@@ -2501,45 +2500,48 @@ passageTabs.forEach((tab) => {
   });
 });
 
-// Initial render
-renderQuestion();
-// ====== THEME TOGGLE ======
-const themeToggleInput = document.getElementById("theme-toggle");
-const bodyEl = document.body;
+// Initial render (only if the question UI exists)
+if (questionStemEl && questionOptionsEl) {
+  renderQuestion();
+}
 
-if (themeToggleInput) {
-  // Load saved theme
-  const savedTheme = localStorage.getItem("rp-theme");
-  if (savedTheme === "dark") {
-    bodyEl.classList.add("dark-theme");
-    themeToggleInput.checked = true;
+// ====== THEME TOGGLE & CLEAR HIGHLIGHTS ======
+(function initThemeAndHighlightControls() {
+  const bodyEl = document.body;
+  const themeToggleInput = document.getElementById("theme-toggle");
+
+  if (themeToggleInput) {
+    const savedTheme = localStorage.getItem("rp-theme");
+    if (savedTheme === "dark") {
+      bodyEl.classList.add("dark-theme");
+      themeToggleInput.checked = true;
+    }
+
+    themeToggleInput.addEventListener("change", () => {
+      if (themeToggleInput.checked) {
+        bodyEl.classList.add("dark-theme");
+        localStorage.setItem("rp-theme", "dark");
+      } else {
+        bodyEl.classList.remove("dark-theme");
+        localStorage.setItem("rp-theme", "light");
+      }
+    });
   }
 
-  themeToggleInput.addEventListener("change", () => {
-    if (themeToggleInput.checked) {
-      bodyEl.classList.add("dark-theme");
-      localStorage.setItem("rp-theme", "dark");
-    } else {
-      bodyEl.classList.remove("dark-theme");
-      localStorage.setItem("rp-theme", "light");
-    }
-  });
-}
+  const clearPassageBtn = document.getElementById("clear-passage-highlights");
+  if (clearPassageBtn) {
+    clearPassageBtn.addEventListener("click", () => {
+      clearPassageHighlights();
+    });
+  }
 
-
-const clearPassageBtn = document.getElementById("clear-passage-highlights");
-if (clearPassageBtn) {
-  clearPassageBtn.addEventListener("click", () => {
-    clearPassageHighlights();
-  });
-}
-
-const clearQuestionBtn = document.getElementById("clear-question-highlights");
-if (clearQuestionBtn) {
-  clearQuestionBtn.addEventListener("click", () => {
-    clearQuestionHighlights();
-  });
-}
+  const clearQuestionBtn = document.getElementById("clear-question-highlights");
+  if (clearQuestionBtn) {
+    clearQuestionBtn.addEventListener("click", () => {
+      clearQuestionHighlights();
+    });
+  }
+})();
 
 // ====== PROGRESS AUTOSAVE ======
 
