@@ -1185,41 +1185,47 @@ initQuestionNavStrip();
 function renderMediaIfPresent(q) {
   if (!q.media) return;
 
-  // Only handle audio/video for now
-  if (q.media.type === "audio" || q.media.type === "video") {
-    const wrapper = document.createElement("div");
-    wrapper.className = "question-media";
+  const { type, src, captions, label } = q.media || {};
+  if (!src || (type !== "audio" && type !== "video")) return;
 
-    const player = document.createElement("video");
-    player.className = "question-media-player";
-    player.controls = true;
-    player.preload = "metadata";
-    player.src = q.media.src;
+  const wrapper = document.createElement("div");
+  wrapper.className = "question-media";
 
-    // Optional captions track
-    if (q.media.captions) {
-      const track = document.createElement("track");
-      track.kind = "subtitles";
-      track.src = q.media.captions;
-      track.srclang = "en";
-      track.label = q.media.label || "English captions";
-      track.default = true;
-      player.appendChild(track);
-    }
+  // Use <audio> for audio clips, <video> for video clips
+  const player =
+    type === "audio"
+      ? document.createElement("audio")
+      : document.createElement("video");
 
-    wrapper.appendChild(player);
+  player.className = "question-media-player";
+  player.controls = true;
+  player.preload = "metadata";
+  player.src = src;
 
-    if (q.media.label) {
-      const label = document.createElement("p");
-      label.className = "media-caption";
-      label.textContent = q.media.label;
-      wrapper.appendChild(label);
-    }
-
-    // 👇 This puts the media block above the answer choices
-    questionOptionsEl.appendChild(wrapper);
+  // Only add a <track> if we actually have a captions file
+  if (captions) {
+    const track = document.createElement("track");
+    track.kind = "subtitles";
+    track.src = captions;
+    track.srclang = "en";
+    track.label = label || "English captions";
+    track.default = true;
+    player.appendChild(track);
   }
+
+  wrapper.appendChild(player);
+
+  if (label) {
+    const labelEl = document.createElement("p");
+    labelEl.className = "media-caption";
+    labelEl.textContent = label;
+    wrapper.appendChild(labelEl);
+  }
+
+  // Put media block above the answer choices
+  questionOptionsEl.appendChild(wrapper);
 }
+
 
 
 // ====== RENDERING ======
@@ -2501,22 +2507,25 @@ renderQuestion();
 const themeToggleInput = document.getElementById("theme-toggle");
 const bodyEl = document.body;
 
-// Load saved theme
-const savedTheme = localStorage.getItem("rp-theme");
-if (savedTheme === "dark") {
-  bodyEl.classList.add("dark-theme");
-  themeToggleInput.checked = true;
+if (themeToggleInput) {
+  // Load saved theme
+  const savedTheme = localStorage.getItem("rp-theme");
+  if (savedTheme === "dark") {
+    bodyEl.classList.add("dark-theme");
+    themeToggleInput.checked = true;
+  }
+
+  themeToggleInput.addEventListener("change", () => {
+    if (themeToggleInput.checked) {
+      bodyEl.classList.add("dark-theme");
+      localStorage.setItem("rp-theme", "dark");
+    } else {
+      bodyEl.classList.remove("dark-theme");
+      localStorage.setItem("rp-theme", "light");
+    }
+  });
 }
 
-themeToggleInput.addEventListener("change", () => {
-  if (themeToggleInput.checked) {
-    bodyEl.classList.add("dark-theme");
-    localStorage.setItem("rp-theme", "dark");
-  } else {
-    bodyEl.classList.remove("dark-theme");
-    localStorage.setItem("rp-theme", "light");
-  }
-});
 
 const clearPassageBtn = document.getElementById("clear-passage-highlights");
 if (clearPassageBtn) {
