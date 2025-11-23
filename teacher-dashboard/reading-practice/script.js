@@ -852,6 +852,45 @@ function getClassCodeFromUrl() {
 const SESSION_CODE = getSessionCodeFromUrl();
 const URL_CLASS_CODE = getClassCodeFromUrl();
 
+let rpSessionInitialized = false;
+
+function beginTrainerSession({ studentName, classCode, sessionCode }) {
+  if (rpSessionInitialized) return;
+  rpSessionInitialized = true;
+
+  const cleanName = (studentName || "").trim();
+  const cleanClass = (classCode || "").trim();
+  const cleanSession = (sessionCode || SESSION_CODE || "").trim();
+
+  if (!cleanSession) {
+    console.warn("[RP] beginTrainerSession called without a sessionCode.");
+  }
+
+  // Tell reporting who this is
+  if (window.RP_REPORT && typeof RP_REPORT.setSessionInfo === "function") {
+    RP_REPORT.setSessionInfo({
+      studentName: cleanName,
+      classCode: cleanClass,
+      sessionCode: cleanSession
+    });
+  }
+
+  // Optional: let reporting.js log a "joined" event
+  if (window.RP_REPORT && typeof RP_REPORT.sendSessionStart === "function") {
+    RP_REPORT.sendSessionStart();
+  }
+
+  // Hide any start screen, show trainer screen if you still use them
+  if (startScreenEl) startScreenEl.style.display = "none";
+  if (trainerScreenEl) trainerScreenEl.style.display = "block";
+
+  // Render first question if the question UI exists
+  if (questionStemEl && questionOptionsEl) {
+    renderQuestion();
+  }
+}
+
+
 // Optional screen containers (if you still use them)
 const startScreenEl = document.getElementById("start-screen");
 const trainerScreenEl = document.getElementById("trainer-screen");
@@ -872,13 +911,80 @@ if (sessionCodeInput && SESSION_CODE) {
 if (classCodeInput && URL_CLASS_CODE) {
   classCodeInput.value = URL_CLASS_CODE;
 }
+// ===== IDENTITY MODAL (student) =====
+const identityModalEl = document.getElementById("rp-identity-modal");
+const identityNameInput = document.getElementById("rp-id-name");
+const identityClassInput = document.getElementById("rp-id-class");
+const identityGoogleBtn = document.getElementById("rp-id-google");
+const identityContinueBtn = document.getElementById("rp-id-continue");
+const identityErrorEl = document.getElementById("rp-id-error");
+
+function showIdentityModal() {
+  if (!identityModalEl || rpSessionInitialized) return;
+
+  // Prefill class from URL if available
+  if (identityClassInput && URL_CLASS_CODE && !identityClassInput.value) {
+    identityClassInput.value = URL_CLASS_CODE;
+  }
+
+  identityModalEl.classList.add("active");
+  identityModalEl.setAttribute("aria-hidden", "false");
+  if (identityNameInput) {
+    identityNameInput.focus();
+  }
+}
+
+function hideIdentityModal() {
+  if (!identityModalEl) return;
+  identityModalEl.classList.remove("active");
+  identityModalEl.setAttribute("aria-hidden", "true");
+}
+
+if (identityContinueBtn) {
+  identityContinueBtn.addEventListener("click", () => {
+    if (rpSessionInitialized) return;
+    const name = (identityNameInput?.value || "").trim();
+    const classCode = (identityClassInput?.value || "").trim();
+    const sessionCode = (sessionCodeInput?.value || SESSION_CODE || "").trim();
+
+    if (!name) {
+      if (identityErrorEl) {
+        identityErrorEl.textContent = "Please type your name to continue.";
+      }
+      return;
+    }
+
+    if (!sessionCode) {
+      if (identityErrorEl) {
+        identityErrorEl.textContent =
+          "This link is missing a session code. Ask your teacher for the correct link.";
+      }
+      return;
+    }
+
+    if (identityErrorEl) identityErrorEl.textContent = "";
+    hideIdentityModal();
+    beginTrainerSession({ studentName: name, classCode, sessionCode });
+  });
+}
+
+if (identityGoogleBtn) {
+  identityGoogleBtn.addEventListener("click", () => {
+    if (!window.RP_AUTH) {
+      alert("Google sign-in is not ready yet. Please try again in a moment.");
+      return;
+    }
+    RP_AUTH.promptSignIn();
+  });
+}
 
 // Start button behavior
 if (startBtn) {
   startBtn.addEventListener("click", () => {
+    if (rpSessionInitialized) return;
     const name = (studentNameInput?.value || "").trim();
     const classCode = (classCodeInput?.value || "").trim();
-    const sessionCode = (sessionCodeInput?.value || "").trim();
+    const sessionCode = (sessionCodeInput?.value || SESSION_CODE || "").trim();
 
     if (!name) {
       if (startErrorMsg) {
@@ -902,45 +1008,53 @@ if (startBtn) {
       startErrorMsg.classList.remove("error");
     }
 
-    // Tell reporting.js who this is
-    if (window.RP_REPORT && typeof RP_REPORT.setSessionInfo === "function") {
-      RP_REPORT.setSessionInfo({
-        studentName: name,
-        classCode,
-        sessionCode
-      });
-    }
-
-    // If you still have a start screen / trainer screen, toggle them:
-    if (startScreenEl) startScreenEl.style.display = "none";
-    if (trainerScreenEl) trainerScreenEl.style.display = "block";
-
-    // Render first question
-    renderQuestion();
+    hideIdentityModal();
+    beginTrainerSession({ studentName: name, classCode, sessionCode });
   });
 }
+
 
 // Google auth wiring for student page
 if (window.RP_AUTH) {
   RP_AUTH.onAuthChange((user) => {
     if (user) {
-      // Auto-fill name if blank
+      // Auto-fill name field(s)
+      const displayName = user.name || user.email || "";
       const nameInput = document.getElementById("rp-student-name");
       if (nameInput && !nameInput.value.trim()) {
-        nameInput.value = user.name || user.email || "";
+        nameInput.value = displayName;
       }
+      if (identityNameInput && !identityNameInput.value.trim()) {
+        identityNameInput.value = displayName;
+      }
+
       if (authStatusEl) {
         authStatusEl.textContent = `Signed in as ${user.email}. Your progress will sync across devices.`;
       }
+
+      // If we haven't started the session yet, and we have a session code, auto-start.
+      const sessionCode = (sessionCodeInput?.value || SESSION_CODE || "").trim();
+      if (!rpSessionInitialized && sessionCode) {
+        const classCode = (classCodeInput?.value || URL_CLASS_CODE || "").trim();
+        hideIdentityModal();
+        beginTrainerSession({
+          studentName: displayName,
+          classCode,
+          sessionCode
+        });
+      }
     } else {
       if (authStatusEl) {
-        authStatusEl.textContent = "Google sign-in saves your progress across devices. Local saving is also enabled.";
+        authStatusEl.textContent =
+          "Google sign-in saves your progress across devices. Local saving is also enabled.";
       }
+      // If they sign out mid-session, we do NOT end the session.
     }
   });
 
   RP_AUTH.initGoogleAuth();
 }
+
 
 if (studentGoogleBtn) {
   studentGoogleBtn.addEventListener("click", () => {
@@ -2504,6 +2618,12 @@ passageTabs.forEach((tab) => {
 if (questionStemEl && questionOptionsEl) {
   renderQuestion();
 }
+
+// Show identity modal on load if we have a session code and the trainer UI is present
+if (SESSION_CODE && questionStemEl && questionOptionsEl && identityModalEl) {
+  showIdentityModal();
+}
+
 
 // ====== THEME TOGGLE & CLEAR HIGHLIGHTS ======
 (function initThemeAndHighlightControls() {

@@ -17,6 +17,52 @@ body {
 body.dashboard-dark {
   background: radial-gradient(circle at top left, #09141c 0, #101b26 45%, #020611 100%);
 }
+/* Base text color for dark mode */
+body.dashboard-dark {
+  color: #e5e7eb; /* light gray */
+}
+
+/* Panels & header in dark mode */
+body.dashboard-dark .dashboard-header,
+body.dashboard-dark .dashboard-filters,
+body.dashboard-dark .dashboard-session-setup,
+body.dashboard-dark .dash-panel {
+  background: #020617;           /* deep navy/near-black */
+  border-color: #1f2937;         /* darker border */
+}
+
+/* Labels & subtle headings */
+body.dashboard-dark .filter-label,
+body.dashboard-dark .session-subtitle,
+body.dashboard-dark .dash-metric-label,
+body.dashboard-dark .panel-title {
+  color: #e5e7eb;
+}
+
+/* Inputs + fake input chips (session link fields, etc.) */
+body.dashboard-dark input,
+body.dashboard-dark .filter-input,
+body.dashboard-dark .session-code-input,
+body.dashboard-dark .fake-input {
+  background: #020617;
+  color: #f9fafb;
+  border-color: #1f2937;
+}
+
+/* Muted helper text */
+body.dashboard-dark .muted,
+body.dashboard-dark .dash-panel small,
+body.dashboard-dark .load-status {
+  color: #9ca3af;
+}
+
+/* “Pill” buttons that look too low-contrast in dark mode */
+body.dashboard-dark .pill-button {
+  background: #0f172a;
+  color: #e5e7eb;
+  border-color: #1f2937;
+}
+
 
 .dashboard-charts > .dash-panel .chart-wrapper {
   max-height: 200px; /* was 260px */
@@ -779,6 +825,9 @@ body.dashboard-dark {
             Click to generate the student link below.
           </span>
         </div>
+<button id="monitor-session-btn" class="pill-button pill-button-accent" disabled>
+  👀 Monitor Live Session
+</button>
 
         <!-- C. STUDENT LINK (READ-ONLY) -->
         <div class="filter-group" style="flex: 1; min-width: 280px;">

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Live Session Monitor | Reading Practice</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .monitor-shell {
+      max-width: 1100px;
+      margin: 1.5rem auto;
+      padding: 0 1rem 2rem;
+    }
+    .monitor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .monitor-grid {
+      overflow-x: auto;
+      border-radius: 12px;
+      border: 1px solid var(--gray-light, #d1d5db);
+      background: var(--bg-card, #fff);
+    }
+    table.monitor-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    table.monitor-table th,
+    table.monitor-table td {
+      padding: 0.4rem 0.5rem;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.4);
+      text-align: center;
+      white-space: nowrap;
+    }
+    table.monitor-table th {
+      position: sticky;
+      top: 0;
+      background: var(--bg-card, #fff);
+      z-index: 1;
+    }
+    .monitor-name-cell {
+      text-align: left;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .slot {
+      width: 1.7rem;
+      height: 1.7rem;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: #f3f4f6;
+      color: #4b5563;
+    }
+    .slot.empty {
+      background: #f9fafb;
+      border-style: dashed;
+    }
+    .slot.correct {
+      background: #22c55e;
+      color: white;
+      border-color: #16a34a;
+    }
+    .slot.incorrect {
+      background: #ef4444;
+      color: white;
+      border-color: #b91c1c;
+    }
+    .slot.partial {
+      background: #facc15;
+      color: #78350f;
+      border-color: #eab308;
+    }
+    .monitor-meta {
+      font-size: 0.8rem;
+      color: #6b7280;
+      margin-top: 0.25rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="monitor-shell">
+    <div class="monitor-header">
+      <div>
+        <h1>Live Session Monitor</h1>
+        <div id="monitor-meta" class="monitor-meta"></div>
+      </div>
+      <button id="monitor-refresh" class="pill-button">Refresh now</button>
+    </div>
+
+    <div id="monitor-grid" class="monitor-grid">
+      <!-- table rendered by JS -->
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script src="live-monitor.js"></script>
+</body>
+</html>

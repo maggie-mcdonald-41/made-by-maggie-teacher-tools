@@ -15,6 +15,43 @@
 </head>
 
 <body>
+  <!-- Student Identity Modal -->
+<div id="rp-identity-modal" class="rp-modal-backdrop" aria-hidden="true">
+  <div class="rp-modal">
+    <h2 class="rp-modal-title">Before we start…</h2>
+    <p class="rp-modal-text">
+      Tell the trainer who you are so your teacher can see your progress.
+    </p>
+
+    <div class="rp-modal-section">
+      <button id="rp-id-google" class="rp-modal-google-btn">
+        <span>🔑 Sign in with Google (recommended)</span>
+      </button>
+      <p class="rp-modal-helper">
+        This helps save your work across devices and keeps your name the same every time.
+      </p>
+    </div>
+
+    <div class="rp-modal-divider">
+      <span>or</span>
+    </div>
+
+    <div class="rp-modal-section">
+      <label for="rp-id-name">Your name</label>
+      <input id="rp-id-name" type="text" autocomplete="name" />
+
+      <label for="rp-id-class">Class / Section</label>
+      <input id="rp-id-class" type="text" placeholder="e.g. 6A, 7B" />
+
+      <button id="rp-id-continue" class="rp-modal-continue-btn">
+        Continue without Google
+      </button>
+
+      <p id="rp-id-error" class="rp-modal-error" aria-live="polite"></p>
+    </div>
+  </div>
+</div>
+
   <div class="app-shell">
     <!-- PAGE HEADER -->
     <header class="app-header">

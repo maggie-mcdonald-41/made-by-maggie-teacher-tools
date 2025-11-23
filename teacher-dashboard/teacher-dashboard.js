@@ -112,6 +112,7 @@ const copyCoTeacherStatusEl = document.getElementById("copy-co-teacher-status");
 
 // One CSV button
 const downloadCsvBtn = document.getElementById("download-csv");
+const monitorSessionBtn = document.getElementById("monitor-session-btn");
 
 // Filters / view summary / overlay
 const clearFiltersBtn = document.getElementById("clear-filters-btn");
@@ -1376,6 +1377,10 @@ async function loadAttempts() {
       loadStatusEl.textContent =
         `Loaded ${attempts.length} attempt${attempts.length === 1 ? "" : "s"} from server.`;
     }
+// Enable live monitor for this session
+enableMonitorButton(sessionCodeRaw, classCodeRaw);
+
+
   } catch (err) {
     console.error("[Dashboard] Error loading attempts, falling back to demo:", err);
 
@@ -1418,9 +1423,42 @@ async function loadAttempts() {
 
     renderDashboard(attemptsToShow);
     loadStatusEl.textContent = statusMessage;
+
+    // Using demo data – live monitor should stay disabled
+enableMonitorButton("", "");
+
   } finally {
     loadBtn.disabled = false;
   }
+}
+
+function enableMonitorButton(sessionCodeRaw, classCodeRaw) {
+  if (!monitorSessionBtn) return;
+
+  const session = (sessionCodeRaw || "").trim();
+  const classCode = (classCodeRaw || "").trim();
+
+  // No session? Turn the button off.
+  if (!session) {
+    monitorSessionBtn.disabled = true;
+    monitorSessionBtn.onclick = null;
+    return;
+  }
+
+  monitorSessionBtn.disabled = false;
+
+  // Use your existing auth guard so only signed-in teachers can open it
+  monitorSessionBtn.onclick = requireTeacherSignedIn(() => {
+    const params = new URLSearchParams();
+    params.set("session", session.toUpperCase());
+    if (classCode) {
+      params.set("class", classCode);
+    }
+
+    // New live monitor page
+    const url = `./reading-practice/live-monitor.html?${params.toString()}`;
+    window.open(url, "_blank");
+  });
 }
 
 
