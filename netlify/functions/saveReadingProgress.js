@@ -1,5 +1,6 @@
 // netlify/functions/saveReadingProgress.js
-// POST only. Saves in-progress reading practice for a student.
+
+const { getStore } = require("@netlify/blobs");
 
 exports.handler = async function (event, context) {
   if (event.httpMethod !== "POST") {
@@ -22,7 +23,7 @@ exports.handler = async function (event, context) {
       };
     }
 
-    const { getStore } = await import("@netlify/blobs");
+    // FIXED: require instead of dynamic import
     const store = getStore("reading-progress");
 
     const key = `progress-${sessionCode}-${studentKey}`;

@@ -1,5 +1,6 @@
 // netlify/functions/getReadingProgress.js
-// GET /getReadingProgress?sessionCode=...&studentKey=...
+
+const { getStore } = require("@netlify/blobs");
 
 exports.handler = async function (event, context) {
   if (event.httpMethod !== "GET") {
@@ -21,22 +22,18 @@ exports.handler = async function (event, context) {
       };
     }
 
-    const { getStore } = await import("@netlify/blobs");
     const store = getStore("reading-progress");
 
     const key = `progress-${sessionCode}-${studentKey}`;
     const data = await store.getJSON(key);
 
-    if (!data) {
-      return {
-        statusCode: 200,
-        body: JSON.stringify({ success: true, found: false, progress: null })
-      };
-    }
-
     return {
       statusCode: 200,
-      body: JSON.stringify({ success: true, found: true, progress: data })
+      body: JSON.stringify({
+        success: true,
+        found: !!data,
+        progress: data || null
+      })
     };
   } catch (err) {
     console.error("[getReadingProgress] Error:", err);

@@ -1,5 +1,7 @@
 // netlify/functions/logReadingAttempt.js
 
+const { getStore } = require("@netlify/blobs");
+
 exports.handler = async function (event, context) {
   if (event.httpMethod !== "POST") {
     return {
@@ -11,7 +13,6 @@ exports.handler = async function (event, context) {
   try {
     const summary = JSON.parse(event.body || "{}");
 
-    // Safety: make sure some core fields exist
     const attemptId =
       summary.attemptId ||
       (typeof crypto !== "undefined" &&
@@ -19,14 +20,11 @@ exports.handler = async function (event, context) {
         crypto.randomUUID()) ||
       String(Date.now());
 
-    const finishedAt =
-      summary.finishedAt || new Date().toISOString();
-
+    const finishedAt = summary.finishedAt || new Date().toISOString();
     const sessionCode = (summary.sessionCode || "").trim();
     const classCode = (summary.classCode || "").trim();
     const studentName = (summary.studentName || "").trim();
 
-    // Log to Netlify function logs (nice for debugging)
     console.log("[logReadingAttempt] New attempt:", {
       attemptId,
       studentName,
@@ -37,9 +35,8 @@ exports.handler = async function (event, context) {
       totalQuestions: summary.totalQuestions
     });
 
-    // ✅ NEW: Persist to Netlify Blobs
-    const { getStore } = await import("@netlify/blobs");
-    const store = getStore("reading-attempts"); // your blob "bucket"
+    // FIXED: require instead of dynamic import
+    const store = getStore("reading-attempts");
 
     const key = `attempt-${sessionCode || "no-session"}-${attemptId}`;
 
@@ -60,8 +57,8 @@ exports.handler = async function (event, context) {
   } catch (err) {
     console.error("[logReadingAttempt] Error:", err);
     return {
-      statusCode: 400,
-      body: JSON.stringify({ success: false, error: "Invalid JSON" })
+      statusCode: 500,
+      body: JSON.stringify({ success: false, error: "Failed to store attempt" })
     };
   }
 };
