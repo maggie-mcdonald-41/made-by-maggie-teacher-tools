@@ -1,0 +1,23 @@
+{
+  "name": "made-by-maggie-teacher-tools",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maggie-mcdonald-41/made-by-maggie-teacher-tools.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/maggie-mcdonald-41/made-by-maggie-teacher-tools/issues"
+  },
+  "homepage": "https://github.com/maggie-mcdonald-41/made-by-maggie-teacher-tools#readme",
+  "description": "",
+  "dependencies": {
+    "@netlify/blobs": "^10.4.1"
+  }
+}
