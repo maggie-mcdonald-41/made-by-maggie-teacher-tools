@@ -1,6 +1,6 @@
 // netlify/functions/logReadingAttempt.js
 
-const { getStore } = require("@netlify/blobs");
+const { getStore, connectLambda } = require("@netlify/blobs");
 
 function sanitizeFragment(value) {
   return String(value || "")
@@ -40,6 +40,7 @@ exports.handler = async function (event, context) {
     const attemptId = `${safeSession}_${now}`;
     const key = `session/${safeSession}/${attemptId}.json`;
 
+    connectLambda(event); 
     const store = getStore("reading-attempts");
 
     // Normalize shape to what teacher-dashboard.js expects

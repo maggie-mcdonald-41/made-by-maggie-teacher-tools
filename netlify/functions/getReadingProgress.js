@@ -1,6 +1,6 @@
 // netlify/functions/getReadingProgress.js
 
-const { getStore } = require("@netlify/blobs");
+const { getStore, connectLambda } = require("@netlify/blobs");
 
 function sanitizeFragment(value) {
   return String(value || "")
@@ -33,6 +33,7 @@ exports.handler = async function (event, context) {
     }
 
     const safeSession = sanitizeFragment(sessionCode);
+    const { getStore, connectLambda } = require("@netlify/blobs");
     const store = getStore("reading-progress");
 
     if (studentKey) {

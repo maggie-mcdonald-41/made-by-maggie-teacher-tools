@@ -1,6 +1,6 @@
 // netlify/functions/saveReadingProgress.js
 
-const { getStore } = require("@netlify/blobs");
+const { getStore, connectLambda } = require("@netlify/blobs");
 
 function sanitizeFragment(value) {
   return String(value || "")
@@ -38,6 +38,7 @@ exports.handler = async function (event, context) {
     const safeStudentKey = sanitizeFragment(studentKey);
 
     const key = `session/${safeSession}/${safeStudentKey}.json`;
+      connectLambda(event);  
     const store = getStore("reading-progress");
 
     const dataToStore = {
