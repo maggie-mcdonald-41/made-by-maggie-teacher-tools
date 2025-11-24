@@ -19,12 +19,14 @@ exports.handler = async function (event, context) {
 
   try {
     const qs = event.queryStringParameters || {};
-    const sessionCode = (qs.sessionCode || "").trim();
-    const studentKey = (qs.studentKey || "").trim();
+    const sessionCodeRaw = qs.sessionCode || "";
+    const studentKeyRaw = qs.studentKey || "";
 
+    const sessionCode = sessionCodeRaw.trim();
     if (!sessionCode) {
       return {
         statusCode: 400,
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           success: false,
           error: "sessionCode is required",
@@ -32,23 +34,24 @@ exports.handler = async function (event, context) {
       };
     }
 
-    const safeSession = sanitizeFragment(sessionCode);
-
-    // Initialize Netlify Blobs for Functions v1
+    // Connect blobs + store
     connectLambda(event);
     const store = getStore("reading-progress");
 
-    // ----- SINGLE STUDENT MODE -----
-    if (studentKey) {
-      const safeStudentKey = sanitizeFragment(studentKey);
+    const safeSession = sanitizeFragment(sessionCode);
+
+    // ---------- SINGLE STUDENT MODE ----------
+    if (studentKeyRaw && studentKeyRaw.trim()) {
+      const safeStudentKey = sanitizeFragment(studentKeyRaw);
       const key = `session/${safeSession}/${safeStudentKey}.json`;
 
-      // 🔧 FIX: use get(..., { type: "json" }) instead of getJSON
-      const data = await store.get(key, { type: "json" });
+      // ✅ use get(..., { type: "json" }) instead of getJSON
+      const doc = await store.get(key, { type: "json" });
 
-      if (!data) {
+      if (!doc) {
         return {
           statusCode: 404,
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             success: false,
             error: "No progress found for that student in this session",
@@ -56,50 +59,45 @@ exports.handler = async function (event, context) {
         };
       }
 
+      // For single-student lookups, just return the document itself
       return {
         statusCode: 200,
-        body: JSON.stringify({
-          success: true,
-          mode: "single",
-          sessionCode,
-          studentKey: safeStudentKey,
-          progress: data,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(doc),
       };
     }
 
-    // ----- WHOLE SESSION MODE -----
+    // ---------- WHOLE SESSION MODE (used by Live Monitor) ----------
     const list = await store.list({ prefix: `session/${safeSession}/` });
-    const entries = list.blobs || list || [];
+    const entries = (list && (list.blobs || list)) || [];
 
     const allProgress = [];
-
     for (const item of entries) {
-      if (!item.key.endsWith(".json")) continue;
+      if (!item.key || !item.key.endsWith(".json")) continue;
 
-      // 🔧 FIX: use get(..., { type: "json" }) instead of getJSON
-      const data = await store.get(item.key, { type: "json" });
-      if (!data) continue;
+      // ✅ use get(..., { type: "json" })
+      const doc = await store.get(item.key, { type: "json" });
+      if (!doc) continue;
 
-      allProgress.push({
-        key: item.key,
-        progress: data,
-      });
+      // ✅ PUSH THE DOC ITSELF, not { key, progress: doc }
+      allProgress.push(doc);
     }
 
     return {
       statusCode: 200,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         success: true,
         mode: "session",
         sessionCode,
-        progress: allProgress,
+        progress: allProgress, // array of docs with studentName, classCode, questionResults, etc.
       }),
     };
   } catch (err) {
     console.error("[getReadingProgress] Error:", err);
     return {
       statusCode: 500,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         success: false,
         error: err.message || "Failed to load progress",

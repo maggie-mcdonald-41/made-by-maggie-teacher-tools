@@ -963,10 +963,23 @@ if (identityContinueBtn) {
     }
 
     if (identityErrorEl) identityErrorEl.textContent = "";
+
+    // NEW: sync into the main form fields so everything matches
+    if (studentNameInput) {
+      studentNameInput.value = name;
+    }
+    if (classCodeInput && classCode) {
+      classCodeInput.value = classCode;
+    }
+    if (sessionCodeInput && sessionCode) {
+      sessionCodeInput.value = sessionCode;
+    }
+
     hideIdentityModal();
     beginTrainerSession({ studentName: name, classCode, sessionCode });
   });
 }
+
 
 if (identityGoogleBtn) {
   identityGoogleBtn.addEventListener("click", () => {
