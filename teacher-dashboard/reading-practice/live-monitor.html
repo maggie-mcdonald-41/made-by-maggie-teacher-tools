@@ -6,56 +6,93 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="styles.css" />
   <style>
-    .monitor-shell {
+       .monitor-shell {
       max-width: 1100px;
       margin: 1.5rem auto;
       padding: 0 1rem 2rem;
     }
+
     .monitor-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 1rem;
     }
+
     .monitor-grid {
       overflow-x: auto;
       border-radius: 12px;
       border: 1px solid var(--gray-light, #d1d5db);
       background: var(--bg-card, #fff);
+      padding: 0.75rem 1rem;
     }
-table.monitor-table th {
-  position: sticky;
-  top: 0;
-  background: var(--bg-card, #fff);
-  z-index: 2;
 
-  /* NEW: angled header text */
-  height: 80px;                 /* gives room for the slanted text */
-  vertical-align: bottom;        /* keeps slanted text aligned at the bottom */
-  white-space: nowrap;
-  font-size: 0.7rem;
-  padding: 0;
+    /* TABLE LAYOUT */
+    table.monitor-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 0.8rem;
+    }
 
-  /* Prevent the rotated text from spilling outside */
-  overflow: visible;
-}
+    table.monitor-table th,
+    table.monitor-table td {
+      border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+      text-align: center;
+      padding: 0.3rem 0.25rem;
+      white-space: nowrap;
+    }
 
-table.monitor-table th > div.header-rotate {
-  transform: rotate(-55deg);   /* angle upward and left */
-  transform-origin: bottom left;
-  white-space: nowrap;
-  display: inline-block;
-  padding: 0;
-  margin: 0;
-  font-weight: 700;
-  color: var(--text, #0a2342);
-}
+    /* Sticky header row */
+    table.monitor-table th {
+      position: sticky;
+      top: 0;
+      background: var(--bg-card, #fff);
+      z-index: 2;
+
+      /* room for angled text for question columns */
+      height: 80px;
+      vertical-align: bottom;
+      font-size: 0.7rem;
+      padding: 0;
+      overflow: visible;
+    }
+
+    /* Rotated labels for question type headers */
+    table.monitor-table th > .header-rotate {
+      display: inline-block;
+      transform: rotate(-55deg);
+      transform-origin: bottom left;
+      white-space: nowrap;
+      margin-bottom: 6px; /* add a little gap above the cells */
+      font-weight: 700;
+      color: var(--text, #0a2342);
+    }
+
+    /* First two headers stay normal, wider, and centered */
+    table.monitor-table th:nth-child(1),
+    table.monitor-table th:nth-child(2) {
+      height: auto;
+      padding: 0.45rem 0.5rem;
+      font-size: 0.8rem;
+      vertical-align: middle;
+    }
+
+    table.monitor-table th:nth-child(1) {
+      text-align: left;
+      min-width: 140px;
+    }
+
+    table.monitor-table th:nth-child(2) {
+      min-width: 80px;
+    }
 
     .monitor-name-cell {
       text-align: left;
       font-weight: 600;
       white-space: nowrap;
     }
+
     .slot {
       width: 1.4rem;
       height: 1.4rem;
@@ -68,20 +105,24 @@ table.monitor-table th > div.header-rotate {
       background: #f3f4f6;
       color: #4b5563;
     }
+
     .slot.empty {
       background: #f9fafb;
       border-style: dashed;
     }
+
     .slot.correct {
       background: #22c55e;
       color: white;
       border-color: #16a34a;
     }
+
     .slot.incorrect {
       background: #ef4444;
       color: white;
       border-color: #b91c1c;
     }
+
     .slot.partial {
       background: #facc15;
       color: #78350f;
@@ -93,6 +134,7 @@ table.monitor-table th > div.header-rotate {
       color: #6b7280;
       margin-top: 0.25rem;
     }
+
   </style>
 </head>
 <body>

@@ -1296,7 +1296,7 @@ if (questionTotalEl) {
 initQuestionNavStrip();
 
 
-// ====== MEDIA RENDERING (audio / video) ======
+// ====== MEDIA RENDERING (audio / video with subtitles support) ======
 function renderMediaIfPresent(q) {
   if (!q.media) return;
 
@@ -1306,24 +1306,30 @@ function renderMediaIfPresent(q) {
   const wrapper = document.createElement("div");
   wrapper.className = "question-media";
 
-  // Use <audio> for audio clips, <video> for video clips
-  const player =
-    type === "audio"
-      ? document.createElement("audio")
-      : document.createElement("video");
+  // 🔥 IMPORTANT:
+  // Browsers DO NOT show captions on <audio>.
+  // If captions exist, we MUST switch to <video>.
+  const useVideo = !!captions || type === "video";
+  const player = document.createElement(useVideo ? "video" : "audio");
 
   player.className = "question-media-player";
   player.controls = true;
   player.preload = "metadata";
   player.src = src;
 
-  // Only add a <track> if we actually have a captions file
+  // Make video-style audio player look nice
+  if (useVideo) {
+    player.style.width = "100%";
+    player.style.maxWidth = "520px";
+  }
+
+  // Add captions track if present
   if (captions) {
     const track = document.createElement("track");
-    track.kind = "subtitles";
+    track.kind = "captions"; 
     track.src = captions;
     track.srclang = "en";
-    track.label = label || "English captions";
+    track.label = label || "English";
     track.default = true;
     player.appendChild(track);
   }
@@ -1337,9 +1343,10 @@ function renderMediaIfPresent(q) {
     wrapper.appendChild(labelEl);
   }
 
-  // Put media block above the answer choices
+  // Insert media block into question area
   questionOptionsEl.appendChild(wrapper);
 }
+
 
 
 
