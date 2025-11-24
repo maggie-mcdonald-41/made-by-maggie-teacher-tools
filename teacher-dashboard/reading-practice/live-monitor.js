@@ -9,9 +9,21 @@
   const metaEl = document.getElementById("monitor-meta");
   const refreshBtn = document.getElementById("monitor-refresh");
 
+  // Hard-coded question types in order of your Reading Trainer
+  // (derived from script.js const questions = [...])
+  const QUESTION_TYPES = [
+    "mcq", "mcq", "multi", "multi", "order",
+    "order", "match", "match", "highlight", "highlight",
+    "dropdown", "dropdown", "classify", "classify", "partAB",
+    "partAB", "classify", "classify", "revise", "revise",
+    "mcq", "audio", "mcq", "audio", "mcq"
+  ];
+  const MAX_QUESTIONS = QUESTION_TYPES.length; // 25
+
   if (!SESSION_CODE) {
     if (gridEl) {
-      gridEl.innerHTML = "<p style='padding:1rem;'>Missing session code in the URL.</p>";
+      gridEl.innerHTML =
+        "<p style='padding:1rem;'>Missing session code in the URL.</p>";
     }
     return;
   }
@@ -36,24 +48,20 @@
         return "Part A/B";
       case "revise":
         return "Revise";
+      case "audio":
+        return "Audio";
+      case "video":
+        return "Video";
       default:
-        return type || "";
+        return "";
     }
-  }
-
-  function getHeaderLabel(index) {
-    // Prefer the global questions config if available
-    if (Array.isArray(window.questions) && window.questions[index]) {
-      const q = window.questions[index];
-      const typeLabel = mapTypeToLabel(q.type);
-      if (typeLabel) return typeLabel;
-    }
-    // Fallback
-    return "Q" + (index + 1);
   }
 
   async function fetchProgress() {
-    const url = new URL("/.netlify/functions/getReadingProgress", window.location.origin);
+    const url = new URL(
+      "/.netlify/functions/getReadingProgress",
+      window.location.origin
+    );
     url.searchParams.set("sessionCode", SESSION_CODE);
     if (CLASS_FILTER) {
       url.searchParams.set("classCode", CLASS_FILTER);
@@ -64,11 +72,10 @@
       throw new Error("Failed to load progress");
     }
     const data = await res.json();
-    // Our function returns { success, progress: [...] }
     return Array.isArray(data.progress) ? data.progress : data;
   }
 
-  function buildSlots(maxQuestions, questionResults) {
+  function buildSlots(questionResults) {
     const slots = [];
     const byIndex = new Map();
     // Expecting [{ index, isCorrect, partial, answered }] in questionResults.
@@ -78,7 +85,7 @@
       }
     });
 
-    for (let i = 0; i < maxQuestions; i++) {
+    for (let i = 0; i < MAX_QUESTIONS; i++) {
       const qr = byIndex.get(i);
       if (!qr || !qr.answered) {
         slots.push({ status: "empty" });
@@ -125,17 +132,11 @@
         return;
       }
 
-      // Determine max questions count from first doc or from global questions array
-      const first = progressDocs[0];
-      const maxQuestions =
-        (first && first.questionResults && first.questionResults.length) ||
-        (Array.isArray(window.questions) ? window.questions.length : 20);
-
       const rows = progressDocs
         .filter((doc) => (!CLASS_FILTER || doc.classCode === CLASS_FILTER))
         .map((doc) => {
           const questionResults = doc.questionResults || [];
-          const slots = buildSlots(maxQuestions, questionResults);
+          const slots = buildSlots(questionResults);
           const percent = computePercent(questionResults);
           return {
             name: doc.studentName || "Unnamed student",
@@ -156,12 +157,13 @@
         return;
       }
 
-      // Build table with a header row that shows QUESTION TYPE for each column.
+      // Build table with type header (top row) and numbers inside squares
       let html = "<table class='monitor-table'><thead><tr>";
       html += "<th>Student</th><th>% Correct</th>";
-      for (let i = 0; i < maxQuestions; i++) {
-        const label = getHeaderLabel(i);
-        html += `<th>${label}</th>`;
+      for (let i = 0; i < MAX_QUESTIONS; i++) {
+        const type = QUESTION_TYPES[i] || "";
+        const label = mapTypeToLabel(type);
+        html += `<th>${label || i + 1}</th>`;
       }
       html += "</tr></thead><tbody>";
 
@@ -172,7 +174,6 @@
         }</td>`;
         html += `<td>${row.percent}%</td>`;
         row.slots.forEach((slot, idx) => {
-          // Number is inside the colored square
           html += `<td><div class="slot ${slot.status}">${idx + 1}</div></td>`;
         });
         html += "</tr>";
@@ -199,7 +200,7 @@
     refreshBtn.addEventListener("click", render);
   }
 
-  // Initial render + auto-refresh every 10s
+  // Auto-refresh every 10s
   render();
   setInterval(render, 10000);
 })();

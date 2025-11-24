@@ -10,7 +10,8 @@ exports.handler = async function (event, context) {
 
   try {
     const { getStore, connectLambda } = await import("@netlify/blobs");
-    // Initialize Netlify Blobs for Functions v1
+
+    // Required for Netlify Blobs in Functions v1
     connectLambda(event);
     const store = getStore("reading-attempts");
 
@@ -18,6 +19,7 @@ exports.handler = async function (event, context) {
     const rawSession = (params.sessionCode || "").trim();
     const rawClass = (params.classCode || "").trim();
 
+    // --- Sanitize for folder prefixes ---
     const sanitizeFragment = (value) =>
       String(value || "")
         .trim()
@@ -26,41 +28,48 @@ exports.handler = async function (event, context) {
 
     let attemptsRaw = [];
 
+    // --- If session filter present, read only prefixed folder ---
     if (rawSession) {
-      // Fetch ONLY attempts for this session
       const safeSession = sanitizeFragment(rawSession);
+
       const list = await store.list({ prefix: `session/${safeSession}/` });
       const entries = list.blobs || list || [];
 
       for (const item of entries) {
-        const data = await store.getJSON(item.key);
+        if (!item.key.endsWith(".json")) continue;
+
+        // FIXED: no getJSON → use get(..., { type: "json" })
+        const data = await store.get(item.key, { type: "json" });
         if (data) {
           attemptsRaw.push({ key: item.key, data });
         }
       }
     } else {
-      // No session filter -> fetch all (fine for your current scale)
+      // No session filter → load all attempts (small scale = ok)
       const list = await store.list();
       const entries = list.blobs || list || [];
 
       for (const item of entries) {
         if (!item.key.endsWith(".json")) continue;
-        const data = await store.getJSON(item.key);
+
+        const data = await store.get(item.key, { type: "json" });
         if (data) {
           attemptsRaw.push({ key: item.key, data });
         }
       }
     }
 
-    // Normalize shape for the dashboard:
+    // ---------- Normalize for Teacher Dashboard ----------
     let attempts = attemptsRaw.map(({ key, data }) => {
       const totalQuestions = Number(
         data.totalQuestions ?? data.numQuestions ?? 0
       );
+
       const numCorrect = Number(data.numCorrect ?? 0);
       const numIncorrect = Number(
         data.numIncorrect ?? (totalQuestions ? totalQuestions - numCorrect : 0)
       );
+
       const accuracy =
         totalQuestions > 0
           ? Math.round((numCorrect / totalQuestions) * 100)
@@ -74,17 +83,22 @@ exports.handler = async function (event, context) {
         rawSession ||
         (data.sessionInfo && data.sessionInfo.sessionCode) ||
         "";
+
       const classCode =
         data.classCode ||
         (data.sessionInfo && data.sessionInfo.classCode) ||
         "";
+
       const studentName =
-        data.studentName || (data.student && data.student.name) || "";
+        data.studentName ||
+        (data.student && data.student.name) ||
+        "";
 
       const startedAt =
         data.startedAt ||
         (data.sessionInfo && data.sessionInfo.startedAt) ||
         null;
+
       const finishedAt =
         data.finishedAt ||
         data.storedAt ||
@@ -107,15 +121,16 @@ exports.handler = async function (event, context) {
       };
     });
 
-    // Optional filter: classCode
+    // Filter by class if requested
     if (rawClass) {
       const classUpper = rawClass.toUpperCase();
       attempts = attempts.filter(
-        (a) => (a.classCode || "").toUpperCase() === classUpper
+        (a) =>
+          (a.classCode || "").toUpperCase() === classUpper
       );
     }
 
-    // Sort newest first (by finishedAt, then startedAt)
+    // Sort newest → oldest
     attempts.sort((a, b) => {
       const aTime = (a.finishedAt || a.startedAt || "").toString();
       const bTime = (b.finishedAt || b.startedAt || "").toString();
