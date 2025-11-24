@@ -13,7 +13,7 @@ exports.handler = async function (event, context) {
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
-      body: "Method Not Allowed"
+      body: "Method Not Allowed",
     };
   }
 
@@ -26,10 +26,11 @@ exports.handler = async function (event, context) {
     if (!sessionCode || !studentKey) {
       return {
         statusCode: 400,
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           success: false,
-          error: "sessionCode and studentKey are required"
-        })
+          error: "sessionCode and studentKey are required",
+        }),
       };
     }
 
@@ -59,23 +60,33 @@ exports.handler = async function (event, context) {
         : [],
 
       // Optional Google auth info
-      user: payload.user || null
+      user: payload.user || null,
     };
+
+    console.log("[saveReadingProgress] Writing key:", key);
 
     await store.setJSON(key, dataToStore);
 
+    console.log("[saveReadingProgress] Saved OK:", key);
+
     return {
       statusCode: 200,
-      body: JSON.stringify({ success: true })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ success: true }),
     };
   } catch (err) {
-    console.error("[saveReadingProgress] Error:", err);
+    console.error("[saveReadingProgress] Error details:", {
+      message: err.message,
+      stack: err.stack,
+    });
+
     return {
       statusCode: 500,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         success: false,
-        error: "Failed to save progress"
-      })
+        error: err.message || "Failed to save progress",
+      }),
     };
   }
 };
