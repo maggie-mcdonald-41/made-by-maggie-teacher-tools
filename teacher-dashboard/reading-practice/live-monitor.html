@@ -23,25 +23,34 @@
       border: 1px solid var(--gray-light, #d1d5db);
       background: var(--bg-card, #fff);
     }
-    table.monitor-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.8rem;          /* slightly smaller so 25 columns fit */
-      table-layout: fixed;        /* more even column widths */
-    }
-    table.monitor-table th,
-    table.monitor-table td {
-      padding: 0.25rem 0.35rem;
-      border-bottom: 1px solid rgba(148, 163, 184, 0.4);
-      text-align: center;
-      white-space: nowrap;
-    }
-    table.monitor-table th {
-      position: sticky;
-      top: 0;
-      background: var(--bg-card, #fff);
-      z-index: 1;
-    }
+table.monitor-table th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-card, #fff);
+  z-index: 2;
+
+  /* NEW: angled header text */
+  height: 80px;                 /* gives room for the slanted text */
+  vertical-align: bottom;        /* keeps slanted text aligned at the bottom */
+  white-space: nowrap;
+  font-size: 0.7rem;
+  padding: 0;
+
+  /* Prevent the rotated text from spilling outside */
+  overflow: visible;
+}
+
+table.monitor-table th > div.header-rotate {
+  transform: rotate(-55deg);   /* angle upward and left */
+  transform-origin: bottom left;
+  white-space: nowrap;
+  display: inline-block;
+  padding: 0;
+  margin: 0;
+  font-weight: 700;
+  color: var(--text, #0a2342);
+}
+
     .monitor-name-cell {
       text-align: left;
       font-weight: 600;

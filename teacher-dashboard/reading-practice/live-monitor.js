@@ -9,8 +9,15 @@
   const metaEl = document.getElementById("monitor-meta");
   const refreshBtn = document.getElementById("monitor-refresh");
 
-  // Hard-coded question types in order of your Reading Trainer
-  // (derived from script.js const questions = [...])
+  if (!SESSION_CODE) {
+    if (gridEl) {
+      gridEl.innerHTML =
+        "<p style='padding:1rem;'>Missing session code in the URL.</p>";
+    }
+    return;
+  }
+
+  // Question types in order for your reading trainer (1–25)
   const QUESTION_TYPES = [
     "mcq", "mcq", "multi", "multi", "order",
     "order", "match", "match", "highlight", "highlight",
@@ -20,40 +27,20 @@
   ];
   const MAX_QUESTIONS = QUESTION_TYPES.length; // 25
 
-  if (!SESSION_CODE) {
-    if (gridEl) {
-      gridEl.innerHTML =
-        "<p style='padding:1rem;'>Missing session code in the URL.</p>";
-    }
-    return;
-  }
-
   function mapTypeToLabel(type) {
     switch (type) {
-      case "mcq":
-        return "MCQ";
-      case "multi":
-        return "Multi";
-      case "order":
-        return "Order";
-      case "match":
-        return "Match";
-      case "highlight":
-        return "Highlight";
-      case "dropdown":
-        return "Dropdown";
-      case "classify":
-        return "Classify";
-      case "partAB":
-        return "Part A/B";
-      case "revise":
-        return "Revise";
-      case "audio":
-        return "Audio";
-      case "video":
-        return "Video";
-      default:
-        return "";
+      case "mcq": return "MCQ";
+      case "multi": return "Multi";
+      case "order": return "Order";
+      case "match": return "Match";
+      case "highlight": return "Highlight";
+      case "dropdown": return "Dropdown";
+      case "classify": return "Classify";
+      case "partAB": return "Part A/B";
+      case "revise": return "Revise";
+      case "audio": return "Audio";
+      case "video": return "Video";
+      default: return "";
     }
   }
 
@@ -72,43 +59,64 @@
       throw new Error("Failed to load progress");
     }
     const data = await res.json();
+    // Our function returns { success, progress: [...] }
     return Array.isArray(data.progress) ? data.progress : data;
   }
 
+  // Convert questionResults → array of { status } for each question 1..25
   function buildSlots(questionResults) {
     const slots = [];
-    const byIndex = new Map();
-    // Expecting [{ index, isCorrect, partial, answered }] in questionResults.
+    const byId = new Map();
+
+    // questionResults entries look like:
+    // { questionId, type, isCorrect, raw: {...} }
     (questionResults || []).forEach((qr) => {
-      if (typeof qr.index === "number") {
-        byIndex.set(qr.index, qr);
+      if (typeof qr.questionId === "number") {
+        byId.set(qr.questionId, qr);
       }
     });
 
-    for (let i = 0; i < MAX_QUESTIONS; i++) {
-      const qr = byIndex.get(i);
-      if (!qr || !qr.answered) {
+    for (let i = 1; i <= MAX_QUESTIONS; i++) {
+      const qr = byId.get(i);
+
+      if (!qr) {
+        // no entry logged yet → not answered
         slots.push({ status: "empty" });
-      } else if (qr.partial) {
-        slots.push({ status: "partial" });
-      } else if (qr.isCorrect) {
+        continue;
+      }
+
+      // If you later add partial credit (e.g. qr.raw.score between 0 and 1),
+      // you can check that here and use "partial".
+      const isCorrect = !!qr.isCorrect;
+      if (isCorrect) {
         slots.push({ status: "correct" });
       } else {
         slots.push({ status: "incorrect" });
       }
     }
+
     return slots;
   }
 
+  // Percent correct based on questionResults shape from reporting.js
   function computePercent(questionResults) {
-    let answered = 0;
-    let correct = 0;
-    (questionResults || []).forEach((qr) => {
-      if (qr.answered) {
-        answered++;
-        if (qr.isCorrect) correct++;
+    if (!Array.isArray(questionResults) || !questionResults.length) return 0;
+
+    const byId = new Map();
+    questionResults.forEach((qr) => {
+      if (typeof qr.questionId === "number") {
+        byId.set(qr.questionId, qr);
       }
     });
+
+    let answered = 0;
+    let correct = 0;
+
+    byId.forEach((qr) => {
+      answered++;
+      if (qr.isCorrect) correct++;
+    });
+
     if (answered === 0) return 0;
     return Math.round((correct / answered) * 100);
   }
@@ -138,6 +146,7 @@
           const questionResults = doc.questionResults || [];
           const slots = buildSlots(questionResults);
           const percent = computePercent(questionResults);
+
           return {
             name: doc.studentName || "Unnamed student",
             classCode: doc.classCode || "",
@@ -157,13 +166,13 @@
         return;
       }
 
-      // Build table with type header (top row) and numbers inside squares
+      // Build table with question-type header row
       let html = "<table class='monitor-table'><thead><tr>";
       html += "<th>Student</th><th>% Correct</th>";
       for (let i = 0; i < MAX_QUESTIONS; i++) {
         const type = QUESTION_TYPES[i] || "";
-        const label = mapTypeToLabel(type);
-        html += `<th>${label || i + 1}</th>`;
+        const label = mapTypeToLabel(type) || (i + 1);
+    html += `<th><div class="header-rotate">${label}</div></th>`;
       }
       html += "</tr></thead><tbody>";
 
@@ -200,7 +209,7 @@
     refreshBtn.addEventListener("click", render);
   }
 
-  // Auto-refresh every 10s
+  // Initial render + auto-refresh every 10s
   render();
   setInterval(render, 10000);
 })();
