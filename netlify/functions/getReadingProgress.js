@@ -42,14 +42,16 @@ exports.handler = async function (event, context) {
     if (studentKey) {
       const safeStudentKey = sanitizeFragment(studentKey);
       const key = `session/${safeSession}/${safeStudentKey}.json`;
-      const data = await store.getJSON(key);
+
+      // 🔧 FIX: use get(..., { type: "json" }) instead of getJSON
+      const data = await store.get(key, { type: "json" });
 
       if (!data) {
         return {
           statusCode: 404,
           body: JSON.stringify({
             success: false,
-            error: "No progress found for that student/session",
+            error: "No progress found for that student in this session",
           }),
         };
       }
@@ -74,7 +76,9 @@ exports.handler = async function (event, context) {
 
     for (const item of entries) {
       if (!item.key.endsWith(".json")) continue;
-      const data = await store.getJSON(item.key);
+
+      // 🔧 FIX: use get(..., { type: "json" }) instead of getJSON
+      const data = await store.get(item.key, { type: "json" });
       if (!data) continue;
 
       allProgress.push({
