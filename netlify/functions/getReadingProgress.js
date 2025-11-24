@@ -33,7 +33,9 @@ exports.handler = async function (event, context) {
     }
 
     const safeSession = sanitizeFragment(sessionCode);
-    const { getStore, connectLambda } = require("@netlify/blobs");
+
+    // Initialize Netlify Blobs for Functions v1
+    connectLambda(event);
     const store = getStore("reading-progress");
 
     if (studentKey) {
@@ -42,41 +44,62 @@ exports.handler = async function (event, context) {
       const key = `session/${safeSession}/${safeStudentKey}.json`;
       const data = await store.getJSON(key);
 
-      return {
-        statusCode: 200,
-        body: JSON.stringify({
-          success: true,
-          found: !!data,
-          progress: data || null
-        })
-      };
-    } else {
-      // All students in this session
-      const list = await store.list({ prefix: `session/${safeSession}/` });
-      const entries = list.blobs || list || [];
-
-      const all = [];
-      for (const item of entries) {
-        const data = await store.getJSON(item.key);
-        if (data) all.push(data);
+      if (!data) {
+        return {
+          statusCode: 404,
+          body: JSON.stringify({
+            success: false,
+            error: "No progress found for that student/session"
+          })
+        };
       }
 
       return {
         statusCode: 200,
         body: JSON.stringify({
           success: true,
-          found: all.length > 0,
-          progress: all
+          mode: "single",
+          sessionCode,
+          studentKey: safeStudentKey,
+          progress: data
         })
       };
     }
+
+    // All students in a session
+    const list = await store.list({ prefix: `session/${safeSession}/` });
+    const entries = list.blobs || list || [];
+
+    const allProgress = [];
+
+    for (const item of entries) {
+      if (!item.key.endsWith(".json")) continue;
+      const data = await store.getJSON(item.key);
+      if (!data) continue;
+
+      allProgress.push({
+        key: item.key,
+        progress: data
+      });
+    }
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        success: true,
+        mode: "session",
+        sessionCode,
+        progress: allProgress
+      })
+    };
   } catch (err) {
-    console.error("[getReadingProgress] Error:", err);
+    console.error("[getReadingProgress] Fatal error:", err);
     return {
       statusCode: 500,
       body: JSON.stringify({
         success: false,
-        error: "Failed to load progress"
+        error: err.message,
+        stack: err.stack
       })
     };
   }

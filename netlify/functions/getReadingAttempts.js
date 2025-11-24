@@ -9,8 +9,9 @@ exports.handler = async function (event, context) {
   }
 
   try {
-    const { getStore } = await import("@netlify/blobs");
-    connectLambda(event); 
+    const { getStore, connectLambda } = await import("@netlify/blobs");
+    // Initialize Netlify Blobs for Functions v1
+    connectLambda(event);
     const store = getStore("reading-attempts");
 
     const params = event.queryStringParameters || {};
