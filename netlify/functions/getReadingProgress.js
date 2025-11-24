@@ -13,7 +13,7 @@ exports.handler = async function (event, context) {
   if (event.httpMethod !== "GET") {
     return {
       statusCode: 405,
-      body: "Method Not Allowed"
+      body: "Method Not Allowed",
     };
   }
 
@@ -27,8 +27,8 @@ exports.handler = async function (event, context) {
         statusCode: 400,
         body: JSON.stringify({
           success: false,
-          error: "sessionCode is required"
-        })
+          error: "sessionCode is required",
+        }),
       };
     }
 
@@ -38,8 +38,8 @@ exports.handler = async function (event, context) {
     connectLambda(event);
     const store = getStore("reading-progress");
 
+    // ----- SINGLE STUDENT MODE -----
     if (studentKey) {
-      // Single student in a session
       const safeStudentKey = sanitizeFragment(studentKey);
       const key = `session/${safeSession}/${safeStudentKey}.json`;
       const data = await store.getJSON(key);
@@ -49,8 +49,8 @@ exports.handler = async function (event, context) {
           statusCode: 404,
           body: JSON.stringify({
             success: false,
-            error: "No progress found for that student/session"
-          })
+            error: "No progress found for that student/session",
+          }),
         };
       }
 
@@ -61,12 +61,12 @@ exports.handler = async function (event, context) {
           mode: "single",
           sessionCode,
           studentKey: safeStudentKey,
-          progress: data
-        })
+          progress: data,
+        }),
       };
     }
 
-    // All students in a session
+    // ----- WHOLE SESSION MODE -----
     const list = await store.list({ prefix: `session/${safeSession}/` });
     const entries = list.blobs || list || [];
 
@@ -79,7 +79,7 @@ exports.handler = async function (event, context) {
 
       allProgress.push({
         key: item.key,
-        progress: data
+        progress: data,
       });
     }
 
@@ -89,18 +89,17 @@ exports.handler = async function (event, context) {
         success: true,
         mode: "session",
         sessionCode,
-        progress: allProgress
-      })
+        progress: allProgress,
+      }),
     };
   } catch (err) {
-    console.error("[getReadingProgress] Fatal error:", err);
+    console.error("[getReadingProgress] Error:", err);
     return {
       statusCode: 500,
       body: JSON.stringify({
         success: false,
-        error: err.message,
-        stack: err.stack
-      })
+        error: err.message || "Failed to load progress",
+      }),
     };
   }
 };

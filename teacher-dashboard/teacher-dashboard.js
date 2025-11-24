@@ -1589,6 +1589,7 @@ function startNewSession() {
   } catch (e) {
     // non-fatal
   }
+    enableMonitorButton(rawSession, rawClass);
 }
 
 
