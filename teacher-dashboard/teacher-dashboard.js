@@ -1649,17 +1649,17 @@ function copyCoTeacherLink() {
 
   const text = coTeacherLinkInput.value;
 
-  const showCopied = (message = "Copied!") => {
-    if (!copyCoTeacherStatusEl) return;
-    copyCoTeacherStatusEl.textContent = message;
-    copyCoTeacherStatusEl.style.opacity = "1";
-    copyCoTeacherStatusEl.style.visibility = "visible";
-    setTimeout(() => {
-      copyCoTeacherStatusEl.style.opacity = "0";
-      copyCoTeacherStatusEl.style.visibility = "hidden";
-      copyCoTeacherStatusEl.textContent = "";
-    }, 1800);
-  };
+const showCopied = (message = "Copied!") => {
+  if (!copyCoTeacherStatusEl) return;
+  copyCoTeacherStatusEl.textContent = "";
+  copyCoTeacherStatusEl.style.opacity = "1";
+  copyCoTeacherStatusEl.style.visibility = "visible";
+  setTimeout(() => {
+    copyCoTeacherStatusEl.style.opacity = "0";
+    copyCoTeacherStatusEl.style.visibility = "hidden";
+    copyCoTeacherStatusEl.textContent = "";
+  }, 1800);
+};
 
 
   if (navigator.clipboard && navigator.clipboard.writeText) {

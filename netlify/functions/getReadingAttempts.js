@@ -19,8 +19,6 @@ exports.handler = async function (event, context) {
     const rawSession = (params.sessionCode || "").trim();
     const rawClass = (params.classCode || "").trim();
 
-
-
     // --- Sanitize for folder prefixes ---
     const sanitizeFragment = (value) =>
       String(value || "")
@@ -40,7 +38,6 @@ exports.handler = async function (event, context) {
       for (const item of entries) {
         if (!item.key.endsWith(".json")) continue;
 
-        // FIXED: no getJSON → use get(..., { type: "json" })
         const data = await store.get(item.key, { type: "json" });
         if (data) {
           attemptsRaw.push({ key: item.key, data });
@@ -107,6 +104,17 @@ exports.handler = async function (event, context) {
         (data.sessionInfo && data.sessionInfo.finishedAt) ||
         null;
 
+      // NEW: normalize assessment metadata
+      const assessmentName =
+        data.assessmentName ||
+        (data.sessionInfo && data.sessionInfo.assessmentName) ||
+        "";
+
+      const assessmentType =
+        data.assessmentType ||
+        (data.sessionInfo && data.sessionInfo.assessmentType) ||
+        "";
+
       return {
         attemptId: data.attemptId || key,
         studentName,
@@ -120,6 +128,9 @@ exports.handler = async function (event, context) {
         accuracy,
         bySkill,
         byType,
+        // NEW fields returned to the dashboard:
+        assessmentName,
+        assessmentType,
       };
     });
 
@@ -127,8 +138,7 @@ exports.handler = async function (event, context) {
     if (rawClass) {
       const classUpper = rawClass.toUpperCase();
       attempts = attempts.filter(
-        (a) =>
-          (a.classCode || "").toUpperCase() === classUpper
+        (a) => (a.classCode || "").toUpperCase() === classUpper
       );
     }
 
