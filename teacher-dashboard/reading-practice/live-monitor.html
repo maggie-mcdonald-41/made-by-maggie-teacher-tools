@@ -5,137 +5,149 @@
   <title>Live Session Monitor | Reading Practice</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="styles.css" />
-  <style>
-       .monitor-shell {
-      max-width: 1100px;
-      margin: 1.5rem auto;
-      padding: 0 1rem 2rem;
-    }
+<style>
+  .monitor-shell {
+    max-width: 1100px;
+    margin: 1.5rem auto;
+    padding: 0 1rem 2rem;
+  }
 
-    .monitor-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-    }
+  .monitor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
 
-    .monitor-grid {
-      overflow-x: auto;
-      border-radius: 12px;
-      border: 1px solid var(--gray-light, #d1d5db);
-      background: var(--bg-card, #fff);
-      padding: 0.75rem 1rem;
-    }
+  .monitor-grid {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid var(--gray-light, #d1d5db);
+    background: var(--bg-card, #fff);
+    padding: 1rem 1.25rem 1.25rem;
+  }
 
-    /* TABLE LAYOUT */
-    table.monitor-table {
-      width: 100%;
-      border-collapse: collapse;
-      table-layout: fixed;
-      font-size: 0.8rem;
-    }
+  /* TABLE LAYOUT */
+  table.monitor-table {
+    /* let the columns size to their content */
+    table-layout: auto;
+    border-collapse: collapse;
+    font-size: 0.8rem;
 
-    table.monitor-table th,
-    table.monitor-table td {
-      border-bottom: 1px solid rgba(148, 163, 184, 0.3);
-      text-align: center;
-      padding: 0.3rem 0.25rem;
-      white-space: nowrap;
-    }
+    /* fill the container but allow horizontal scroll if needed */
+    width: max-content;
+    min-width: 100%;
+  }
 
-    /* Sticky header row */
-    table.monitor-table th {
-      position: sticky;
-      top: 0;
-      background: var(--bg-card, #fff);
-      z-index: 2;
+  table.monitor-table th,
+  table.monitor-table td {
+    border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+    text-align: center;
+    padding: 0.35rem 0.25rem;
+    white-space: nowrap;
+  }
 
-      /* room for angled text for question columns */
-      height: 80px;
-      vertical-align: bottom;
-      font-size: 0.7rem;
-      padding: 0;
-      overflow: visible;
-    }
+  /* Sticky header row */
+  table.monitor-table th {
+    position: sticky;
+    top: 0;
+    background: var(--bg-card, #fff);
+    z-index: 2;
 
-    /* Rotated labels for question type headers */
-    table.monitor-table th > .header-rotate {
-      display: inline-block;
-      transform: rotate(-55deg);
-      transform-origin: bottom left;
-      white-space: nowrap;
-      margin-bottom: 6px; /* add a little gap above the cells */
-      font-weight: 700;
-      color: var(--text, #0a2342);
-    }
+    /* room for angled text for question columns */
+    height: 90px;
+    vertical-align: bottom;
+    font-size: 0.7rem;
+    padding: 0;
+    overflow: visible;
+  }
 
-    /* First two headers stay normal, wider, and centered */
-    table.monitor-table th:nth-child(1),
-    table.monitor-table th:nth-child(2) {
-      height: auto;
-      padding: 0.45rem 0.5rem;
-      font-size: 0.8rem;
-      vertical-align: middle;
-    }
+  /* First two headers: normal, wider, centered */
+  table.monitor-table th:nth-child(1),
+  table.monitor-table th:nth-child(2) {
+    height: auto;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.8rem;
+    vertical-align: middle;
+  }
 
-    table.monitor-table th:nth-child(1) {
-      text-align: left;
-      min-width: 140px;
-    }
+  table.monitor-table th:nth-child(1) {
+    text-align: left;
+    min-width: 140px;
+  }
 
-    table.monitor-table th:nth-child(2) {
-      min-width: 80px;
-    }
+  table.monitor-table th:nth-child(2) {
+    text-align: center;
+    min-width: 80px;
+  }
 
-    .monitor-name-cell {
-      text-align: left;
-      font-weight: 600;
-      white-space: nowrap;
-    }
+  /* Question columns: fixed-ish width so labels & pills line up */
+  table.monitor-table th:nth-child(n + 3) {
+    width: 2.4rem;
+  }
 
-    .slot {
-      width: 1.4rem;
-      height: 1.4rem;
-      border-radius: 6px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.65rem;
-      border: 1px solid rgba(148, 163, 184, 0.6);
-      background: #f3f4f6;
-      color: #4b5563;
-    }
+  /* Rotated labels for question type headers */
+  table.monitor-table th:nth-child(n + 3) > .header-rotate {
+    display: block;
+    margin: 0 auto 8px;
 
-    .slot.empty {
-      background: #f9fafb;
-      border-style: dashed;
-    }
+    transform: rotate(-55deg);
+    transform-origin: bottom center; /* center over the pill */
+    white-space: nowrap;
+    font-weight: 700;
+    color: var(--text, #0a2342);
+  }
 
-    .slot.correct {
-      background: #22c55e;
-      color: white;
-      border-color: #16a34a;
-    }
+  .monitor-name-cell {
+    text-align: left;
+    font-weight: 600;
+    white-space: nowrap;
+  }
 
-    .slot.incorrect {
-      background: #ef4444;
-      color: white;
-      border-color: #b91c1c;
-    }
+  .slot {
+    width: 1.4rem;
+    height: 1.4rem;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    border: 1px solid rgba(148, 163, 184, 0.6);
+    background: #f3f4f6;
+    color: #4b5563;
+    margin: 0 auto; /* center in the cell */
+  }
 
-    .slot.partial {
-      background: #facc15;
-      color: #78350f;
-      border-color: #eab308;
-    }
+  .slot.empty {
+    background: #f9fafb;
+    border-style: dashed;
+  }
 
-    .monitor-meta {
-      font-size: 0.8rem;
-      color: #6b7280;
-      margin-top: 0.25rem;
-    }
+  .slot.correct {
+    background: #22c55e;
+    color: white;
+    border-color: #16a34a;
+  }
 
-  </style>
+  .slot.incorrect {
+    background: #ef4444;
+    color: white;
+    border-color: #b91c1c;
+  }
+
+  .slot.partial {
+    background: #facc15;
+    color: #78350f;
+    border-color: #eab308;
+  }
+
+  .monitor-meta {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+  }
+</style>
+
 </head>
 <body>
   <div class="monitor-shell">

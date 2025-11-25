@@ -1,5 +1,7 @@
 // netlify/functions/getReadingAttempts.js
 
+const { getStore, connectLambda } = require("@netlify/blobs");
+
 exports.handler = async function (event, context) {
   if (event.httpMethod !== "GET") {
     return {
@@ -9,8 +11,6 @@ exports.handler = async function (event, context) {
   }
 
   try {
-    const { getStore, connectLambda } = await import("@netlify/blobs");
-
     // Required for Netlify Blobs in Functions v1
     connectLambda(event);
     const store = getStore("reading-attempts");
@@ -18,6 +18,8 @@ exports.handler = async function (event, context) {
     const params = event.queryStringParameters || {};
     const rawSession = (params.sessionCode || "").trim();
     const rawClass = (params.classCode || "").trim();
+
+
 
     // --- Sanitize for folder prefixes ---
     const sanitizeFragment = (value) =>

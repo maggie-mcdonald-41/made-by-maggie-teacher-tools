@@ -2,6 +2,9 @@
 
 // ====== HIGHLIGHTING STATE ======
 let currentHighlightColor = "yellow"; // default color
+// ====== ASSESSMENT LABEL ======
+const ASSESSMENT_NAME = "School Start Time";
+
 
 function setHighlightColor(color) {
   currentHighlightColor = color;
@@ -871,7 +874,8 @@ function beginTrainerSession({ studentName, classCode, sessionCode }) {
     RP_REPORT.setSessionInfo({
       studentName: cleanName,
       classCode: cleanClass,
-      sessionCode: cleanSession
+      sessionCode: cleanSession,
+      assessmentName: ASSESSMENT_NAME
     });
   }
 
@@ -2168,7 +2172,11 @@ function renderHighlight(q) {
     } else {
       setFeedback("Some evidence is missing or incorrect. Reread and think about which sentences show feelings or opinions.", false);
     }
-
+    logQuestionResult(q, {
+      isCorrect: allCorrect,
+      selectedSentenceIds: Array.from(selectedSet)
+    });
+    
     checkAnswerBtn.disabled = true;
     nextQuestionBtn.disabled = false;
   };

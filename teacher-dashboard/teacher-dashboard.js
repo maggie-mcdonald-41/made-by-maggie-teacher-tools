@@ -1057,6 +1057,12 @@ function renderSkillHeatmap(attempts) {
 
 // ---------- CORE DASHBOARD RENDERING ----------
 function renderDashboard(attempts) {
+  const assessmentLabelEl = document.getElementById("summary-assessment-name");
+if (assessmentLabelEl) {
+    const first = attempts[0];
+    assessmentLabelEl.textContent = first?.assessmentName || "Unnamed Assessment";
+}
+
   // Keep a copy for CSV exports
   CURRENT_ATTEMPTS = attempts.slice();
   const hasData = CURRENT_ATTEMPTS.length > 0;
