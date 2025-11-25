@@ -76,18 +76,20 @@
    * Example payload:
    *   { studentName: "Ava", classCode: "3rd Period", sessionCode: "ABC123" }
    */
-  function setSessionInfo(info = {}) {
-    state.sessionInfo = {
-      studentName: cleanString(info.studentName),
-      classCode: cleanString(info.classCode),
-      sessionCode: cleanString(info.sessionCode)
-    };
+function setSessionInfo(info = {}) {
+  state.sessionInfo = {
+    studentName: cleanString(info.studentName),
+    classCode: cleanString(info.classCode),
+    sessionCode: cleanString(info.sessionCode),
+    assessmentName: cleanString(info.assessmentName)
+  };
 
-    if (!state.startedAt) {
-      state.startedAt = new Date().toISOString();
-    }
-    console.log("[RP_REPORT] Session info set:", state.sessionInfo);
+  if (!state.startedAt) {
+    state.startedAt = new Date().toISOString();
   }
+  console.log("[RP_REPORT] Session info set:", state.sessionInfo);
+}
+
 
   /**
    * Called from script.js whenever a question is checked.

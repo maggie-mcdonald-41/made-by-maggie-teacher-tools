@@ -2742,6 +2742,7 @@ async function autosaveProgress() {
     sessionCode,
     studentName: info.studentName || "",
     classCode: info.classCode || "",
+    assessmentName: info.assessmentName || "",
     // progress
     startedAt: state.startedAt,
     lastSavedAt: new Date().toISOString(),
