@@ -1610,11 +1610,14 @@ function copySessionLink() {
   const showCopied = (message = "Copied!") => {
     if (!copyLinkStatusEl) return;
     copyLinkStatusEl.textContent = message;
-    copyLinkStatusEl.style.display = "inline";
+    copyLinkStatusEl.style.opacity = "1";
+    copyLinkStatusEl.style.visibility = "visible";
     setTimeout(() => {
-      copyLinkStatusEl.style.display = "none";
+      copyLinkStatusEl.style.opacity = "0";
+      copyLinkStatusEl.style.visibility = "hidden";
     }, 1800);
   };
+
 
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard
@@ -1648,11 +1651,14 @@ function copyCoTeacherLink() {
   const showCopied = (message = "Copied!") => {
     if (!copyCoTeacherStatusEl) return;
     copyCoTeacherStatusEl.textContent = message;
-    copyCoTeacherStatusEl.style.display = "inline";
+    copyCoTeacherStatusEl.style.opacity = "1";
+    copyCoTeacherStatusEl.style.visibility = "visible";
     setTimeout(() => {
-      copyCoTeacherStatusEl.style.display = "none";
+      copyCoTeacherStatusEl.style.opacity = "0";
+      copyCoTeacherStatusEl.style.visibility = "hidden";
     }, 1800);
   };
+
 
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard

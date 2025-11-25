@@ -2693,15 +2693,43 @@ if (SESSION_CODE && questionStemEl && questionOptionsEl && identityModalEl) {
 
 // ====== PROGRESS AUTOSAVE ======
 
-// Create a stable key for this student:
-// - If signed in with Google: use their Google "sub" ID
-// - Otherwise: generate an anonymous ID and keep it in localStorage
+// Build a stable key so each student (name + class + session)
+// gets their own row in the live monitor.
 function getStudentKey() {
+  // If they're signed in with Google, keep using the Google sub.
   const user = window.RP_AUTH && RP_AUTH.currentUser;
   if (user && user.sub) {
     return `google-${user.sub}`;
   }
 
+  // Otherwise, derive the key from session info: session + class + name
+  try {
+    if (window.RP_REPORT && RP_REPORT._debugGetState) {
+      const state = RP_REPORT._debugGetState();
+      const info = state.sessionInfo || {};
+
+      const safe = (value, fallback) =>
+        (value || fallback)
+          .toString()
+          .trim()
+          .toLowerCase()
+          .replace(/[^\w]+/g, "_");
+
+      const session = safe(info.sessionCode, "nosession");
+      const name = safe(info.studentName, "noname");
+      const cls = safe(info.classCode, "noclass");
+
+      // Example: sess_new_test__class_6a__name_maya_j
+      return `sess_${session}__class_${cls}__name_${name}`;
+    }
+  } catch (e) {
+    console.warn(
+      "[RP] Failed to build name-based studentKey, falling back to anon id",
+      e
+    );
+  }
+
+  // Final fallback: old anon-id behavior, just in case sessionInfo isn't set.
   const KEY = "rp_anon_id";
   try {
     let anon = localStorage.getItem(KEY);
@@ -2711,10 +2739,11 @@ function getStudentKey() {
     }
     return anon;
   } catch (_) {
-    // No localStorage (very rare)
     return "anon-" + Math.random().toString(36).slice(2);
   }
 }
+
+
 
 // Simple debounce so we don't spam the server
 function debounce(fn, delay) {

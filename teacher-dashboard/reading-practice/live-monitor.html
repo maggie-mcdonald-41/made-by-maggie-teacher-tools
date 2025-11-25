@@ -7,145 +7,118 @@
   <link rel="stylesheet" href="styles.css" />
 <style>
   .monitor-shell {
-    max-width: 1100px;
-    margin: 1.5rem auto;
-    padding: 0 1rem 2rem;
-  }
+  max-width: 100%;
+  margin: 1rem auto;
+  padding: 0 .25rem 1.5rem;
+}
 
-  .monitor-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-  }
+.monitor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: .5rem;
+}
 
-  .monitor-grid {
-    overflow-x: auto;
-    border-radius: 12px;
-    border: 1px solid var(--gray-light, #d1d5db);
-    background: var(--bg-card, #fff);
-    padding: 1rem 1.25rem 1.25rem;
-  }
+/* Less padding so all columns fit comfortably */
+.monitor-grid {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid var(--gray-light, #d1d5db);
+  background: var(--bg-card, #fff);
+  padding: .5rem .5rem;
+}
 
-  /* TABLE LAYOUT */
-  table.monitor-table {
-    /* let the columns size to their content */
-    table-layout: auto;
-    border-collapse: collapse;
-    font-size: 0.8rem;
+table.monitor-table {
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  width: 100%;
+}
 
-    /* fill the container but allow horizontal scroll if needed */
-    width: max-content;
-    min-width: 100%;
-  }
+/* Smaller cell padding */
+table.monitor-table th,
+table.monitor-table td {
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  text-align: center;
+  padding: .25rem .15rem;
+  white-space: nowrap;
+}
 
-  table.monitor-table th,
-  table.monitor-table td {
-    border-bottom: 1px solid rgba(148, 163, 184, 0.25);
-    text-align: center;
-    padding: 0.35rem 0.25rem;
-    white-space: nowrap;
-  }
+/************ HEADER ALIGNMENT + ROTATION ************/
 
-  /* Sticky header row */
-  table.monitor-table th {
-    position: sticky;
-    top: 0;
-    background: var(--bg-card, #fff);
-    z-index: 2;
+table.monitor-table th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-card, #fff);
+  z-index: 2;
+  height: 60px;
+  vertical-align: bottom;
+  padding: 0;
+}
 
-    /* room for angled text for question columns */
-    height: 90px;
-    vertical-align: bottom;
-    font-size: 0.7rem;
-    padding: 0;
-    overflow: visible;
-  }
+/* First two columns normal */
+table.monitor-table th:nth-child(1),
+table.monitor-table th:nth-child(2) {
+  height: auto;
+  padding: .3rem;
+  font-size: 0.8rem;
+  vertical-align: middle;
+  min-width: 80px;
+}
 
-  /* First two headers: normal, wider, centered */
-  table.monitor-table th:nth-child(1),
-  table.monitor-table th:nth-child(2) {
-    height: auto;
-    padding: 0.45rem 0.75rem;
-    font-size: 0.8rem;
-    vertical-align: middle;
-  }
+/* Fixed narrower widths so all 25 fit */
+table.monitor-table th:nth-child(n + 3) {
+  width: 34px;
+}
 
-  table.monitor-table th:nth-child(1) {
-    text-align: left;
-    min-width: 140px;
-  }
+/* Rotated label styles */
+.header-rotate {
+  display: block;
+  margin: 0 auto;
+  padding: 0;
+  transform: rotate(-45deg);
+  transform-origin: bottom center;
+  line-height: 1;
+  font-weight: 700;
+  color: var(--text, #0a2342);
+}
 
-  table.monitor-table th:nth-child(2) {
-    text-align: center;
-    min-width: 80px;
-  }
+/************ SLOT BOXES ************/
+.slot {
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .65rem;
+  margin: 0 auto;
+  border: 1px solid rgba(148,163,184,0.5);
+}
 
-  /* Question columns: fixed-ish width so labels & pills line up */
-  table.monitor-table th:nth-child(n + 3) {
-    width: 2.4rem;
-  }
+.slot.empty {
+  background: #fafafa;
+  border-style: dashed;
+}
 
-  /* Rotated labels for question type headers */
-  table.monitor-table th:nth-child(n + 3) > .header-rotate {
-    display: block;
-    margin: 0 auto 8px;
+.slot.correct {
+  background: #22c55e;
+  color: #fff;
+  border-color: #16a34a;
+}
 
-    transform: rotate(-55deg);
-    transform-origin: bottom center; /* center over the pill */
-    white-space: nowrap;
-    font-weight: 700;
-    color: var(--text, #0a2342);
-  }
+.slot.incorrect {
+  background: #ef4444;
+  color: #fff;
+  border-color: #b91c1c;
+}
 
-  .monitor-name-cell {
-    text-align: left;
-    font-weight: 600;
-    white-space: nowrap;
-  }
+.slot.partial {
+  background: #facc15;
+  color: #78350f;
+  border-color: #eab308;
+}
 
-  .slot {
-    width: 1.4rem;
-    height: 1.4rem;
-    border-radius: 6px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.65rem;
-    border: 1px solid rgba(148, 163, 184, 0.6);
-    background: #f3f4f6;
-    color: #4b5563;
-    margin: 0 auto; /* center in the cell */
-  }
-
-  .slot.empty {
-    background: #f9fafb;
-    border-style: dashed;
-  }
-
-  .slot.correct {
-    background: #22c55e;
-    color: white;
-    border-color: #16a34a;
-  }
-
-  .slot.incorrect {
-    background: #ef4444;
-    color: white;
-    border-color: #b91c1c;
-  }
-
-  .slot.partial {
-    background: #facc15;
-    color: #78350f;
-    border-color: #eab308;
-  }
-
-  .monitor-meta {
-    font-size: 0.8rem;
-    color: #6b7280;
-    margin-top: 0.25rem;
-  }
 </style>
 
 </head>

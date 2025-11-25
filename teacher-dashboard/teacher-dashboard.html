@@ -459,6 +459,17 @@
   .copy-link-row .filter-input {
     flex: 1;
   }
+  
+  .link-status {
+  display: block;
+  min-height: 1.1em;              /* reserves space so layout doesn't jump */
+  font-size: 0.8rem;
+  margin-top: 0.15rem;
+  opacity: 0;                      /* hidden by default */
+  visibility: hidden;
+  transition: opacity 0.2s ease;
+}
+
 
   /* dark mode inputs */
   body.dashboard-dark input,
@@ -976,8 +987,8 @@ body.dashboard-dark .tag-mid {
             </button>
           </div>
 
-          <span class="muted" id="copy-link-status" style="display: none;">
-            Copied!
+        <span class="muted link-status" id="copy-link-status"></span>
+
           </span>
         </div>
 
@@ -1004,7 +1015,7 @@ body.dashboard-dark .tag-mid {
     </button>
   </div>
 
-  <span class="muted" id="copy-co-teacher-status" style="display: none;">
+<span class="muted link-status" id="copy-co-teacher-status"></span>
     Copied!
   </span>
 </div>
