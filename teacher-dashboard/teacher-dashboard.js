@@ -1615,6 +1615,7 @@ function copySessionLink() {
     setTimeout(() => {
       copyLinkStatusEl.style.opacity = "0";
       copyLinkStatusEl.style.visibility = "hidden";
+      copyLinkStatusEl.textContent = ""; 
     }, 1800);
   };
 
@@ -1656,6 +1657,7 @@ function copyCoTeacherLink() {
     setTimeout(() => {
       copyCoTeacherStatusEl.style.opacity = "0";
       copyCoTeacherStatusEl.style.visibility = "hidden";
+      copyCoTeacherStatusEl.textContent = "";
     }, 1800);
   };
 
