@@ -1651,7 +1651,7 @@ function copyCoTeacherLink() {
 
 const showCopied = (message = "Copied!") => {
   if (!copyCoTeacherStatusEl) return;
-  copyCoTeacherStatusEl.textContent = "";
+  copyCoTeacherStatusEl.textContent = message;
   copyCoTeacherStatusEl.style.opacity = "1";
   copyCoTeacherStatusEl.style.visibility = "visible";
   setTimeout(() => {

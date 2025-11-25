@@ -7,9 +7,9 @@
   <link rel="stylesheet" href="styles.css" />
 <style>
   .monitor-shell {
-    max-width: 100%;
+    max-width: 1600px;           /* keep it nicely centered, but wide */
     margin: 1rem auto;
-    padding: 0 .5rem 1.5rem;
+    padding: 0 1rem 1.5rem;
   }
 
   .monitor-header {
@@ -20,17 +20,19 @@
   }
 
   .monitor-grid {
-    border-radius: 10px;
+    border-radius: 12px;
     border: 1px solid var(--gray-light, #d1d5db);
     background: var(--bg-card, #fff);
-    padding: .5rem;
+    padding: 1rem;
+    overflow-x: auto;            /* just in case on smaller screens */
   }
 
   /* TABLE LAYOUT */
   table.monitor-table {
     border-collapse: collapse;
-    font-size: 0.75rem;
-    width: auto;           /* size to content, not full-width */
+    font-size: 0.8rem;
+    width: 100%;                 /* stretch across the whole card */
+    table-layout: fixed;         /* makes column widths consistent */
     margin: 0 auto;
   }
 
@@ -38,36 +40,43 @@
   table.monitor-table td {
     border: 1px solid rgba(148, 163, 184, 0.25);
     text-align: center;
-    padding: .15rem .1rem;
+    padding: .25rem .3rem;       /* a bit more breathing room */
     white-space: nowrap;
   }
 
   /* Header row */
+  table.monitor-table thead tr {
+    background: var(--bg-card, #fff);
+  }
+
   table.monitor-table th {
     position: sticky;
     top: 0;
     background: var(--bg-card, #fff);
     z-index: 2;
-    height: 70px;
+    height: 90px;                /* taller so labels fit inside */
     vertical-align: bottom;
-    padding: 0;
+    padding: 0 0 10px;           /* space at the bottom for rotated text */
   }
 
-  /* First two columns: smaller width so they don't dominate */
+  /* First two columns: smaller so question grid gets more width */
   table.monitor-table th:nth-child(1),
   table.monitor-table td:nth-child(1) {
-    width: 130px;
+    width: 18%;
+    max-width: 220px;
   }
 
   table.monitor-table th:nth-child(2),
   table.monitor-table td:nth-child(2) {
-    width: 60px;
+    width: 8%;
+    max-width: 80px;
   }
 
-  /* Question columns: narrow, consistent width */
+  /* Question columns: share remaining width, not cramped 32px */
   table.monitor-table th:nth-child(n + 3),
   table.monitor-table td:nth-child(n + 3) {
-    width: 32px;
+    width: auto;
+    min-width: 40px;
   }
 
   /* Rotated labels INSIDE the header box */
@@ -77,7 +86,7 @@
 
   .header-rotate {
     position: absolute;
-    bottom: 4px;
+    bottom: 6px;                 /* keeps label fully inside cell */
     left: 50%;
     transform: translateX(-50%) rotate(-55deg);
     transform-origin: bottom center;
@@ -94,14 +103,24 @@
     white-space: nowrap;
   }
 
+  /* Striping for easier row reading */
+  table.monitor-table tbody tr:nth-child(odd) {
+    background: rgba(249, 250, 251, 0.95);   /* light gray */
+  }
+
+  table.monitor-table tbody tr:nth-child(even) {
+    background: rgba(239, 246, 255, 0.95);   /* light blue */
+  }
+
+  /* Question “slots” */
   .slot {
-    width: 1.2rem;
-    height: 1.2rem;
+    width: 1.4rem;
+    height: 1.4rem;
     border-radius: 4px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: .65rem;
+    font-size: .7rem;
     margin: 0 auto;
     border: 1px solid rgba(148,163,184,0.5);
     background: #f9fafb;
@@ -136,6 +155,7 @@
     margin-top: 0.25rem;
   }
 </style>
+
 
 
 </head>
