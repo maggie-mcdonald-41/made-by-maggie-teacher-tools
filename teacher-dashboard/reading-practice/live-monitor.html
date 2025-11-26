@@ -257,18 +257,85 @@ table.monitor-table {
     width: 30%;
   }
 }
+
+/* -------------------------------
+   DARK MODE TOGGLE SWITCH
+-------------------------------- */
+.monitor-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  user-select: none;
+}
+
+.theme-toggle input {
+  display: none;
+}
+
+.toggle-slider {
+  width: 40px;
+  height: 22px;
+  background: #d1d5db;
+  border-radius: 999px;
+  position: relative;
+  transition: 0.25s ease;
+}
+
+.toggle-slider::before {
+  content: "";
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: 0.25s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+
+.theme-toggle input:checked + .toggle-slider {
+  background: #2563eb;
+}
+
+.theme-toggle input:checked + .toggle-slider::before {
+  transform: translateX(18px);
+}
+
+.toggle-label {
+  color: var(--text-main);
+}
+
 </style>
 
 </head>
 <body>
   <div class="monitor-shell">
-    <div class="monitor-header">
-      <div>
-        <h1>Live Session Monitor</h1>
-        <div id="monitor-meta" class="monitor-meta"></div>
-      </div>
-      <button id="monitor-refresh" class="pill-button">Refresh now</button>
-    </div>
+<div class="monitor-header">
+  <div>
+    <h1>Live Session Monitor</h1>
+    <div id="monitor-meta" class="monitor-meta"></div>
+  </div>
+
+  <div class="monitor-controls">
+    <label class="theme-toggle">
+      <input type="checkbox" id="theme-toggle">
+      <span class="toggle-slider"></span>
+      <span class="toggle-label">Dark Mode</span>
+    </label>
+
+    <button id="monitor-refresh" class="pill-button">Refresh now</button>
+  </div>
+</div>
+
 
     <div id="monitor-grid" class="monitor-grid">
       <!-- table rendered by JS -->

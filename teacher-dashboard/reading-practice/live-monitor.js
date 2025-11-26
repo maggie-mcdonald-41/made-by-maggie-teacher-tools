@@ -205,11 +205,36 @@
     }
   }
 
-  if (refreshBtn) {
+    if (refreshBtn) {
     refreshBtn.addEventListener("click", render);
   }
 
   // Initial render + auto-refresh every 10s
   render();
   setInterval(render, 10000);
+
+  // ---------- THEME TOGGLE ----------
+  const STORAGE_KEY = "mbm-theme";
+  const toggle = document.getElementById("theme-toggle");
+
+  if (!toggle) return; // if somehow no toggle, just stop here
+
+  function applyTheme(theme) {
+    if (theme === "dark") {
+      document.body.classList.add("dark-mode");
+    } else {
+      document.body.classList.remove("dark-mode");
+    }
+  }
+
+  // Initialize
+  const saved = localStorage.getItem(STORAGE_KEY) || "light";
+  applyTheme(saved);
+  toggle.checked = saved === "dark";
+
+  toggle.addEventListener("change", () => {
+    const newTheme = toggle.checked ? "dark" : "light";
+    localStorage.setItem(STORAGE_KEY, newTheme);
+    applyTheme(newTheme);
+  });
 })();
