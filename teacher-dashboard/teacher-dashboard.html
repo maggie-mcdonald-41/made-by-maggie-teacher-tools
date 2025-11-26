@@ -49,12 +49,7 @@
     margin: 0;
     font-family: "Nunito", system-ui, -apple-system, BlinkMacSystemFont,
       "Segoe UI", sans-serif;
-    background: radial-gradient(
-      circle at top left,
-      #ffe0d3 0,
-      #fffdf6 45%,
-      #f5fdff 100%
-    );
+  background: linear-gradient(90deg, #84EBE6, #FFD466, #FFA69E);
     color: #0f172a;
   }
 
@@ -616,6 +611,82 @@
       grid-template-columns: minmax(0, 1fr);
     }
   }
+
+  /* ===== Fullscreen chart overlay ===== */
+
+.dashboard-charts .chart-wrapper {
+  cursor: zoom-in; /* hint that it's clickable */
+}
+
+/* Backdrop behind fullscreen chart */
+.chart-fullscreen-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease-out;
+  z-index: 60;
+}
+
+.chart-fullscreen-backdrop.is-active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* When a chart wrapper is in fullscreen mode */
+.chart-wrapper-fullscreen {
+  position: fixed !important;
+  top: 3.5rem;
+  left: 2.5rem;
+  right: 2.5rem;
+  bottom: 2.5rem;
+  background: var(--bg-card, #ffffff);
+  z-index: 70;
+  border-radius: 18px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.45);
+  padding: 1rem 1.5rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Let the canvas stretch nicely in fullscreen */
+.chart-wrapper-fullscreen canvas {
+  flex: 1 1 auto;
+}
+
+/* Close button inside fullscreen chart */
+.chart-fullscreen-close {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(15, 23, 42, 0.06);
+  cursor: pointer;
+  display: none; /* toggled by JS */
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: inherit;
+}
+
+.chart-fullscreen-close:hover {
+  background: rgba(15, 23, 42, 0.12);
+}
+
+.chart-fullscreen-close.is-visible {
+  display: flex;
+}
+
+/* When fullscreen, change cursor hint */
+.chart-wrapper-fullscreen {
+  cursor: zoom-out;
+}
+
 /* ============================
    2. PANEL BACKGROUNDS IN DARK MODE
    ============================ */
@@ -729,27 +800,32 @@ body.dashboard-dark .tag-mid {
   }
 
   /* === Student detail drawer === */
-  .student-detail-panel {
-    position: fixed;
-    right: 0;
-    top: 4.5rem;
-    bottom: 0;
-    width: 320px;
-    max-width: 90vw;
-    background: var(--bg-card);
-    box-shadow: -4px 0 12px rgba(0, 0, 0, 0.18);
-    border-left: 1px solid rgba(0, 0, 0, 0.05);
-    padding: 0.75rem 0.9rem;
-    display: flex;
-    flex-direction: column;
-    transform: translateX(100%);
-    transition: transform 0.22s ease-out;
-    z-index: 40;
-  }
+.student-detail-panel {
+  position: fixed;
+  left: 0;
+  right: auto;
+  top: 4.5rem;
+  bottom: 0;
+  width: 320px;
+  max-width: 90vw;
+  background: var(--bg-card);
+  /* shadow now cast to the right instead of left */
+  box-shadow: 4px 0 12px rgba(0, 0, 0, 0.18);
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+  border-left: none;
+  padding: 0.75rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  /* start hidden just off the left edge */
+  transform: translateX(-100%);
+  transition: transform 0.22s ease-out;
+  z-index: 40;
+}
 
-  .student-detail-panel.is-open {
-    transform: translateX(0%);
-  }
+.student-detail-panel.is-open {
+  transform: translateX(0%);
+}
+
 
   .student-detail-header {
     display: flex;
@@ -1364,6 +1440,9 @@ body.dashboard-dark .tag-mid {
         document.body.classList.remove("dashboard-dark");
       }
     }
+
+    <!-- Fullscreen chart backdrop -->
+<div id="chart-fullscreen-backdrop" class="chart-fullscreen-backdrop"></div>
 
     // Initialize from saved setting (or default to light)
     const saved = localStorage.getItem(STORAGE_KEY) || "light";

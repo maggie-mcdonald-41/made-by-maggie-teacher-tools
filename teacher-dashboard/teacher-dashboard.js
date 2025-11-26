@@ -1799,6 +1799,71 @@ if (window.RP_AUTH) {
 
   RP_AUTH.initGoogleAuth();
 }
+// ====== FULLSCREEN CHARTS ======
+function initChartFullscreen() {
+  const overlay = document.getElementById("chart-fullscreen-backdrop");
+  if (!overlay) return;
+
+  let activeWrapper = null;
+
+  function closeFullscreen() {
+    if (!activeWrapper) return;
+    activeWrapper.classList.remove("chart-wrapper-fullscreen");
+    const closeBtn = activeWrapper.querySelector(".chart-fullscreen-close");
+    if (closeBtn) {
+      closeBtn.classList.remove("is-visible");
+    }
+    overlay.classList.remove("is-active");
+    activeWrapper = null;
+  }
+
+  // Close on backdrop click
+  overlay.addEventListener("click", closeFullscreen);
+
+  // Close on Escape key
+  document.addEventListener("keydown", (evt) => {
+    if (evt.key === "Escape") {
+      closeFullscreen();
+    }
+  });
+
+  // Attach to all dashboard charts
+  document.querySelectorAll(".dashboard-charts .chart-wrapper").forEach((wrapper) => {
+    // Create a close button inside each wrapper (once)
+    let closeBtn = wrapper.querySelector(".chart-fullscreen-close");
+    if (!closeBtn) {
+      closeBtn = document.createElement("button");
+      closeBtn.type = "button";
+      closeBtn.className = "chart-fullscreen-close";
+      closeBtn.setAttribute("aria-label", "Close full screen chart");
+      closeBtn.innerHTML = "&times;";
+      wrapper.appendChild(closeBtn);
+
+      closeBtn.addEventListener("click", (evt) => {
+        evt.stopPropagation(); // don’t re-trigger the wrapper click
+        closeFullscreen();
+      });
+    }
+
+    // Click chart to open fullscreen
+    wrapper.addEventListener("click", () => {
+      // If this chart is already fullscreen, ignore (or you could close here)
+      if (activeWrapper === wrapper) return;
+
+      // If some other chart is open, close it first
+      if (activeWrapper) {
+        activeWrapper.classList.remove("chart-wrapper-fullscreen");
+        const prevBtn = activeWrapper.querySelector(".chart-fullscreen-close");
+        if (prevBtn) prevBtn.classList.remove("is-visible");
+      }
+
+      activeWrapper = wrapper;
+      wrapper.classList.add("chart-wrapper-fullscreen");
+      closeBtn.classList.add("is-visible");
+      overlay.classList.add("is-active");
+    });
+  });
+}
 
 // Try to restore last Google user so buttons work after refresh
 (function restoreTeacherFromLocalStorage() {
@@ -1844,6 +1909,9 @@ if (copyCoTeacherLinkBtn) {
 // ---------- INITIAL LOAD ----------
 // Load any saved filter prefs
 loadDashboardPrefs();
+
+// Enable click-to-fullscreen on dashboard charts
+initChartFullscreen();
 
 // Initial render: empty dashboard + any stored history
 renderDashboard([]);
