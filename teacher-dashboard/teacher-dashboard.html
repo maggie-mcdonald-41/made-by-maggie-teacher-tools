@@ -21,7 +21,7 @@
 
     --danger: #ff5d52;
     --violet: #2a1933;
-
+    --indigo: #4f46e5;
     --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.08);
   }
 
@@ -40,6 +40,7 @@
 
     --danger: #fb7185;
     --violet: #e5e7eb;
+    --indigo: #6366f1;
 
     --shadow-soft: 0 14px 40px rgba(0, 0, 0, 0.8);
   }
@@ -187,18 +188,54 @@
     font-weight: 600;
     white-space: nowrap;
   }
+/* Utility / Info Button — Load Attempts */
+.btn-info-small {
+  background: #3b82f6; /* Blue 500 */
+  color: #ffffff;
+  border: none;
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(59, 130, 246, 0.25);
+  transition: filter .15s ease;
+}
 
-  .btn-primary-small {
-    background: #004860;
-    color: #fff;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
-  }
+.btn-info-small:hover {
+  filter: brightness(0.95);
+}
 
-  .btn-primary-small:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    box-shadow: none;
-  }
+.btn-info-small:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Dark mode version */
+body.dashboard-dark .btn-info-small {
+  background: #38bdf8; /* Sky 400 for dark backgrounds */
+  color: #020617;
+}
+
+.btn-primary-small {
+  background: var(--indigo);
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(79, 70, 229, 0.3);
+}
+
+.btn-primary-small:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+body.dashboard-dark .btn-primary-small {
+  background: var(--indigo);
+}
+
+body.dashboard-dark .pill-button-accent {
+  background: var(--pink);
+}
 
   .btn-secondary-small {
     background: #f5f6ff;
@@ -223,12 +260,12 @@
     white-space: nowrap;
   }
 
-  .pill-button-accent {
-    background: #05C1B8;
-    color: #ffffff;
-    border-color: transparent;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
-  }
+.pill-button-accent {
+  background: var(--pink);       /* #ff8f85 from your palette */
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 3px 10px rgba(255, 143, 133, 0.35);
+}
 
   .pill-button:disabled {
     opacity: 0.55;
@@ -417,11 +454,22 @@
 
   .dashboard-filters {
     display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .filters-row {
+    display: flex;
     flex-wrap: wrap;
     gap: 0.75rem;
     align-items: flex-end;
-    margin-bottom: 1rem;
   }
+
+  .filters-row-actions {
+    margin-top: 0.25rem;
+  }
+
 
   .filter-group {
     display: flex;
@@ -534,6 +582,24 @@
   .session-tag span {
     font-weight: 700;
   }
+
+  .session-actions .session-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.mini-set-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  margin-top: 0.4rem;
+}
+
+.mini-set-toggle input {
+  margin: 0;
+}
 
   .dashboard-view-summary {
     display: flex;
@@ -992,6 +1058,28 @@ body.dashboard-dark .tag-mid {
         </button>
       </div>
       <div class="history-sidebar-body">
+                <!-- E. LOAD ATTEMPTS -->
+        <div class="filter-group" style="min-width: 180px;">
+          <label class="filter-label">&nbsp;</label>
+      <button
+        id="load-attempts-btn"
+        class="btn-small btn-info-small"
+        type="button"
+      >
+        📥 Load Attempts
+      </button>
+
+        </div>
+          <!-- D. OPTIONAL CLASS FILTER -->
+  <div class="filter-group">
+    <label for="filter-class" class="filter-label">Filter by Class (optional)</label>
+    <input
+      id="filter-class"
+      type="text"
+      class="filter-input"
+      placeholder="e.g. 6A, 7B"
+    />
+  </div>
         <p class="history-help">
           Click a past session to reload its data. Saved only on this device.
         </p>
@@ -1006,163 +1094,155 @@ body.dashboard-dark .tag-mid {
     <!-- RIGHT: Main Dashboard Content -->
     <main class="dashboard-main">
       <!-- Filters -->
+      <!-- Filters -->
       <section class="dashboard-filters">
-        <!-- A. SESSION CODE (TEACHER-TYPED) -->
-        <div class="filter-group" style="min-width: 220px;">
-          <label for="filter-session" class="filter-label">
-            Name this Practice Session
-          </label>
-          <input
-            id="filter-session"
-            type="text"
-            class="filter-input"
-            placeholder="e.g. 6A-STARTTIME-DEC2"
-          />
-          <span class="muted" style="margin-top: 0.25rem;">
-            Use something you’ll recognize later (class + topic + date).
-          </span>
-        </div>
-
-        <!-- B. START SESSION BUTTON -->
-        <div class="filter-group" style="min-width: 200px;">
-          <label class="filter-label">&nbsp;</label>
-          <button
-            id="start-session-btn"
-            class="btn-small btn-primary-small"
-            type="button"
-          >
-            ➕ Start New Session
-          </button>
-          <span class="muted" style="margin-top: 0.25rem;">
-            Click to generate the student link below.
-          </span>
-        </div>
-<button id="monitor-session-btn" class="pill-button pill-button-accent" disabled>
-  👀 Monitor Live Session
-</button>
-
-<!-- B2. MINI SET TOGGLE -->
-<div class="filter-group" style="min-width: 220px;">
-  <label class="filter-label">
-    <input type="checkbox" id="use-mini-set" />
-    Use mini question set
-  </label>
-  <span class="muted" style="margin-top: 0.25rem;">
-    Shorter version (focus on multi-step question types).
-  </span>
-</div>
-
-        <!-- C. STUDENT LINK (READ-ONLY) -->
-        <div class="filter-group" style="flex: 1; min-width: 280px;">
-          <label for="current-session-link" class="filter-label">
-            Student Link for This Session
-          </label>
-
-          <div class="copy-link-row">
+        <!-- ROW 1: Name + Start/Monitor + Mini Set -->
+        <div class="filters-row">
+          <!-- A. SESSION CODE (TEACHER-TYPED) -->
+          <div class="filter-group" style="min-width: 220px;">
+            <label for="filter-session" class="filter-label">
+              Name this Practice Session
+            </label>
             <input
-              id="current-session-link"
+              id="filter-session"
               type="text"
               class="filter-input"
-              placeholder="Start a session to generate"
-              readonly
+              placeholder="e.g. 6A-STARTTIME-DEC2"
             />
+            <span class="muted" style="margin-top: 0.25rem;">
+              Use something you’ll recognize later (class + topic + date).
+            </span>
+          </div>
+
+          <!-- B. START + MONITOR BUTTONS -->
+          <div class="filter-group" style="min-width: 240px;">
+            <label class="filter-label">&nbsp;</label>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <button
+                id="start-session-btn"
+                class="btn-small btn-primary-small"
+                type="button"
+              >
+                ➕ Start New Session
+              </button>
+
+              <button
+                id="monitor-session-btn"
+                class="pill-button pill-button-accent"
+                type="button"
+                disabled
+              >
+                👀 Monitor Live Session
+              </button>
+            </div>
+          </div>
+
+          <!-- B2. MINI SET TOGGLE -->
+          <div class="filter-group" style="min-width: 220px;">
+            <label class="filter-label">
+              <input type="checkbox" id="use-mini-set" />
+              Use mini question set
+            </label>
+            <span class="muted" style="margin-top: 0.25rem;">
+              Shorter version (focus on multi-step question types).
+            </span>
+          </div>
+        </div>
+
+        <!-- ROW 2: Links -->
+        <div class="filters-row">
+          <!-- C. STUDENT LINK (READ-ONLY) -->
+          <div class="filter-group" style="flex: 1; min-width: 280px;">
+            <label for="current-session-link" class="filter-label">
+              Student Link for This Session
+            </label>
+
+            <div class="copy-link-row">
+              <input
+                id="current-session-link"
+                type="text"
+                class="filter-input"
+                placeholder="Start a session to generate"
+                readonly
+              />
+              <button
+                id="copy-session-link-btn"
+                class="btn-small btn-secondary-small"
+                type="button"
+              >
+                Copy
+              </button>
+            </div>
+
+            <span class="muted link-status" id="copy-link-status"></span>
+          </div>
+
+          <!-- C2. CO-TEACHER DASHBOARD LINK -->
+          <div class="filter-group" style="flex: 1; min-width: 280px;">
+            <label for="co-teacher-dashboard-link" class="filter-label">
+              Co-Teacher Dashboard Link
+            </label>
+
+            <div class="filter-flex">
+              <input
+                id="co-teacher-dashboard-link"
+                type="text"
+                class="filter-input"
+                placeholder="Start a session to generate"
+                readonly
+              />
+              <button
+                id="copy-co-teacher-link-btn"
+                class="btn-small btn-secondary-small"
+                type="button"
+              >
+                Copy
+              </button>
+            </div>
+
+            <span class="muted link-status" id="copy-co-teacher-status"></span>
+          </div>
+        </div>
+
+        <!-- ROW 3: Actions (Clear / PDF / CSV) -->
+        <div class="filters-row filters-row-actions">
+          <!-- G. CLEAR FILTERS -->
+          <div class="filter-group" style="min-width: 150px;">
+            <label class="filter-label">&nbsp;</label>
             <button
-              id="copy-session-link-btn"
+              id="clear-filters-btn"
               class="btn-small btn-secondary-small"
               type="button"
             >
-              Copy
+              🔄 Clear Filters
             </button>
           </div>
 
-      <span class="muted link-status" id="copy-link-status"></span>
-
-          </span>
-        </div>
-
-<!-- C2. CO-TEACHER DASHBOARD LINK -->
-<div class="filter-group" style="flex: 1; min-width: 280px;">
-  <label for="co-teacher-dashboard-link" class="filter-label">
-    Co-Teacher Dashboard Link
-  </label>
-
-  <div class="filter-flex">
-    <input
-      id="co-teacher-dashboard-link"
-      type="text"
-      class="filter-input"
-      placeholder="Start a session to generate"
-      readonly
-    />
-    <button
-      id="copy-co-teacher-link-btn"
-      class="btn-small btn-secondary-small"
-      type="button"
-    >
-      Copy
-    </button>
-  </div>
-
-<span class="muted link-status" id="copy-co-teacher-status"></span>
-
-</div>
-
-
-        <!-- D. OPTIONAL CLASS FILTER -->
-        <div class="filter-group">
-          <label for="filter-class" class="filter-label">Filter by Class (optional)</label>
-          <input
-            id="filter-class"
-            type="text"
-            class="filter-input"
-            placeholder="e.g. 6A, 7B"
-          />
-        </div>
-
-        <!-- E. LOAD ATTEMPTS -->
-        <div class="filter-group" style="min-width: 180px;">
-          <label class="filter-label">&nbsp;</label>
-          <button
-            id="load-attempts-btn"
-            class="btn-small btn-secondary-small"
-            type="button"
-          >
-            📥 Load Attempts
-          </button>
-        </div>
-
-        <!-- F. CSV DOWNLOAD -->
-        <div class="filter-group" style="min-width: 180px;">
-          <label class="filter-label">&nbsp;</label>
-          <button
-            id="download-csv"
-            class="btn-small btn-secondary-small"
-            type="button"
-            disabled
-          >
-            ⬇ CSV Export
-          </button>
-        </div>
-
-        <!-- G. CLEAR FILTERS -->
-        <div class="filter-group" style="min-width: 150px;">
-          <label class="filter-label">&nbsp;</label>
-          <button
-            id="clear-filters-btn"
-            class="btn-small btn-secondary-small"
-            type="button"
-          >
-            🔄 Clear Filters
-          </button>
-        </div>
-
           <!-- H. EXPORT PDF -->
-  <div class="filter-group" style="min-width: 170px;">
-    <label class="filter-label">&nbsp;</label>
-    <button id="export-pdf-btn" class="btn-small btn-secondary-small" type="button">
-      📄 Export Summary PDF
-    </button>
-  </div>
+          <div class="filter-group" style="min-width: 170px;">
+            <label class="filter-label">&nbsp;</label>
+            <button
+              id="export-pdf-btn"
+              class="btn-small btn-secondary-small"
+              type="button"
+            >
+              📄 Export Summary PDF
+            </button>
+          </div>
+
+          <!-- F. CSV DOWNLOAD -->
+          <div class="filter-group" style="min-width: 180px;">
+            <label class="filter-label">&nbsp;</label>
+            <button
+              id="download-csv"
+              class="btn-small btn-secondary-small"
+              type="button"
+              disabled
+            >
+              ⬇ CSV Export
+            </button>
+          </div>
+        </div>
 
         <span class="muted" id="load-status">
           No data loaded yet. Type a session code, click “Start New Session” to get
@@ -1170,6 +1250,7 @@ body.dashboard-dark .tag-mid {
           CSV export will include exactly the attempts currently shown in the table.
         </span>
       </section>
+
 
       <!-- BIG SUMMARY (make this feel “largest”) -->
       <section class="dashboard-summary-row">
