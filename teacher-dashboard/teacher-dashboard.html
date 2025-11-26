@@ -1442,8 +1442,6 @@ body.dashboard-dark .tag-mid {
     }
 
 
-<div id="chart-fullscreen-backdrop" class="chart-fullscreen-backdrop"></div>
-
     // Initialize from saved setting (or default to light)
     const saved = localStorage.getItem(STORAGE_KEY) || "light";
     applyTheme(saved);
@@ -1457,6 +1455,6 @@ body.dashboard-dark .tag-mid {
     });
   })();
 </script>
-
+<div id="chart-fullscreen-backdrop" class="chart-fullscreen-backdrop"></div>
 </body>
 </html>

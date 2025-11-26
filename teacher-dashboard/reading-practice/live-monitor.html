@@ -129,41 +129,25 @@ table.monitor-table {
   top: 0;
   background: var(--bg-card);
   z-index: 3;
-  height: 90px;
-  padding-bottom: 15px;
+  height: 130px;                  /* more space for rotated text */
+  padding-bottom: 25px;           /* move content upward */
   vertical-align: bottom;
   font-weight: 700;
   color: var(--text-main);
 }
 
-/* First two header cells: normal height + centered text */
+/* First two headers stay normal height */
 .monitor-table th:nth-child(1),
 .monitor-table th:nth-child(2) {
-  height: 40px;
+  height: 50px;
   padding-bottom: 6px;
   vertical-align: middle;
-}
-
-/* First two columns (Student / % Correct) */
-.monitor-table th:nth-child(1),
-.monitor-table td:nth-child(1) {
-  width: 14%;
-  max-width: 220px;
-  text-align: left;
-  padding-left: 0.5rem;
-  font-weight: 600;
-}
-
-.monitor-table th:nth-child(2),
-.monitor-table td:nth-child(2) {
-  width: 7%;
-  max-width: 80px;
 }
 
 /* Question columns */
 .monitor-table th:nth-child(n+3),
 .monitor-table td:nth-child(n+3) {
-  min-width: 40px;
+  min-width: 60px;   /* was 40–44px */
 }
 
 /* Rotated headers for question columns only */
@@ -171,17 +155,43 @@ table.monitor-table {
   position: relative;
 }
 
+/* Slot size slightly larger to match wider columns */
+.slot {
+  width: 1.9rem;      
+  height: 1.9rem;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;  
+  border: 1px solid rgba(148,163,184,0.45);
+  margin: 0 auto;
+  font-weight: 700;
+}
+
+/* Question columns */
+.monitor-table th:nth-child(n+3),
+.monitor-table td:nth-child(n+3) {
+  min-width: 60px;
+}
+
+/* Rotated headers for question columns only */
+.monitor-table th:nth-child(n+3) {
+  position: relative;
+}
 .header-rotate {
   position: absolute;
-  bottom: 6px;
+  bottom: 15px;                  
   left: 50%;
   transform: translateX(-50%) rotate(-55deg);
   transform-origin: bottom center;
   display: block;
-  line-height: 1;
-  font-size: 0.75rem;
+  line-height: 1.1;
+  font-size: 0.78rem;
   font-weight: 700;
   pointer-events: none;
+  width: 100px;                   /* prevents wrapping; adjust if needed */
+  text-align: center;
 }
 
 /* ---------------------------------------------------
@@ -198,13 +208,13 @@ table.monitor-table {
    QUESTION RESULT SLOTS
 --------------------------------------------------- */
 .slot {
-  width: 1.45rem;
-  height: 1.45rem;
-  border-radius: 6px;
+  width: 1.9rem;      /* was 1.45rem */
+  height: 1.9rem;
+  border-radius: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.7rem;
+  font-size: 0.8rem;  /* a hair bigger */
   border: 1px solid rgba(148,163,184,0.45);
   margin: 0 auto;
   font-weight: 700;
