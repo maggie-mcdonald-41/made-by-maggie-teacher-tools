@@ -9,7 +9,7 @@
    BASE COLORS + THEMING
 --------------------------------------------------- */
 :root {
-  --bg-page: linear-gradient(135deg, #fdfcff, #f5f7fb);
+  --bg-page: linear-gradient(90deg, #84EBE6, #FFD466, #FFA69E);
   --bg-card: #ffffff;
   --bg-strip-odd: rgba(249, 250, 251, 0.95);
   --bg-strip-even: rgba(239, 246, 255, 0.95);
@@ -48,8 +48,7 @@ body {
   padding: 0;
   font-family: "Nunito", sans-serif;
   color: var(--text-main);
-  background: linear-gradient(90deg, #84EBE6, #FFD466, #FFA69E);
-}
+  background: var(--bg-page);}
 
 .monitor-shell {
   max-width: 1600px;
@@ -261,6 +260,8 @@ table.monitor-table {
 /* -------------------------------
    DARK MODE TOGGLE SWITCH
 -------------------------------- */
+
+
 .monitor-controls {
   display: flex;
   align-items: center;
