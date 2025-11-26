@@ -1431,7 +1431,7 @@ enableMonitorButton(sessionCodeRaw, classCodeRaw);
     loadStatusEl.textContent = statusMessage;
 
     // Using demo data – live monitor should stay disabled
-enableMonitorButton("", "");
+   enableMonitorButton(sessionCodeRaw2, classCodeRaw2);
 
   } finally {
     loadBtn.disabled = false;
@@ -1966,8 +1966,15 @@ renderSessionHistory(loadHistoryFromStorage());
     if (lastCoLink && coTeacherLinkInput && !coTeacherLinkInput.value) {
       coTeacherLinkInput.value = lastCoLink;
     }
+
+    // Also re-enable the live monitor button for this session
+    if (lastCode) {
+      enableMonitorButton(lastCode, lastClass || "");
+    }
   } catch (e) {
     // ignore
   }
 })();
+
+
 
