@@ -14,13 +14,15 @@
   --bg-strip-odd: rgba(249, 250, 251, 0.95);
   --bg-strip-even: rgba(239, 246, 255, 0.95);
 
+  --header-strip-1: #f9fafb;
+  --header-strip-2: #eef2ff;
+
   --text-main: #0a2342;
   --text-muted: #6b7280;
 
   --border-light: rgba(148, 163, 184, 0.25);
 
   --accent-blue: #3b82f6;
-  --accent-blue-light: #dbeafe;
 }
 
 .dark-mode {
@@ -28,6 +30,9 @@
   --bg-card: #1e293b;
   --bg-strip-odd: rgba(30, 41, 59, 0.65);
   --bg-strip-even: rgba(51, 65, 85, 0.65);
+
+  --header-strip-1: #111827;
+  --header-strip-2: #020617;
 
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
@@ -43,7 +48,7 @@ body {
   padding: 0;
   font-family: "Nunito", sans-serif;
   color: var(--text-main);
-  background: linear-gradient(90deg, #84EBE6, #FFD466, #FFA69E);
+  background: var(--bg-page);
 }
 
 .monitor-shell {
@@ -77,7 +82,7 @@ body {
 .pill-button {
   padding: 0.55rem 1.25rem;
   border-radius: 999px;
-  background: #004860;
+  background: var(--accent-blue);
   color: #fff;
   font-weight: 600;
   border: none;
@@ -85,7 +90,7 @@ body {
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 .pill-button:hover {
-  background: #2563eb;
+  filter: brightness(0.95);
 }
 
 /* ---------------------------------------------------
@@ -118,80 +123,79 @@ table.monitor-table {
   white-space: nowrap;
 }
 
-/* Header row visuals */
+/* Header row */
 .monitor-table thead tr {
   background: var(--bg-card);
 }
 
-/* Default header style (for question columns) */
+/* Default header style */
 .monitor-table th {
   position: sticky;
   top: 0;
-  background: var(--bg-card);
   z-index: 3;
-  height: 130px;                  /* more space for rotated text */
-  padding-bottom: 25px;           /* move content upward */
-  vertical-align: bottom;
   font-weight: 700;
   color: var(--text-main);
 }
 
-/* First two headers stay normal height */
+/* First two header cells (Student / % Correct) */
 .monitor-table th:nth-child(1),
 .monitor-table th:nth-child(2) {
-  height: 50px;
-  padding-bottom: 6px;
+  height: 48px;
+  padding-bottom: 4px;
   vertical-align: middle;
 }
 
-/* Question columns */
-.monitor-table th:nth-child(n+3),
-.monitor-table td:nth-child(n+3) {
-  min-width: 60px;   /* was 40–44px */
+/* Bigger, readable first two columns */
+.monitor-table th:nth-child(1),
+.monitor-table td:nth-child(1) {
+  width: 18%;
+  max-width: 260px;
+  text-align: left;
+  padding-left: 0.75rem;
+  font-weight: 600;
 }
 
-/* Rotated headers for question columns only */
-.monitor-table th:nth-child(n+3) {
-  position: relative;
-}
-
-/* Slot size slightly larger to match wider columns */
-.slot {
-  width: 1.9rem;      
-  height: 1.9rem;
-  border-radius: 8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;  
-  border: 1px solid rgba(148,163,184,0.45);
-  margin: 0 auto;
-  font-weight: 700;
+.monitor-table th:nth-child(2),
+.monitor-table td:nth-child(2) {
+  width: 10%;
+  max-width: 95px;
 }
 
 /* Question columns */
 .monitor-table th:nth-child(n+3),
 .monitor-table td:nth-child(n+3) {
-  min-width: 60px;
+  min-width: 46px;
 }
 
-/* Rotated headers for question columns only */
+/* Question header cells: tall, with vertical label centered */
 .monitor-table th:nth-child(n+3) {
-  position: relative;
+  height: 120px;
+  background: var(--header-strip-1);
+  position: sticky;
+  top: 0;
+  vertical-align: middle;
 }
+
+/* Alternate header background colors for question columns */
+.monitor-table th:nth-child(2n+3) { /* 3, 5, 7, ... */
+  background: var(--header-strip-1);
+}
+.monitor-table th:nth-child(2n+4) { /* 4, 6, 8, ... */
+  background: var(--header-strip-2);
+}
+
+/* Vertical header text using the existing .header-rotate div */
 .header-rotate {
   position: absolute;
-  bottom: 15px;                  
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%) rotate(-55deg);
-  transform-origin: bottom center;
-  display: block;
+  transform: translate(-50%, -50%) rotate(-90deg); /* vertical text */
+  transform-origin: center center;
+  display: inline-block;
   line-height: 1.1;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 700;
   pointer-events: none;
-  width: 100px;                   /* prevents wrapping; adjust if needed */
-  text-align: center;
 }
 
 /* ---------------------------------------------------
@@ -208,13 +212,13 @@ table.monitor-table {
    QUESTION RESULT SLOTS
 --------------------------------------------------- */
 .slot {
-  width: 1.9rem;      /* was 1.45rem */
-  height: 1.9rem;
+  width: 1.6rem;
+  height: 1.6rem;
   border-radius: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem;  /* a hair bigger */
+  font-size: 0.75rem;
   border: 1px solid rgba(148,163,184,0.45);
   margin: 0 auto;
   font-weight: 700;
@@ -254,7 +258,6 @@ table.monitor-table {
   }
 }
 </style>
-
 
 </head>
 <body>
