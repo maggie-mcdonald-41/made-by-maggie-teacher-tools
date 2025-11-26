@@ -4,6 +4,8 @@
   const params = new URLSearchParams(window.location.search);
   const SESSION_CODE = params.get("session") || "";
   const CLASS_FILTER = params.get("class") || "";
+  const SET_PARAM = (params.get("set") || "full").toLowerCase();
+  const SET_LABEL = SET_PARAM === "mini" ? "Mini set" : "Full set";
 
   const gridEl = document.getElementById("monitor-grid");
   const metaEl = document.getElementById("monitor-meta");
@@ -17,15 +19,48 @@
     return;
   }
 
-  // Question types in order for your reading trainer (1–25)
-  const QUESTION_TYPES = [
-    "mcq", "mcq", "multi", "multi", "order",
-    "order", "match", "match", "highlight", "highlight",
-    "dropdown", "dropdown", "classify", "classify", "partAB",
-    "partAB", "classify", "classify", "revise", "revise",
-    "mcq", "audio", "mcq", "audio", "mcq"
+  // Which questions belong to the mini set
+  // (must match the IDs used in reading-practice/script.js)
+  const MINI_IDS = [3, 5, 7, 9, 11, 15, 17, 19, 22, 24];
+
+  // Question types in order for your reading trainer (questions 1–25)
+  // Index 0 = Q1, index 1 = Q2, etc.
+  const QUESTION_TYPES_FULL = [
+    "mcq",     // 1
+    "mcq",     // 2
+    "multi",   // 3
+    "multi",   // 4
+    "order",   // 5
+    "order",   // 6
+    "match",   // 7
+    "match",   // 8
+    "highlight", // 9
+    "highlight", // 10
+    "dropdown",  // 11
+    "dropdown",  // 12
+    "classify",  // 13
+    "classify",  // 14
+    "partAB",    // 15
+    "partAB",    // 16
+    "classify",  // 17
+    "classify",  // 18
+    "revise",    // 19
+    "revise",    // 20
+    "mcq",       // 21 (audio-based MCQ)
+    "audio",     // 22 (audio-focused)
+    "mcq",       // 23 (graph + audio)
+    "audio",     // 24 (video / multimedia)
+    "mcq"        // 25
   ];
-  const MAX_QUESTIONS = QUESTION_TYPES.length; // 25
+
+  // For a full set: [1, 2, 3, ..., 25]
+  // For a mini set: [3, 5, 7, 9, 11, 15, 17, 19, 22, 24]
+  const QUESTION_ID_SEQUENCE =
+    SET_PARAM === "mini"
+      ? MINI_IDS
+      : QUESTION_TYPES_FULL.map((_, idx) => idx + 1);
+
+  const MAX_QUESTIONS = QUESTION_ID_SEQUENCE.length;
 
   function mapTypeToLabel(type) {
     switch (type) {
@@ -63,7 +98,7 @@
     return Array.isArray(data.progress) ? data.progress : data;
   }
 
-  // Convert questionResults → array of { status } for each question 1..25
+  // Convert questionResults → array of { status } for each question in the active set
   function buildSlots(questionResults) {
     const slots = [];
     const byId = new Map();
@@ -76,13 +111,14 @@
       }
     });
 
-    for (let i = 1; i <= MAX_QUESTIONS; i++) {
-      const qr = byId.get(i);
+    // Only consider the IDs in QUESTION_ID_SEQUENCE (full or mini)
+    QUESTION_ID_SEQUENCE.forEach((qId) => {
+      const qr = byId.get(qId);
 
       if (!qr) {
         // no entry logged yet → not answered
         slots.push({ status: "empty" });
-        continue;
+        return;
       }
 
       // If you later add partial credit (e.g. qr.raw.score between 0 and 1),
@@ -93,7 +129,7 @@
       } else {
         slots.push({ status: "incorrect" });
       }
-    }
+    });
 
     return slots;
   }
@@ -135,7 +171,7 @@
             "<p style='padding:1rem;'>No students joined yet. As they start, you’ll see them appear here.</p>";
         }
         if (metaEl) {
-          metaEl.textContent = `Session: ${SESSION_CODE} • 0 students`;
+          metaEl.textContent = `Session: ${SESSION_CODE} • ${SET_LABEL} • 0 students`;
         }
         return;
       }
@@ -161,7 +197,7 @@
             "<p style='padding:1rem;'>No students matched this class filter yet.</p>";
         }
         if (metaEl) {
-          metaEl.textContent = `Session: ${SESSION_CODE} • 0 students`;
+          metaEl.textContent = `Session: ${SESSION_CODE} • ${SET_LABEL} • 0 students`;
         }
         return;
       }
@@ -169,10 +205,13 @@
       // Build table with question-type header row
       let html = "<table class='monitor-table'><thead><tr>";
       html += "<th>Student</th><th>% Correct</th>";
+
+      // One column per question in the active set
       for (let i = 0; i < MAX_QUESTIONS; i++) {
-        const type = QUESTION_TYPES[i] || "";
-        const label = mapTypeToLabel(type) || (i + 1);
-    html += `<th><div class="header-rotate">${label}</div></th>`;
+        const qId = QUESTION_ID_SEQUENCE[i];
+        const typeKey = QUESTION_TYPES_FULL[qId - 1] || "";
+        const label = mapTypeToLabel(typeKey) || (i + 1);
+        html += `<th><div class="header-rotate">${label}</div></th>`;
       }
       html += "</tr></thead><tbody>";
 
@@ -183,6 +222,7 @@
         }</td>`;
         html += `<td>${row.percent}%</td>`;
         row.slots.forEach((slot, idx) => {
+          // Show contiguous 1..N for the active set
           html += `<td><div class="slot ${slot.status}">${idx + 1}</div></td>`;
         });
         html += "</tr>";
@@ -194,7 +234,7 @@
         gridEl.innerHTML = html;
       }
       if (metaEl) {
-        metaEl.textContent = `Session: ${SESSION_CODE} • Students: ${rows.length}`;
+        metaEl.textContent = `Session: ${SESSION_CODE} • ${SET_LABEL} • Students: ${rows.length}`;
       }
     } catch (err) {
       console.error("[Monitor] Error:", err);
@@ -205,7 +245,7 @@
     }
   }
 
-    if (refreshBtn) {
+  if (refreshBtn) {
     refreshBtn.addEventListener("click", render);
   }
 
