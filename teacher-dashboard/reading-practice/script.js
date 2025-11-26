@@ -36,9 +36,8 @@ function attachCrossOutHandlers(btn) {
   });
 }
 
-// ====== DATA MODEL: QUESTIONS ======
 // Types: 'mcq', 'multi', 'order', 'match', 'highlight', 'dropdown', 'classify', 'partAB', 'revise'
-const questions = [
+let questions = [
   // 1. MCQ – Main claim, Passage 1
   {
     id: 1,
@@ -47,17 +46,17 @@ const questions = [
     stem: "What is the main claim the author makes in Passage 1?",
     instructions: "Select the best answer from the choices below.",
     options: [
-      "Schools should give students more homework so they learn responsibility.",
       "The school day should start later so students can be healthier and more focused.",
       "Students should visit the nurse less often during the school day.",
-      "Walking or biking to school is too dangerous for most students."
+      "Walking or biking to school is too dangerous for most students.",
+      "Schools should give students more homework so they learn responsibility."
     ],
-    correctIndex: 1,
+    correctIndex: 0,
     skills: [
-      "claim",          // identifying the author's claim
-      "central-idea",   // big idea of the passage
+      "claim",
+      "central-idea",
       "passage-1",
-      "mcq"             // test-format skill
+      "mcq"
     ]
   },
 
@@ -70,16 +69,16 @@ const questions = [
     instructions: "Choose the answer that best summarizes the author’s main point.",
     options: [
       "Later school start times always improve student health and happiness.",
-      "Earlier school start times are better because they fit family schedules, activities, and transportation needs.",
       "Students should quit after-school activities so they have more time for sleep.",
-      "Bus rides are the most important part of a student’s school experience."
+      "Bus rides are the most important part of a student’s school experience.",
+      "Earlier school start times are better because they fit family schedules, activities, and transportation needs."
     ],
-    correctIndex: 1,
+    correctIndex: 3,
     skills: [
-      "central-idea", // main idea / gist
+      "central-idea",
       "summarizing",
       "passage-2",
-      "mcq"           // test-format skill
+      "mcq"
     ]
   },
 
@@ -96,15 +95,14 @@ const questions = [
       "One district in Colorado saw chronic absenteeism drop by 12% after starting later.",
       "Many students with a 7:30 a.m. start time wake up between 5:30 and 6:00 a.m."
     ],
-    // A & B directly support health/safety (headaches, nurse visits, accidents)
     correctIndices: [0, 1],
     minSelections: 2,
     maxSelections: 3,
     skills: [
-      "text-evidence",   // choosing evidence
-      "details",         // paying attention to data points
-      "health-safety",   // specific focus
-      "multi-select"     // test-format skill
+      "text-evidence",
+      "details",
+      "health-safety",
+      "multi-select"
     ]
   },
 
@@ -121,7 +119,6 @@ const questions = [
       "Students learn to wake up early, prepare, and arrive on time, just like in real-world jobs.",
       "Bus routes became longer and traffic heavier when districts changed to a later school start time."
     ],
-    // A: family schedule issues; B: after-school runs late; D: transportation problems
     correctIndices: [0, 1, 3],
     minSelections: 2,
     maxSelections: 4,
@@ -129,7 +126,7 @@ const questions = [
       "text-evidence",
       "details",
       "problem-solution",
-      "multi-select"     // test-format skill
+      "multi-select"
     ]
   },
 
@@ -140,20 +137,18 @@ const questions = [
     linkedPassage: 1,
     stem: "Put these ideas from Passage 1 in the order they appear in the text.",
     instructions: "Drag and drop the ideas so they appear from first to last.",
-    // Scrambled starting order — none in the correct position
     items: [
       { id: "e2", text: "The author describes a study showing students at later-start schools are healthier and less tired." },
       { id: "e4", text: "The author explains that later start times lead to safer travel for students in the morning." },
       { id: "e1", text: "The author explains how much sleep middle-school students need and how early schedules make this difficult." },
       { id: "e3", text: "The author gives an example of a district where attendance improved after starting school later." }
     ],
-    // Correct sequence
     correctOrder: ["e1", "e2", "e3", "e4"],
     skills: [
-      "chronological-order", // ordering ideas/events
-      "text-structure",      // noticing how the argument is built
+      "chronological-order",
+      "text-structure",
       "passage-1",
-      "drag-drop"            // test-format skill
+      "drag-drop"
     ]
   },
 
@@ -164,7 +159,6 @@ const questions = [
     linkedPassage: 2,
     stem: "Sequence the ideas from Passage 2 in the order they are presented.",
     instructions: "Drag and drop the ideas so they are in the correct sequence.",
-    // Different scramble pattern, no piece starts in the right place
     items: [
       { id: "s3", text: "The author explains that earlier start times teach real-world responsibility and time management." },
       { id: "s1", text: "The author explains how earlier start times fit with parents’ work schedules." },
@@ -177,7 +171,7 @@ const questions = [
       "text-structure",
       "cause-effect",
       "passage-2",
-      "drag-drop"            // test-format skill
+      "drag-drop"
     ]
   },
 
@@ -204,11 +198,11 @@ const questions = [
       m3: "r2"
     },
     skills: [
-      "argument-structure", // claim-reason-evidence roles
+      "argument-structure",
       "claim",
       "reason",
       "text-evidence",
-      "matching"            // test-format skill
+      "matching"
     ]
   },
 
@@ -238,7 +232,7 @@ const questions = [
       "argument-structure",
       "details",
       "cause-effect",
-      "matching"            // test-format skill
+      "matching"
     ]
   },
 
@@ -262,7 +256,7 @@ const questions = [
       },
       {
         id: "h3",
-        text: "The percentage of students who reported feeling “very tired” during the school day dropped from 56% to 31%.",
+        text: "The percentage of students who reported feeling \"very tired\" during the school day dropped from 56% to 31%.",
         correct: true
       },
       {
@@ -276,7 +270,7 @@ const questions = [
       "details",
       "close-reading",
       "distinguish-fact-opinion",
-      "highlight"           // test-format skill
+      "highlight"
     ]
   },
 
@@ -313,7 +307,7 @@ const questions = [
       "author-opinion",
       "distinguish-fact-opinion",
       "close-reading",
-      "highlight"           // test-format skill
+      "highlight"
     ]
   },
 
@@ -327,12 +321,12 @@ const questions = [
       "The author believes that changing the school start time would ",
       " student health and safety."
     ],
-    options: ["slightly change", "improve", "not affect"],
-    correctIndex: 1,
+    options: ["not affect", "slightly change", "improve"],
+    correctIndex: 2,
     skills: [
-      "author-meaning",      // keeping the meaning aligned with the passage
-      "precision-language",  // choosing the most accurate phrasing
-      "dropdown"             // test-format skill
+      "author-meaning",
+      "precision-language",
+      "dropdown"
     ]
   },
 
@@ -349,9 +343,9 @@ const questions = [
     options: ["somewhat okay", "often confusing", "better overall"],
     correctIndex: 2,
     skills: [
-      "author-opinion",      // matching the author's opinion
-      "precision-language",  // stronger, clearer phrasing
-      "dropdown"             // test-format skill
+      "author-opinion",
+      "precision-language",
+      "dropdown"
     ]
   },
 
@@ -374,7 +368,7 @@ const questions = [
       },
       {
         id: "c2",
-        text: "The percentage of students who reported feeling “very tired” dropped from 56% to 31%.",
+        text: "The percentage of students who reported feeling \"very tired\" dropped from 56% to 31%.",
         categoryId: "health"
       },
       {
@@ -386,8 +380,8 @@ const questions = [
     skills: [
       "details",
       "text-evidence",
-      "classify",        // conceptual skill
-      "table-sorting"   // test-format skill
+      "classify",
+      "table-sorting"
     ]
   },
 
@@ -422,8 +416,8 @@ const questions = [
     skills: [
       "details",
       "text-evidence",
-      "classify",        // conceptual skill
-      "table-sorting"   // test-format skill
+      "classify",
+      "table-sorting"
     ]
   },
 
@@ -448,10 +442,10 @@ const questions = [
       label: "Part B",
       stem: "Which sentence from Passage 1 best supports your answer to Part A?",
       options: [
-        "“When school starts at 7:30 a.m., many students wake up between 5:30 and 6:00 a.m.”",
-        "“The percentage of students who reported feeling ‘very tired’ during the school day dropped from 56% to 31%.”",
-        "“One district in Colorado saw chronic absenteeism drop by 12% after pushing back its start time.”",
-        "“Researchers at the University of Minnesota found that communities with later school start times saw a 16% decrease in morning car accidents involving teen drivers.”"
+        "\"When school starts at 7:30 a.m., many students wake up between 5:30 and 6:00 a.m.\"",
+        "\"The percentage of students who reported feeling 'very tired' during the school day dropped from 56% to 31%.\"",
+        "\"One district in Colorado saw chronic absenteeism drop by 12% after pushing back its start time.\"",
+        "\"Researchers at the University of Minnesota found that communities with later school start times saw a 16% decrease in morning car accidents involving teen drivers.\""
       ],
       correctIndex: 3
     },
@@ -459,7 +453,7 @@ const questions = [
       "claim",
       "text-evidence",
       "argument-structure",
-      "two-part"        // test-format skill
+      "two-part"
     ]
   },
 
@@ -484,10 +478,10 @@ const questions = [
       label: "Part B",
       stem: "Which sentence from Passage 2 best supports your answer to Part A?",
       options: [
-        "“Many parents begin work between 7:00 and 8:00 a.m., so dropping off children earlier allows families to stay on the same routine.”",
-        "“Practices often ran later into the evening, leaving students with less free time.”",
-        "“Bus routes became longer and traffic heavier when districts changed to a later school start time.”",
-        "“In some cases, younger elementary students were forced to begin even earlier to make the schedule work.”"
+        "\"Many parents begin work between 7:00 and 8:00 a.m., so dropping off children earlier allows families to stay on the same routine.\"",
+        "\"Practices often ran later into the evening, leaving students with less free time.\"",
+        "\"Bus routes became longer and traffic heavier when districts changed to a later school start time.\"",
+        "\"In some cases, younger elementary students were forced to begin even earlier to make the schedule work.\""
       ],
       correctIndex: 0
     },
@@ -495,7 +489,7 @@ const questions = [
       "reason",
       "text-evidence",
       "argument-structure",
-      "two-part"        // test-format skill
+      "two-part"
     ]
   },
 
@@ -503,7 +497,6 @@ const questions = [
   {
     id: 17,
     type: "classify",
-    // no single linkedPassage because this uses BOTH passages
     stem: "Sort each statement into the passage it best describes.",
     instructions: "Drag each statement into the correct column. Use both Passage 1 and Passage 2.",
     categories: [
@@ -536,8 +529,8 @@ const questions = [
       "compare-passages",
       "claim",
       "details",
-      "classify",        // conceptual skill
-      "table-sorting"   // test-format skill
+      "classify",
+      "table-sorting"
     ]
   },
 
@@ -554,7 +547,7 @@ const questions = [
     items: [
       {
         id: "cp5",
-        text: "Reports that the percentage of students who felt “very tired” dropped from 56% to 31%.",
+        text: "Reports that the percentage of students who felt \"very tired\" dropped from 56% to 31%.",
         categoryId: "p1"
       },
       {
@@ -577,8 +570,8 @@ const questions = [
       "compare-passages",
       "details",
       "text-evidence",
-      "classify",        // conceptual skill
-      "table-sorting"   // test-format skill
+      "classify",
+      "table-sorting"
     ]
   },
 
@@ -603,7 +596,7 @@ const questions = [
       "revise-sentence",
       "precision-language",
       "clarity",
-      "revise"           // test-format skill
+      "revise"
     ]
   },
 
@@ -619,19 +612,17 @@ const questions = [
       " for families and the community."
     ],
     options: [
-      "sort of okay",
       "often a good fit",
+      "sort of okay",
       "the best possible choice in every situation"
     ],
-    // “often a good fit” is strong and realistic; “best possible choice in every situation”
-    // is too extreme and not supported by the text
-    correctIndex: 1,
+    correctIndex: 0,
     skills: [
       "revise-sentence",
       "author-opinion",
       "precision-language",
       "tone",
-      "revise"           // test-format skill
+      "revise"
     ]
   },
 
@@ -639,156 +630,198 @@ const questions = [
   {
     id: 21,
     type: "mcq",
-    // Uses BOTH passages plus the audio; leaving this null is fine since it's multi-source.
     linkedPassage: null,
     media: {
       type: "audio",
-      // change to "media/reading-lesson-1.mp4" if your file lives in a /media folder
       src: "reading-lesson-1.mp4",
       captions: "later-start-times-debate.vtt",
       label: "Audio Debate: Later School Start Times"
     },
-    stem: "Use Passages 1 and 2 and the audio debate. How does the second speaker counter the argument that later school start times must be a “non-negotiable priority” for safety?",
+    stem: "Use Passages 1 and 2 and the audio debate. How does the second speaker counter the argument that later school start times must be a \"non-negotiable priority\" for safety?",
     instructions: "Listen to the debate, then choose the best answer.",
     options: [
+      "By insisting that transportation budgets always decrease when start times are changed.",
       "By arguing that later start times have no real effect on teen sleep.",
       "By pointing out that later start times create serious problems for families and after-school activities.",
-      "By claiming that earlier start times improve students’ health more than sleep does.",
-      "By insisting that transportation budgets always decrease when start times are changed."
+      "By claiming that earlier start times improve students’ health more than sleep does."
     ],
-    correctIndex: 1,
+    correctIndex: 2,
     skills: [
-      "listening-comprehension", // audio-based understanding
-      "evaluate-argument",       // weighing arguments/claims
-      "counterclaim",            // how one speaker responds to another
-      "compare-passages",        // uses both passages + audio
-      "audio-media",             // multimedia skill tag
-      "mcq"                      // test-format skill
+      "listening-comprehension",
+      "evaluate-argument",
+      "counterclaim",
+      "compare-passages",
+      "audio-media",
+      "mcq"
     ]
   },
 
- // 22. MCQ – Audio debate, counterargument (Passages 1 & 2 + audio)
+  // 22. MCQ – Audio debate, main disagreement (Passages 1 & 2 + audio)
   {
-  id: 22,
-  type: "mcq",
-  linkedPassage: null,
-  media: {
-    type: "audio",
-    src: "reading-lesson-1.mp4",
-    captions: "later-start-times-debate.vtt",
-    label: "Audio Debate: Later School Start Times"
+    id: 22,
+    type: "mcq",
+    linkedPassage: null,
+    media: {
+      type: "audio",
+      src: "reading-lesson-1.mp4",
+      captions: "later-start-times-debate.vtt",
+      label: "Audio Debate: Later School Start Times"
+    },
+    stem: "Based on the audio debate, what is the main disagreement between the two speakers?",
+    instructions: "Use information from both passages and the audio debate to choose the best answer.",
+    options: [
+      "Whether students need more sleep than adults.",
+      "Whether after-school activities are more important than academic learning.",
+      "Whether schools should eliminate extracurricular activities to reduce stress.",
+      "Whether the health and safety benefits of later start times outweigh the scheduling problems they create for families and communities."
+    ],
+    correctIndex: 3,
+    skills: [
+      "central-idea",
+      "compare-passages",
+      "evaluate-argument",
+      "listening-comprehension",
+      "audio-media",
+      "mcq"
+    ]
   },
-  stem: "Based on the audio debate, what is the main disagreement between the two speakers?",
-  instructions: "Use information from both passages and the audio debate to choose the best answer.",
-  options: [
-    "Whether students need more sleep than adults.",
-    "Whether the health and safety benefits of later start times outweigh the scheduling problems they create for families and communities.",
-    "Whether after-school activities are more important than academic learning.",
-    "Whether schools should eliminate extracurricular activities to reduce stress."
-  ],
-  correctIndex: 1,
-  skills: [
-    "central-idea",
-    "compare-passages",
-    "evaluate-argument",
-    "listening-comprehension",
-    "audio-media",
-    "mcq"
-  ]
-},
 
-{
-  id: 23,
-  type: "mcq",
-  linkedPassage: 1,
-  media: {
-    type: "audio",
-    src: "reading-lesson-1.mp4",
-    captions: "later-start-times-debate.vtt",
-    label: "Audio Debate: Later School Start Times"
-  },
-  stem: "How does the graph in Passage 1 most clearly support a claim made by Speaker 1 in the audio debate?",
-  instructions: "Use the graph and the audio to answer the question.",
-  options: [
-    "The graph proves that students at all schools sleep the same amount of time.",
-    "The graph shows that later start times sharply reduce the percentage of students who feel very tired, supporting Speaker 1’s argument about improved health and alertness.",
-    "The graph shows that after-school participation decreases when school starts later.",
-    "The graph reveals that transportation costs always increase when start times change."
-  ],
-  correctIndex: 1,
-  skills: [
-    "graph-analysis",
-    "text-evidence",
-    "evaluate-argument",
-    "synthesis",
-    "audio-media",
-    "mcq"
-  ]
-},
-
-  //24. MCQ - Video debate, inference
+  // 23. MCQ – Graph + audio
   {
-  id: 24,
-  type: "mcq",
-  linkedPassage: null,
-  media: {
-    type: "video",
-    src: "video-clip.mp4",
-    captions: "video-clip-captions.vtt", // optional; remove if you aren't adding captions
-    label: "Video Report: The School Start Time Debate"
+    id: 23,
+    type: "mcq",
+    linkedPassage: 1,
+    media: {
+      type: "audio",
+      src: "reading-lesson-1.mp4",
+      captions: "later-start-times-debate.vtt",
+      label: "Audio Debate: Later School Start Times"
+    },
+    stem: "How does the graph in Passage 1 most clearly support a claim made by Speaker 1 in the audio debate?",
+    instructions: "Use the graph and the audio to answer the question.",
+    options: [
+      "The graph shows that later start times sharply reduce the percentage of students who feel very tired, supporting Speaker 1’s argument about improved health and alertness.",
+      "The graph proves that students at all schools sleep the same amount of time.",
+      "The graph shows that after-school participation decreases when school starts later.",
+      "The graph reveals that transportation costs always increase when start times change."
+    ],
+    correctIndex: 0,
+    skills: [
+      "graph-analysis",
+      "text-evidence",
+      "evaluate-argument",
+      "synthesis",
+      "audio-media",
+      "mcq"
+    ]
   },
-  stem: "Based on the video, which inference can the viewer make about why communities struggle to agree on school start times?",
-  instructions: "Watch the video, then choose the answer that is supported by evidence but not directly stated.",
-  options: [
-    "Most communities prefer to change start times every few years to test new schedules.",
-    "Both sides have valid concerns, so any decision will create a trade-off that affects different groups in different ways.",
-    "Students generally agree that earlier start times are the best way to prepare for future careers.",
-    "The majority of parents believe that later start times will automatically fix every problem schools face."
-  ],
-  correctIndex: 1,
-  skills: [
-    "inference",
-    "synthesis",
-    "evaluate-argument",
-    "listening-comprehension",
-    "multimedia-analysis",
-    "video",
-    "mcq"
-  ]
-},
 
-{
-  id: 25,
-  type: "mcq",
-  linkedPassage: null,
-  media: {
-    type: "video",
-    src: "video-clip.mp4",
-    captions: "video-clip-captions.vtt",
-    label: "Video Report: The School Start Time Debate"
+  // 24. MCQ – Video debate, inference
+  {
+    id: 24,
+    type: "mcq",
+    linkedPassage: null,
+    media: {
+      type: "video",
+      src: "video-clip.mp4",
+      captions: "video-clip-captions.vtt",
+      label: "Video Report: The School Start Time Debate"
+    },
+    stem: "Based on the video, which inference can the viewer make about why communities struggle to agree on school start times?",
+    instructions: "Watch the video, then choose the answer that is supported by evidence but not directly stated.",
+    options: [
+      "Most communities prefer to change start times every few years to test new schedules.",
+      "Students generally agree that earlier start times are the best way to prepare for future careers.",
+      "The majority of parents believe that later start times will automatically fix every problem schools face.",
+      "Both sides have valid concerns, so any decision will create a trade-off that affects different groups in different ways."
+    ],
+    correctIndex: 3,
+    skills: [
+      "inference",
+      "synthesis",
+      "evaluate-argument",
+      "listening-comprehension",
+      "multimedia-analysis",
+      "video",
+      "mcq"
+    ]
   },
-  stem: "Based on the video and the passages, which statement best explains why changing school start times is such a difficult decision for communities?",
-  instructions: "Use information from the video and both passages to infer the best answer.",
-  options: [
-    "Most communities change their school schedules every year and are used to rapid adjustments.",
-    "The evidence shows that only one side of the debate has meaningful concerns.",
-    "Any schedule change creates trade-offs that affect student health, family routines, transportation, and after-school activities.",
-    "Most parents and students want to eliminate extracurricular activities to simplify the schedules."
-  ],
-  correctIndex: 2,
-  skills: [
-    "inference",
-    "synthesis",
-    "compare-passages",
-    "evaluate-argument",
-    "multimedia-analysis",
-    "video",
-    "mcq"
-  ]
-}
 
-
+  // 25. MCQ – Video + passages, synthesis
+  {
+    id: 25,
+    type: "mcq",
+    linkedPassage: null,
+    media: {
+      type: "video",
+      src: "video-clip.mp4",
+      captions: "video-clip-captions.vtt",
+      label: "Video Report: The School Start Time Debate"
+    },
+    stem: "Based on the video and the passages, which statement best explains why changing school start times is such a difficult decision for communities?",
+    instructions: "Use information from the video and both passages to infer the best answer.",
+    options: [
+      "Most communities change their school schedules every year and are used to rapid adjustments.",
+      "The evidence shows that only one side of the debate has meaningful concerns.",
+      "Any schedule change creates trade-offs that affect student health, family routines, transportation, and after-school activities.",
+      "Most parents and students want to eliminate extracurricular activities to simplify the schedules."
+    ],
+    correctIndex: 2,
+    skills: [
+      "inference",
+      "synthesis",
+      "compare-passages",
+      "evaluate-argument",
+      "multimedia-analysis",
+      "video",
+      "mcq"
+    ]
+  }
 ];
+
+// ===== QUESTION SET CONFIG (full vs mini, future-friendly) =====
+const ALL_QUESTIONS = questions.slice(); // keep an untouched copy
+
+// Define which IDs belong to which set.
+// You can add more sets later (e.g., "reteach", "challenge") by adding keys here.
+const QUESTION_SETS = {
+  full: null, // null means "use all questions"
+  mini: [3, 5, 7, 9, 11, 15, 17, 19, 22, 24]
+  // NOTE:
+  // 3  - multi
+  // 5  - order
+  // 7  - match
+  // 9  - highlight
+  // 11 - dropdown
+  // 15 - partAB
+  // 17 - classify
+  // 19 - revise
+  // 22 - audio-based mcq
+  // 24 - video-based mcq
+};
+
+// Apply the set from the URL (?set=mini or ?set=full)
+(function applyQuestionSetFromUrl() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const setParam = (params.get("set") || "full").toLowerCase();
+
+    const config = QUESTION_SETS[setParam];
+
+    if (Array.isArray(config)) {
+      // Use only the questions whose IDs are in this set
+      questions = ALL_QUESTIONS.filter((q) => config.includes(q.id));
+    } else {
+      // Fallback / "full" set = all questions
+      questions = ALL_QUESTIONS.slice();
+    }
+  } catch (e) {
+    // On any error, just use full set
+    questions = ALL_QUESTIONS.slice();
+    console.warn("[Reading Trainer] Could not apply question set from URL:", e);
+  }
+})();
+
 
 function logQuestionResult(q, extra = {}) {
   if (!window.RP_REPORT || typeof RP_REPORT.recordQuestionResult !== "function") {

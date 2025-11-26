@@ -1453,7 +1453,6 @@ function enableMonitorButton(sessionCodeRaw, classCodeRaw) {
 
   monitorSessionBtn.disabled = false;
 
-  // Use your existing auth guard so only signed-in teachers can open it
   monitorSessionBtn.onclick = requireTeacherSignedIn(() => {
     const params = new URLSearchParams();
     params.set("session", session.toUpperCase());
@@ -1461,11 +1460,19 @@ function enableMonitorButton(sessionCodeRaw, classCodeRaw) {
       params.set("class", classCode);
     }
 
-    // New live monitor page
+    // Match the mini/full set choice for live monitor as well
+    const miniCheckbox = document.getElementById("use-mini-set");
+    if (miniCheckbox && miniCheckbox.checked) {
+      params.set("set", "mini");
+    } else {
+      params.set("set", "full");
+    }
+
     const url = `./reading-practice/live-monitor.html?${params.toString()}`;
     window.open(url, "_blank");
   });
 }
+
 
 
 async function exportDashboardPDF() {
@@ -1493,13 +1500,14 @@ async function exportDashboardPDF() {
 
 // ---------- NEW: BUILD & COPY STUDENT LINK ----------
 function buildStudentLink(sessionCode, classCode) {
-  // Normalize: we’ll default to uppercasing session codes for consistency
   const cleanSession = sessionCode.trim().toUpperCase();
   const cleanClass = (classCode || "").trim();
 
-  // Keep the normalized value in the input so teacher sees it
+  // Keep the normalized value in the inputs so the teacher sees it
   sessionInput.value = cleanSession;
-  if (cleanClass) classInput.value = cleanClass;
+  if (cleanClass) {
+    classInput.value = cleanClass;
+  }
 
   const baseUrl = `${window.location.origin}/teacher-dashboard/reading-practice/index.html`;
   const params = new URLSearchParams();
@@ -1508,8 +1516,17 @@ function buildStudentLink(sessionCode, classCode) {
     params.set("class", cleanClass);
   }
 
+  // NEW: set = mini | full
+  const miniCheckbox = document.getElementById("use-mini-set");
+  if (miniCheckbox && miniCheckbox.checked) {
+    params.set("set", "mini");
+  } else {
+    params.set("set", "full");
+  }
+
   return `${baseUrl}?${params.toString()}`;
 }
+
 
 function buildCoTeacherLink(sessionCode, classCode) {
   const cleanSession = sessionCode.trim().toUpperCase();
