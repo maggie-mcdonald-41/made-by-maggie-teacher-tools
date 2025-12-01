@@ -303,25 +303,33 @@ function saveHistoryToStorage(history) {
  */
 function updateSessionHistory(sessionCodeRaw, classCodeRaw, attempts) {
   if (!sessionCodeRaw) return;
-  if (!Array.isArray(attempts) || attempts.length === 0) return;
 
   const sessionCode = sessionCodeRaw.trim();
   const classCode = (classCodeRaw || "").trim();
-
-  const totalQuestions = attempts.reduce(
-    (sum, a) => sum + (a.totalQuestions || 0),
-    0
-  );
-  const totalCorrect = attempts.reduce(
-    (sum, a) => sum + (a.numCorrect || 0),
-    0
-  );
-  const uniqueStudentNames = new Set(
-    attempts.map(a => (a.studentName || "").trim()).filter(Boolean)
-  );
-
   const nowIso = new Date().toISOString();
-  const history = loadHistoryFromStorage();
+
+  const history = loadHistoryFromStorage() || [];
+
+  // Calculate aggregates if we have attempts, otherwise use zeros
+  let attemptsCount = 0;
+  let totalQuestions = 0;
+  let totalCorrect = 0;
+  const uniqueStudentNames = new Set();
+
+  if (Array.isArray(attempts) && attempts.length > 0) {
+    attemptsCount = attempts.length;
+
+    attempts.forEach((a) => {
+      totalQuestions += Number(a.totalQuestions || 0);
+      totalCorrect += Number(a.numCorrect || 0);
+
+      if (a.studentName) {
+        uniqueStudentNames.add(String(a.studentName).trim());
+      }
+    });
+  }
+
+  const uniqueStudentsCount = uniqueStudentNames.size;
 
   const idx = history.findIndex(
     (entry) =>
@@ -333,10 +341,10 @@ function updateSessionHistory(sessionCodeRaw, classCodeRaw, attempts) {
     sessionCode,
     classCode,
     lastLoadedAt: nowIso,
-    attemptsCount: attempts.length,
+    attemptsCount,
     totalQuestions,
     totalCorrect,
-    uniqueStudentsCount: uniqueStudentNames.size
+    uniqueStudentsCount,
   };
 
   if (idx >= 0) {
@@ -348,6 +356,7 @@ function updateSessionHistory(sessionCodeRaw, classCodeRaw, attempts) {
   saveHistoryToStorage(history);
   renderSessionHistory(history);
 }
+
 
 // ---------- SERVER-HYDRATED SESSION HISTORY (owned + shared) ----------
 
