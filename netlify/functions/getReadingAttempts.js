@@ -19,9 +19,12 @@ exports.handler = async function (event, context) {
     const rawSession = (params.sessionCode || "").trim();
     const rawClass = (params.classCode || "").trim();
 
-// NEW – also respect teacherEmail from the dashboard
-const rawOwnerEmail =
-  (params.ownerEmail || params.teacherEmail || params.owner || "").trim();
+    // Respect explicit owner fields coming from the dashboard / co-teacher links
+    const rawOwnerEmail =
+      (params.ownerEmail || params.teacherEmail || params.owner || "").trim();
+
+    // NEW: viewerEmail = "show me attempts I own OR that are shared with me"
+    const rawViewerEmail = (params.viewerEmail || "").trim();
 
     // --- Sanitize for folder prefixes ---
     const sanitizeFragment = (value) =>
@@ -93,9 +96,7 @@ const rawOwnerEmail =
         "";
 
       const studentName =
-        data.studentName ||
-        (data.student && data.student.name) ||
-        "";
+        data.studentName || (data.student && data.student.name) || "";
 
       const startedAt =
         data.startedAt ||
@@ -108,7 +109,7 @@ const rawOwnerEmail =
         (data.sessionInfo && data.sessionInfo.finishedAt) ||
         null;
 
-      // NEW: normalize assessment metadata
+      // Normalize assessment metadata
       const assessmentName =
         data.assessmentName ||
         (data.sessionInfo && data.sessionInfo.assessmentName) ||
@@ -119,13 +120,22 @@ const rawOwnerEmail =
         (data.sessionInfo && data.sessionInfo.assessmentType) ||
         "";
 
-      // NEW: normalize owner / teacher email
+      // Normalize owner / teacher email
       const ownerEmail =
         data.ownerEmail ||
         data.teacherEmail ||
         (data.sessionInfo && data.sessionInfo.ownerEmail) ||
         (data.sessionInfo && data.sessionInfo.teacherEmail) ||
         "";
+
+      // NEW: normalize shared-with list (for co-teachers)
+      const sharedWithEmails = Array.isArray(data.sharedWithEmails)
+        ? data.sharedWithEmails
+        : Array.isArray(
+            data.sessionInfo && data.sessionInfo.sharedWithEmails
+          )
+        ? data.sessionInfo.sharedWithEmails
+        : [];
 
       return {
         attemptId: data.attemptId || key,
@@ -142,13 +152,32 @@ const rawOwnerEmail =
         byType,
         assessmentName,
         assessmentType,
-        // NEW: return owner email so front-end knows who owns this data
+        // ownership
         ownerEmail,
+        sharedWithEmails,
       };
     });
 
-    // NEW: Filter by owner email if provided (for co-teacher links)
-    if (rawOwnerEmail) {
+    // ---------- Filtering ----------
+
+    // NEW: viewerEmail takes priority and includes:
+    //  - attempts where viewer is the owner
+    //  - attempts where viewer is in sharedWithEmails
+    if (rawViewerEmail) {
+      const viewerLower = rawViewerEmail.toLowerCase();
+
+      attempts = attempts.filter((a) => {
+        const ownerLower = (a.ownerEmail || "").toLowerCase();
+        if (ownerLower === viewerLower) return true;
+
+        const shared = Array.isArray(a.sharedWithEmails)
+          ? a.sharedWithEmails.map((e) => String(e).toLowerCase())
+          : [];
+
+        return shared.includes(viewerLower);
+      });
+    } else if (rawOwnerEmail) {
+      // Backward-compatible: filter only by owner if viewerEmail not provided
       const ownerLower = rawOwnerEmail.toLowerCase();
       attempts = attempts.filter(
         (a) => (a.ownerEmail || "").toLowerCase() === ownerLower

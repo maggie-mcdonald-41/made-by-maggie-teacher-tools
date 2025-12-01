@@ -349,6 +349,134 @@ function updateSessionHistory(sessionCodeRaw, classCodeRaw, attempts) {
   renderSessionHistory(history);
 }
 
+// ---------- SERVER-HYDRATED SESSION HISTORY (owned + shared) ----------
+
+async function hydrateSessionHistoryFromServer(viewerEmail) {
+  if (!viewerEmail || typeof fetch === "undefined") return;
+
+  try {
+    const params = new URLSearchParams();
+    params.set("viewerEmail", viewerEmail);
+
+    const res = await fetch(
+      `/.netlify/functions/getReadingAttempts?${params.toString()}`,
+      {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      }
+    );
+
+    if (!res.ok) {
+      console.warn(
+        "[Dashboard] History fetch failed:",
+        res.status,
+        await res.text().catch(() => "")
+      );
+      return;
+    }
+
+    const payload = await res.json().catch(() => ({}));
+    const attempts = Array.isArray(payload.attempts) ? payload.attempts : [];
+
+    if (!attempts.length) {
+      // nothing to hydrate, fall back to whatever is in localStorage
+      const existing = loadHistoryFromStorage();
+      renderSessionHistory(existing);
+      return;
+    }
+
+    // Group attempts by (sessionCode + classCode)
+    const grouped = new Map();
+
+    attempts.forEach((a) => {
+      const sessionCode = (a.sessionCode || "").trim();
+      if (!sessionCode) return;
+      const classCode = (a.classCode || "").trim();
+      const key = `${sessionCode}||${classCode}`;
+
+      if (!grouped.has(key)) {
+        grouped.set(key, {
+          sessionCode,
+          classCode,
+          lastLoadedAt: a.finishedAt || a.startedAt || null,
+          attemptsCount: 0,
+          totalQuestions: 0,
+          totalCorrect: 0,
+          uniqueStudents: new Set(),
+        });
+      }
+
+      const entry = grouped.get(key);
+
+      entry.attemptsCount += 1;
+      entry.totalQuestions += Number(a.totalQuestions || 0);
+      entry.totalCorrect += Number(a.numCorrect || 0);
+
+      if (a.studentName) {
+        entry.uniqueStudents.add(String(a.studentName).trim());
+      }
+
+      const t = a.finishedAt || a.startedAt;
+      if (t && (!entry.lastLoadedAt || t > entry.lastLoadedAt)) {
+        entry.lastLoadedAt = t;
+      }
+    });
+
+    const serverHistory = Array.from(grouped.values()).map((entry) => ({
+      sessionCode: entry.sessionCode,
+      classCode: entry.classCode,
+      lastLoadedAt:
+        entry.lastLoadedAt || new Date().toISOString(),
+      attemptsCount: entry.attemptsCount,
+      totalQuestions: entry.totalQuestions,
+      totalCorrect: entry.totalCorrect,
+      uniqueStudentsCount: entry.uniqueStudents.size,
+    }));
+
+    // Merge with whatever is in localStorage already
+    const localHistory = loadHistoryFromStorage();
+    const mergedByKey = new Map();
+
+    const addEntries = (entries) => {
+      entries.forEach((h) => {
+        const key = `${h.sessionCode}||${h.classCode || ""}`;
+        const existing = mergedByKey.get(key);
+
+        if (!existing) {
+          mergedByKey.set(key, h);
+        } else {
+          // keep the entry with the newer lastLoadedAt
+          const existingTime = (existing.lastLoadedAt || "").toString();
+          const newTime = (h.lastLoadedAt || "").toString();
+          if (newTime > existingTime) {
+            mergedByKey.set(key, h);
+          }
+        }
+      });
+    };
+
+    addEntries(localHistory || []);
+    addEntries(serverHistory);
+
+    const mergedHistory = Array.from(mergedByKey.values()).sort((a, b) =>
+      (b.lastLoadedAt || "").toString().localeCompare(
+        (a.lastLoadedAt || "").toString()
+      )
+    );
+
+    saveHistoryToStorage(mergedHistory);
+    renderSessionHistory(mergedHistory);
+  } catch (err) {
+    console.warn(
+      "[Dashboard] Could not hydrate session history from server:",
+      err
+    );
+    // fall back to local history if something goes wrong
+    const existing = loadHistoryFromStorage();
+    renderSessionHistory(existing);
+  }
+}
+
 // ---------- HISTORY RENDERING ----------
 function renderSessionHistory(history) {
   historyListEl.innerHTML = "";
@@ -1358,14 +1486,17 @@ async function loadAttempts() {
     if (sessionCodeRaw) params.set("sessionCode", sessionCodeRaw);
     if (classCodeRaw) params.set("classCode", classCodeRaw);
 
-    // NEW: scope results to the *owner* of this data
-    const ownerEmail =
-      OWNER_EMAIL_FOR_VIEW ||
-      (teacherUser && teacherUser.email) ||
-      "";
-    if (ownerEmail) {
-      // Name this however your Netlify function expects it:
-      params.set("ownerEmail", ownerEmail);
+    // UPDATED: scope results based on sign-in state
+    // - If teacher is signed in, use viewerEmail → get all owned + shared sessions
+    // - If not signed in but we have an OWNER_EMAIL_FOR_VIEW (co-teacher link),
+    //   use ownerEmail → show the owner's data for that session
+    if (teacherUser && teacherUser.email) {
+      params.set("viewerEmail", teacherUser.email);
+    } else {
+      const ownerEmail = OWNER_EMAIL_FOR_VIEW || "";
+      if (ownerEmail) {
+        params.set("ownerEmail", ownerEmail);
+      }
     }
 
     const res = await fetch(
@@ -1373,8 +1504,8 @@ async function loadAttempts() {
       {
         method: "GET",
         headers: {
-          "Accept": "application/json"
-        }
+          Accept: "application/json",
+        },
       }
     );
 
@@ -1392,14 +1523,18 @@ async function loadAttempts() {
     } else {
       renderDashboard(attempts);
       updateSessionHistory(sessionCodeRaw, classCodeRaw, attempts);
-      loadStatusEl.textContent =
-        `Loaded ${attempts.length} attempt${attempts.length === 1 ? "" : "s"} from server.`;
+      loadStatusEl.textContent = `Loaded ${attempts.length} attempt${
+        attempts.length === 1 ? "" : "s"
+      } from server.`;
     }
+
     // Enable live monitor for this session
     enableMonitorButton(sessionCodeRaw, classCodeRaw);
-
   } catch (err) {
-    console.error("[Dashboard] Error loading attempts, falling back to demo:", err);
+    console.error(
+      "[Dashboard] Error loading attempts, falling back to demo:",
+      err
+    );
 
     // --------- SMART DEMO FALLBACK ---------
     // Start with all demo attempts
@@ -1413,20 +1548,21 @@ async function loadAttempts() {
     // Apply filters to demo data, if any
     if (sessionCodeRaw2) {
       const codeUpper = sessionCodeRaw2.toUpperCase();
-      filtered = filtered.filter(a =>
-        (a.sessionCode || "").toUpperCase() === codeUpper
+      filtered = filtered.filter(
+        (a) => (a.sessionCode || "").toUpperCase() === codeUpper
       );
     }
 
     if (classCodeRaw2) {
       const classUpper = classCodeRaw2.toUpperCase();
-      filtered = filtered.filter(a =>
-        (a.classCode || "").toUpperCase() === classUpper
+      filtered = filtered.filter(
+        (a) => (a.classCode || "").toUpperCase() === classUpper
       );
     }
 
     let attemptsToShow = filtered;
-    let statusMessage = "Could not reach the server. Showing demo data instead.";
+    let statusMessage =
+      "Could not reach the server. Showing demo data instead.";
 
     // If filters wipe everything out, show full demo so you still see samples
     if (!attemptsToShow.length) {
@@ -1443,11 +1579,11 @@ async function loadAttempts() {
 
     // Using demo data – live monitor should stay disabled
     enableMonitorButton(sessionCodeRaw2, classCodeRaw2);
-
   } finally {
     loadBtn.disabled = false;
   }
 }
+
 
 function enableMonitorButton(sessionCodeRaw, classCodeRaw) {
   if (!monitorSessionBtn) return;
@@ -1844,6 +1980,12 @@ if (window.RP_AUTH) {
       if (!OWNER_EMAIL_FOR_VIEW) {
         OWNER_EMAIL_FOR_VIEW = teacherUser.email;
       }
+
+      // NEW: hydrate Session History with all sessions this teacher owns
+      // or that are shared with them
+      if (typeof hydrateSessionHistoryFromServer === "function") {
+        hydrateSessionHistoryFromServer(teacherUser.email);
+      }
     } else {
       teacherSignInBtn.style.display = "inline-flex";
       teacherSignOutBtn.style.display = "none";
@@ -1853,6 +1995,7 @@ if (window.RP_AUTH) {
 
   RP_AUTH.initGoogleAuth();
 }
+
 
 // ====== FULLSCREEN CHARTS ======
 function initChartFullscreen() {

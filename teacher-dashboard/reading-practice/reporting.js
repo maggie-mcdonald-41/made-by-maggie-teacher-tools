@@ -7,9 +7,12 @@
     sessionInfo: {
       studentName: "",
       classCode: "",
-      sessionCode: ""
+      sessionCode: "",
+      assessmentName: "",
+      // NEW: who owns this assessment (dashboard owner)
+      ownerEmail: ""
     },
-     startedAt: null,
+    startedAt: null,
     // Each entry: { questionId, type, linkedPassage, skills[], isCorrect, raw }
     questionResults: []
   };
@@ -74,22 +77,37 @@
   /**
    * Called from script.js when the student hits "Start Practice".
    * Example payload:
-   *   { studentName: "Ava", classCode: "3rd Period", sessionCode: "ABC123" }
+   *   {
+   *     studentName: "Ava",
+   *     classCode: "3rd Period",
+   *     sessionCode: "ABC123",
+   *     assessmentName: "Start Times Article",
+   *     // NEW:
+   *     teacherEmail / ownerEmail / teacher: "teacher@school.org"
+   *   }
    */
-function setSessionInfo(info = {}) {
-  state.sessionInfo = {
-    studentName: cleanString(info.studentName),
-    classCode: cleanString(info.classCode),
-    sessionCode: cleanString(info.sessionCode),
-    assessmentName: cleanString(info.assessmentName)
-  };
+  function setSessionInfo(info = {}) {
+    const ownerEmail = cleanString(
+      info.ownerEmail ||
+      info.teacherEmail ||
+      info.teacher ||                  // if you pass it under "teacher"
+      (info.user && info.user.email) || // just in case you wire a user object later
+      ""
+    );
 
-  if (!state.startedAt) {
-    state.startedAt = new Date().toISOString();
+    state.sessionInfo = {
+      studentName: cleanString(info.studentName),
+      classCode: cleanString(info.classCode),
+      sessionCode: cleanString(info.sessionCode),
+      assessmentName: cleanString(info.assessmentName),
+      ownerEmail
+    };
+
+    if (!state.startedAt) {
+      state.startedAt = new Date().toISOString();
+    }
+    console.log("[RP_REPORT] Session info set:", state.sessionInfo);
   }
-  console.log("[RP_REPORT] Session info set:", state.sessionInfo);
-}
-
 
   /**
    * Called from script.js whenever a question is checked.
@@ -124,7 +142,6 @@ function setSessionInfo(info = {}) {
     if (typeof window !== "undefined" && typeof window.RP_AUTOSAVE_PROGRESS === "function") {
       window.RP_AUTOSAVE_PROGRESS();
     }
-
   }
 
   /**
@@ -136,7 +153,7 @@ function setSessionInfo(info = {}) {
     const finishedAt = new Date().toISOString();
 
     const payload = {
-      ...state.sessionInfo,
+      ...state.sessionInfo,   // includes ownerEmail now 🎯
       ...summary,
       startedAt: state.startedAt || null,
       finishedAt,

@@ -22,11 +22,20 @@ exports.handler = async function (event, context) {
 
     const sessionCode = (body.sessionCode || "").trim();
     const studentName = (body.studentName || "").trim();
-    const classCode = (body.classCode || "").trim();
+    const classCode   = (body.classCode || "").trim();
 
-    // NEW: assessment metadata from the front end
+    // NEW: teacher ownership
+    const ownerEmail = (body.ownerEmail || body.teacherEmail || "").trim();
+
+    // NEW: optional co-teacher sharing
+    let sharedWithEmails = [];
+    if (Array.isArray(body.sharedWithEmails)) {
+      sharedWithEmails = body.sharedWithEmails.map(email => String(email).trim()).filter(Boolean);
+    }
+
+    // NEW: assessment metadata
     const assessmentName = (body.assessmentName || "").trim();
-    const assessmentType = (body.assessmentType || "").trim(); // e.g. "Reading Practice"
+    const assessmentType = (body.assessmentType || "").trim();
 
     if (!sessionCode || !studentName) {
       return {
@@ -41,28 +50,34 @@ exports.handler = async function (event, context) {
     const safeSession = sanitizeFragment(sessionCode);
     const now = Date.now();
 
+    // Unique attempt ID
     const attemptId = `${safeSession}_${now}`;
     const key = `session/${safeSession}/${attemptId}.json`;
 
-    // Required for Netlify Blobs in Functions v1
+    // Required for Netlify Blobs v1
     connectLambda(event);
     const store = getStore("reading-attempts");
 
-    // Normalize shape to what teacher-dashboard.js expects
+    // --------- BUILD ATTEMPT OBJECT (dashboard-ready) ----------
     const attempt = {
       attemptId,
       studentName,
       classCode,
       sessionCode,
 
-      // NEW: stored on every attempt
+      // === NEW: Ownership ===
+      ownerEmail: ownerEmail || "",      // who owns this assessment
+      sharedWithEmails,                  // co-teachers with view access
+
+      // === NEW: Assessment Metadata ===
       assessmentName,
       assessmentType,
 
+      // Main stats
       numCorrect: Number(body.numCorrect || 0),
       totalQuestions: Number(body.totalQuestions || 0),
 
-      // Per-skill + per-type breakdowns (support both naming styles just in case)
+      // Per-skill & per-type breakdowns
       bySkill: body.perSkill || body.bySkill || {},
       byType: body.perType || body.byType || {},
 
@@ -70,18 +85,20 @@ exports.handler = async function (event, context) {
       startedAt: body.startedAt || null,
       finishedAt: body.finishedAt || new Date().toISOString(),
 
-      // Optional detailed results (perfect for future question-by-question view)
+      // Detailed item-level results
       questionResults: Array.isArray(body.questionResults)
         ? body.questionResults
         : []
     };
 
+    // Store JSON
     await store.setJSON(key, attempt);
 
     return {
       statusCode: 200,
       body: JSON.stringify({ success: true, attemptId })
     };
+
   } catch (err) {
     console.error("[logReadingAttempt] Error:", err);
     return {
