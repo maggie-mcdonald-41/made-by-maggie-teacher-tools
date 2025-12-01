@@ -19,6 +19,10 @@ exports.handler = async function (event, context) {
     const rawSession = (params.sessionCode || "").trim();
     const rawClass = (params.classCode || "").trim();
 
+// NEW – also respect teacherEmail from the dashboard
+const rawOwnerEmail =
+  (params.ownerEmail || params.teacherEmail || params.owner || "").trim();
+
     // --- Sanitize for folder prefixes ---
     const sanitizeFragment = (value) =>
       String(value || "")
@@ -115,6 +119,14 @@ exports.handler = async function (event, context) {
         (data.sessionInfo && data.sessionInfo.assessmentType) ||
         "";
 
+      // NEW: normalize owner / teacher email
+      const ownerEmail =
+        data.ownerEmail ||
+        data.teacherEmail ||
+        (data.sessionInfo && data.sessionInfo.ownerEmail) ||
+        (data.sessionInfo && data.sessionInfo.teacherEmail) ||
+        "";
+
       return {
         attemptId: data.attemptId || key,
         studentName,
@@ -128,11 +140,20 @@ exports.handler = async function (event, context) {
         accuracy,
         bySkill,
         byType,
-        // NEW fields returned to the dashboard:
         assessmentName,
         assessmentType,
+        // NEW: return owner email so front-end knows who owns this data
+        ownerEmail,
       };
     });
+
+    // NEW: Filter by owner email if provided (for co-teacher links)
+    if (rawOwnerEmail) {
+      const ownerLower = rawOwnerEmail.toLowerCase();
+      attempts = attempts.filter(
+        (a) => (a.ownerEmail || "").toLowerCase() === ownerLower
+      );
+    }
 
     // Filter by class if requested
     if (rawClass) {

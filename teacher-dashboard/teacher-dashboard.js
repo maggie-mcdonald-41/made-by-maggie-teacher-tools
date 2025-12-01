@@ -167,6 +167,11 @@ const teacherSignOutBtn = document.getElementById("teacher-signout-btn");
 
 let teacherUser = null;
 
+// NEW: which teacher actually OWNS the data we’re viewing.
+// - For the main teacher: usually their own email.
+// - For co-teachers: comes from ?owner= in the dashboard link.
+let OWNER_EMAIL_FOR_VIEW = null;
+
 // ---------- UTILITIES ----------
 function formatPercent(numerator, denominator) {
   if (!denominator || denominator === 0) return "0%";
@@ -788,7 +793,7 @@ function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelec
     studentDetailNeedsWorkEl.innerHTML = '<li class="muted">Not enough data yet.</li>';
     studentDetailStrengthsEl.innerHTML = '<li class="muted">Not enough data yet.</li>';
 
-    // NEW: clear progress chart if it exists
+    // clear progress chart if it exists
     if (studentProgressChart) {
       studentProgressChart.destroy();
       studentProgressChart = null;
@@ -820,7 +825,7 @@ function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelec
   studentDetailAttemptsEl.textContent =
     `Attempts counted: ${studentAttempts.length}.`;
 
-  // === NEW: Progress-over-time chart ===
+  // === Progress-over-time chart ===
   const chartCanvas = document.getElementById("student-detail-progress-chart");
   if (chartCanvas && typeof Chart !== "undefined") {
     // Sort attempts by finishedAt/startedAt ascending
@@ -888,7 +893,6 @@ function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelec
         label: skillName,
         data: series,
         borderWidth: 1.5,
-        // leave colors to Chart.js theme; clickable legend still works
         pointRadius: 3
       });
     });
@@ -935,42 +939,41 @@ function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelec
   if (!entries.length) {
     studentDetailNeedsWorkEl.innerHTML = '<li class="muted">Not enough skill data yet.</li>';
     studentDetailStrengthsEl.innerHTML = '<li class="muted">Not enough skill data yet.</li>';
-    return;
+  } else {
+    const skillsWithPct = entries
+      .filter(([, stats]) => stats.total && stats.total >= 3) // require some data
+      .map(([skill, stats]) => ({
+        skill,
+        pct: (stats.correct / stats.total) * 100,
+        total: stats.total
+      }));
+
+    if (!skillsWithPct.length) {
+      studentDetailNeedsWorkEl.innerHTML = '<li class="muted">Not enough skill data yet.</li>';
+      studentDetailStrengthsEl.innerHTML = '<li class="muted">Not enough skill data yet.</li>';
+      return;
+    }
+
+    // Sort ascending for "needs work", descending for strengths
+    const sortedByLow = [...skillsWithPct].sort((a, b) => a.pct - b.pct);
+    const sortedByHigh = [...skillsWithPct].sort((a, b) => b.pct - a.pct);
+
+    const needsWork = sortedByLow.slice(0, 2);
+    const strengths = sortedByHigh.slice(0, 2);
+
+    const makeLi = ({ skill, pct, total }) =>
+      `<li>${skill}: ${Math.round(pct)}% (${total} questions)</li>`;
+
+    studentDetailNeedsWorkEl.innerHTML =
+      needsWork.length
+        ? needsWork.map(makeLi).join("")
+        : '<li class="muted">No clear weaknesses yet.</li>';
+
+    studentDetailStrengthsEl.innerHTML =
+      strengths.length
+        ? strengths.map(makeLi).join("")
+        : '<li class="muted">No clear strengths yet.</li>';
   }
-
-  const skillsWithPct = entries
-    .filter(([, stats]) => stats.total && stats.total >= 3) // require some data
-    .map(([skill, stats]) => ({
-      skill,
-      pct: (stats.correct / stats.total) * 100,
-      total: stats.total
-    }));
-
-  if (!skillsWithPct.length) {
-    studentDetailNeedsWorkEl.innerHTML = '<li class="muted">Not enough skill data yet.</li>';
-    studentDetailStrengthsEl.innerHTML = '<li class="muted">Not enough skill data yet.</li>';
-    return;
-  }
-
-  // Sort ascending for "needs work", descending for strengths
-  const sortedByLow = [...skillsWithPct].sort((a, b) => a.pct - b.pct);
-  const sortedByHigh = [...skillsWithPct].sort((a, b) => b.pct - a.pct);
-
-  const needsWork = sortedByLow.slice(0, 2);
-  const strengths = sortedByHigh.slice(0, 2);
-
-  const makeLi = ({ skill, pct, total }) =>
-    `<li>${skill}: ${Math.round(pct)}% (${total} questions)</li>`;
-
-  studentDetailNeedsWorkEl.innerHTML =
-    needsWork.length
-      ? needsWork.map(makeLi).join("")
-      : '<li class="muted">No clear weaknesses yet.</li>';
-
-  studentDetailStrengthsEl.innerHTML =
-    strengths.length
-      ? strengths.map(makeLi).join("")
-      : '<li class="muted">No clear strengths yet.</li>';
 }
 
 function renderSkillHeatmap(attempts) {
@@ -1058,10 +1061,10 @@ function renderSkillHeatmap(attempts) {
 // ---------- CORE DASHBOARD RENDERING ----------
 function renderDashboard(attempts) {
   const assessmentLabelEl = document.getElementById("summary-assessment-name");
-if (assessmentLabelEl) {
+  if (assessmentLabelEl) {
     const first = attempts[0];
     assessmentLabelEl.textContent = first?.assessmentName || "Unnamed Assessment";
-}
+  }
 
   // Keep a copy for CSV exports
   CURRENT_ATTEMPTS = attempts.slice();
@@ -1094,7 +1097,7 @@ if (assessmentLabelEl) {
       )
     : [];
 
-  // 🔹 Update charts with class vs selected student
+  // Update charts with class vs selected student
   updateScoreBandsChart(
     attempts,
     selectedStudentAttempts,
@@ -1216,7 +1219,7 @@ if (assessmentLabelEl) {
   skillsTableBody.innerHTML = "";
   const skillEntries = Object.entries(skillTotalsAll);
 
-  // 🔹 Update skill accuracy chart (class vs student)
+  // Update skill accuracy chart (class vs student)
   updateSkillAccuracyChart(
     skillTotalsAll,
     skillTotalsSelected,
@@ -1355,6 +1358,16 @@ async function loadAttempts() {
     if (sessionCodeRaw) params.set("sessionCode", sessionCodeRaw);
     if (classCodeRaw) params.set("classCode", classCodeRaw);
 
+    // NEW: scope results to the *owner* of this data
+    const ownerEmail =
+      OWNER_EMAIL_FOR_VIEW ||
+      (teacherUser && teacherUser.email) ||
+      "";
+    if (ownerEmail) {
+      // Name this however your Netlify function expects it:
+      params.set("ownerEmail", ownerEmail);
+    }
+
     const res = await fetch(
       `/.netlify/functions/getReadingAttempts?${params.toString()}`,
       {
@@ -1366,7 +1379,6 @@ async function loadAttempts() {
     );
 
     if (!res.ok) {
-      // This is where your 500 is coming from
       throw new Error(`Server error: ${res.status}`);
     }
 
@@ -1383,9 +1395,8 @@ async function loadAttempts() {
       loadStatusEl.textContent =
         `Loaded ${attempts.length} attempt${attempts.length === 1 ? "" : "s"} from server.`;
     }
-// Enable live monitor for this session
-enableMonitorButton(sessionCodeRaw, classCodeRaw);
-
+    // Enable live monitor for this session
+    enableMonitorButton(sessionCodeRaw, classCodeRaw);
 
   } catch (err) {
     console.error("[Dashboard] Error loading attempts, falling back to demo:", err);
@@ -1431,7 +1442,7 @@ enableMonitorButton(sessionCodeRaw, classCodeRaw);
     loadStatusEl.textContent = statusMessage;
 
     // Using demo data – live monitor should stay disabled
-   enableMonitorButton(sessionCodeRaw2, classCodeRaw2);
+    enableMonitorButton(sessionCodeRaw2, classCodeRaw2);
 
   } finally {
     loadBtn.disabled = false;
@@ -1472,8 +1483,6 @@ function enableMonitorButton(sessionCodeRaw, classCodeRaw) {
     window.open(url, "_blank");
   });
 }
-
-
 
 async function exportDashboardPDF() {
   try {
@@ -1516,7 +1525,7 @@ function buildStudentLink(sessionCode, classCode) {
     params.set("class", cleanClass);
   }
 
-  // NEW: set = mini | full
+  // set = mini | full
   const miniCheckbox = document.getElementById("use-mini-set");
   if (miniCheckbox && miniCheckbox.checked) {
     params.set("set", "mini");
@@ -1524,9 +1533,17 @@ function buildStudentLink(sessionCode, classCode) {
     params.set("set", "full");
   }
 
+  // tie this student link to the signed-in teacher (owner of attempts)
+  const ownerEmail =
+    OWNER_EMAIL_FOR_VIEW ||
+    (teacherUser && teacherUser.email) ||
+    "";
+  if (ownerEmail) {
+    params.set("teacher", ownerEmail);
+  }
+
   return `${baseUrl}?${params.toString()}`;
 }
-
 
 function buildCoTeacherLink(sessionCode, classCode) {
   const cleanSession = sessionCode.trim().toUpperCase();
@@ -1547,6 +1564,15 @@ function buildCoTeacherLink(sessionCode, classCode) {
     params.set("classCode", cleanClass);
   }
 
+  // the teacher who actually OWNS this data (for co-teacher access)
+  const ownerEmail =
+    OWNER_EMAIL_FOR_VIEW ||
+    (teacherUser && teacherUser.email) ||
+    "";
+  if (ownerEmail) {
+    params.set("owner", ownerEmail);
+  }
+
   const link = `${baseUrl}?${params.toString()}`;
 
   if (coTeacherLinkInput) {
@@ -1556,13 +1582,15 @@ function buildCoTeacherLink(sessionCode, classCode) {
   // remember it for restore-on-refresh
   try {
     window.localStorage.setItem("rp_lastCoTeacherLink", link);
+    if (ownerEmail) {
+      window.localStorage.setItem("rp_lastOwnerEmail", ownerEmail);
+    }
   } catch (e) {
     // non-fatal
   }
 
   return link;
 }
-
 
 function startNewSession() {
   const rawSession = sessionInput.value.trim();
@@ -1585,9 +1613,7 @@ function startNewSession() {
     sessionLinkInput.value = studentLink;
   }
 
-  // (Optional) if you want to also show the co-teacher link here
-  // make sure coTeacherLinkInput is defined at the top:
-  // const coTeacherLinkInput = document.getElementById("co-teacher-dashboard-link");
+  // Show the co-teacher link (if present)
   if (typeof coTeacherLinkInput !== "undefined" && coTeacherLinkInput) {
     coTeacherLinkInput.value = coLink;
   }
@@ -1609,12 +1635,20 @@ function startNewSession() {
     window.localStorage.setItem("rp_lastSessionClass", rawClass || "");
     window.localStorage.setItem("rp_lastSessionLink", studentLink);
     // Note: rp_lastCoTeacherLink is already saved inside buildCoTeacherLink()
+
+    const ownerEmail =
+      OWNER_EMAIL_FOR_VIEW ||
+      (teacherUser && teacherUser.email) ||
+      "";
+    if (ownerEmail) {
+      window.localStorage.setItem("rp_lastOwnerEmail", ownerEmail);
+    }
   } catch (e) {
     // non-fatal
   }
-    enableMonitorButton(rawSession, rawClass);
-}
 
+  enableMonitorButton(rawSession, rawClass);
+}
 
 function copySessionLink() {
   if (!sessionLinkInput || !sessionLinkInput.value) {
@@ -1632,10 +1666,9 @@ function copySessionLink() {
     setTimeout(() => {
       copyLinkStatusEl.style.opacity = "0";
       copyLinkStatusEl.style.visibility = "hidden";
-      copyLinkStatusEl.textContent = ""; 
+      copyLinkStatusEl.textContent = "";
     }, 1800);
   };
-
 
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard
@@ -1666,18 +1699,17 @@ function copyCoTeacherLink() {
 
   const text = coTeacherLinkInput.value;
 
-const showCopied = (message = "Copied!") => {
-  if (!copyCoTeacherStatusEl) return;
-  copyCoTeacherStatusEl.textContent = message;
-  copyCoTeacherStatusEl.style.opacity = "1";
-  copyCoTeacherStatusEl.style.visibility = "visible";
-  setTimeout(() => {
-    copyCoTeacherStatusEl.style.opacity = "0";
-    copyCoTeacherStatusEl.style.visibility = "hidden";
-    copyCoTeacherStatusEl.textContent = "";
-  }, 1800);
-};
-
+  const showCopied = (message = "Copied!") => {
+    if (!copyCoTeacherStatusEl) return;
+    copyCoTeacherStatusEl.textContent = message;
+    copyCoTeacherStatusEl.style.opacity = "1";
+    copyCoTeacherStatusEl.style.visibility = "visible";
+    setTimeout(() => {
+      copyCoTeacherStatusEl.style.opacity = "0";
+      copyCoTeacherStatusEl.style.visibility = "hidden";
+      copyCoTeacherStatusEl.textContent = "";
+    }, 1800);
+  };
 
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard
@@ -1698,7 +1730,6 @@ const showCopied = (message = "Copied!") => {
     }
   }
 }
-
 
 // ---------- AUTH WIRING ----------
 function requireTeacherSignedIn(action) {
@@ -1807,6 +1838,12 @@ if (window.RP_AUTH) {
       teacherSignInBtn.style.display = "none";
       teacherSignOutBtn.style.display = "inline-flex";
       teacherSignOutBtn.textContent = `Sign out (${teacherUser.email})`;
+
+      // If we didn't already have an owner (e.g. not a co-teacher link),
+      // default the owner to the signed-in teacher.
+      if (!OWNER_EMAIL_FOR_VIEW) {
+        OWNER_EMAIL_FOR_VIEW = teacherUser.email;
+      }
     } else {
       teacherSignInBtn.style.display = "inline-flex";
       teacherSignOutBtn.style.display = "none";
@@ -1816,6 +1853,7 @@ if (window.RP_AUTH) {
 
   RP_AUTH.initGoogleAuth();
 }
+
 // ====== FULLSCREEN CHARTS ======
 function initChartFullscreen() {
   const overlay = document.getElementById("chart-fullscreen-backdrop");
@@ -1897,11 +1935,14 @@ function initChartFullscreen() {
     teacherSignInBtn.style.display = "none";
     teacherSignOutBtn.style.display = "inline-flex";
     teacherSignOutBtn.textContent = `Sign out (${teacherUser.email})`;
+
+    if (!OWNER_EMAIL_FOR_VIEW) {
+      OWNER_EMAIL_FOR_VIEW = teacherUser.email;
+    }
   } catch (e) {
     console.warn("[Dashboard] Could not restore teacher from localStorage:", e);
   }
 })();
-
 
 // Sidebar collapse / expand
 historyToggleBtn.addEventListener("click", () => {
@@ -1934,12 +1975,17 @@ initChartFullscreen();
 renderDashboard([]);
 renderSessionHistory(loadHistoryFromStorage());
 
-// Use URL ?sessionCode=&classCode= to pre-fill filters
+// Use URL ?sessionCode=&classCode=&owner= to pre-fill filters
 (function applyUrlFiltersOnLoad() {
   try {
     const params = new URLSearchParams(window.location.search);
     const urlSession = params.get("sessionCode") || params.get("session");
     const urlClass = params.get("classCode") || params.get("class");
+    const urlOwner = params.get("owner") || params.get("ownerEmail");
+
+    if (urlOwner) {
+      OWNER_EMAIL_FOR_VIEW = urlOwner;
+    }
 
     if (urlSession && sessionInput) {
       sessionInput.value = urlSession;
@@ -1966,6 +2012,7 @@ renderSessionHistory(loadHistoryFromStorage());
     const lastClass = window.localStorage.getItem("rp_lastSessionClass");
     const lastLink = window.localStorage.getItem("rp_lastSessionLink");
     const lastCoLink = window.localStorage.getItem("rp_lastCoTeacherLink");
+    const lastOwner = window.localStorage.getItem("rp_lastOwnerEmail");
 
     if (lastCode && sessionInput && !sessionInput.value) {
       sessionInput.value = lastCode;
@@ -1984,6 +2031,11 @@ renderSessionHistory(loadHistoryFromStorage());
       coTeacherLinkInput.value = lastCoLink;
     }
 
+    // If we don't already have an owner (e.g. not a co-teacher URL), restore from localStorage
+    if (lastOwner && !OWNER_EMAIL_FOR_VIEW) {
+      OWNER_EMAIL_FOR_VIEW = lastOwner;
+    }
+
     // Also re-enable the live monitor button for this session
     if (lastCode) {
       enableMonitorButton(lastCode, lastClass || "");
@@ -1992,6 +2044,3 @@ renderSessionHistory(loadHistoryFromStorage());
     // ignore
   }
 })();
-
-
-
