@@ -1,57 +1,234 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Privacy Policy</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy | Made by Maggie Teaching Tools</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      color: #222;
+    }
+    h1, h2, h3 {
+      color: #0a2342;
+    }
+    ul {
+      margin-left: 1.2rem;
+    }
+    a { color: #0077cc; }
+    .section-break {
+      margin-top: 2.5rem;
+      border-top: 1px solid #ddd;
+      padding-top: 2rem;
+    }
+  </style>
 </head>
+
 <body>
+
   <h1>Privacy Policy</h1>
-  <p>Last updated: November 8, 2025</p>
+  <p><em>Last updated: December 01, 2025</em></p>
 
   <p>
-    MadeByMaggie.org values your privacy. We collect only the information needed to support saving and editing student work for the organizers. This privacy policy applies to all Made by Maggie teaching tools, including the
-Argumentative Essay Organizer, Opinion Organizer, Conclusion Builder, and any future tools developed under the Made by Maggie brand.
-
+    MadeByMaggie.org provides digital teaching tools designed for educators and students. 
+    We value your privacy and collect only the minimum data required for our organizers, 
+    reading trainers, dashboards, and Google-integrated tools to function.
   </p>
-
-  <h2>What We Collect with the Orgnanizers</h2>
-  <ul>
-    <li><strong>Email Address (via Google Sign-In):</strong> If you choose to sign in with Google, we request access to your email address. This is used to identify your work and support autosave to Google Drive. It is not used for marketing, communication, or shared with others.</li>
-    <li><strong>Saved Work:</strong> Your essay data is stored either in your browser’s local storage or in your own Google Drive, depending on which features you use. We do not store your work on any external servers.</li>
-  </ul>
-
-  <h2>How We Use Your Information</h2>
-  <ul>
-    <li>To connect your saved work to your account</li>
-    <li>To autosave your progress in your own Google Drive if enabled</li>
-    <li>To help you resume or recover your writing</li>
-  </ul>
-
-  <h2>Data Protection and Security</h2>
-  <ul>
-    <li>All communication between the app and Google services is encrypted in transit using HTTPS/TLS.</li>
-    <li>The app only requests the <code>drive.file</code> and <code>userinfo.email</code> permissions, which limit access to files you create or explicitly select for use with the app.</li>
-    <li>Your work is stored only in your own Google Drive account or your browser’s local storage — never on our servers.</li>
-    <li>No personal data or file contents are shared with third parties.</li>
-    <li>We do not retain or back up your files outside of your Google Drive or local storage; deleting them from those locations permanently removes them from our access.</li>
-  </ul>
-
-<h2>For all Made by Maggie Teacher Tools:</h2>
-<p>The tool only requests the minimum permissions required to perform its functions. 
-Some tools may request permission to edit the currently open Google Doc, display a 
-sidebar, save documents you create into your own Google Drive, or identify your Google
-account for saving progress. <br> All permissions are limited to the documents and resources you are actively using with 
-the tool. The tools do not access, read, search, or modify any other files in your 
-Google Drive.
-</p>
 
   <p>
-    This tool is built to support learning — not to track or monetize user behavior.
+    This policy applies to all Made by Maggie Teaching Tools, including but not limited to:
+    the writing organizers (Argumentative, Opinion, Narrative, Conclusion Builder), 
+    the Reading Practice Trainer, the Teacher Dashboard, and all future tools under the 
+    Made by Maggie brand.
   </p>
+
+
+  <!-- ========================================================= -->
+  <h2 id="data-collection">1. What Data We Collect (All Tools)</h2>
+  <!-- ========================================================= -->
+
+  <h3>Email Address (Google Sign-In — Optional)</h3>
+  <p>
+    If you choose to sign in with Google, we request your email address. 
+    This is used only to identify your Google Drive files, support autosave, and allow you 
+    to resume or recover your work. It is never used for marketing or shared with others.
+  </p>
+
+  <h3>Saved Work</h3>
+  <p>
+    Depending on the tool, your work may be stored in:
+  </p>
+  <ul>
+    <li>Your browser’s local storage</li>
+    <li>Your own Google Drive (via Drive API autosave)</li>
+    <li>Your teacher’s dashboard session (Reading Trainer only)</li>
+  </ul>
+
+  <p>
+    We do not store your writing or organizer content on Made by Maggie servers.
+  </p>
+
+  <h3>Dashboard Usage Data</h3>
+  <p>
+    The Teacher Dashboard collects:
+  </p>
+  <ul>
+    <li>Session codes created by teachers</li>
+    <li>Student answer attempts tied to those session codes</li>
+    <li>Skill-category accuracy and timing</li>
+    <li>Optional class/section labels</li>
+  </ul>
+  <p><strong>No student names are collected unless a teacher manually enters them.</strong></p>
+
+
+  <!-- ========================================================= -->
+  <div class="section-break"></div>
+  <h2 id="tool-specific">2. Tool-Specific Data Practices</h2>
+  <!-- ========================================================= -->
+
+  <h3 id="organizers">2A. Writing Organizers (Argumentative, Opinion, Narrative, Conclusion Builder)</h3>
+  <p>
+    These tools may save:
+  </p>
+  <ul>
+    <li>Your essay text</li>
+    <li>Writing logs (timestamps, revision progress)</li>
+    <li>Autosaved versions of your work in Google Drive</li>
+  </ul>
+
+  <p>Your files are stored only in your Google Drive or your browser — never on our servers.</p>
+
+
+  <h3 id="reading-trainer">2B. Reading Practice Trainer (Student View)</h3>
+  <p>
+    During a reading session, the tool collects only:
+  </p>
+  <ul>
+    <li>Your selected answers</li>
+    <li>Timing and skill-category performance</li>
+    <li>Any highlight actions (optional)</li>
+  </ul>
+
+  <p>
+    This information is visible only to the teacher who started the session. 
+    No student account is created and no personal identifiers are required.
+  </p>
+
+
+  <h3 id="dashboard">2C. Teacher Dashboard</h3>
+  <p>
+    The dashboard stores:
+  </p>
+  <ul>
+    <li>Teacher-created session codes</li>
+    <li>Answer attempts submitted during that session</li>
+    <li>Skill breakdowns and analytics</li>
+  </ul>
+  <p>
+    This data is used only to help teachers review performance. 
+    It is never sold, shared externally, or used for advertising.
+  </p>
+
+
+  <h3 id="google-docs">2D. Google Docs-Based Tools (e.g., Conclusion Builder Add-On)</h3>
+  <p>These tools may request:</p>
+  <ul>
+    <li><code>docs.currentonly</code> — to edit the currently open Google Doc</li>
+    <li><code>drive.file</code> — to save or update files created with the tool</li>
+  </ul>
+
+  <p>
+    These tools do <strong>not</strong> search, read, or modify other files in your Google Drive and do 
+    <strong>not</strong> access your email content.
+  </p>
+
+
+  <!-- ========================================================= -->
+  <div class="section-break"></div>
+  <h2 id="use">3. How We Use Your Information</h2>
+  <!-- ========================================================= -->
+
+  <ul>
+    <li>To support saving, editing, and restoring your work</li>
+    <li>To enable Google Drive autosave and version recovery</li>
+    <li>To provide teachers with reading-session performance data</li>
+    <li>To maintain proper functioning of the tools you use</li>
+  </ul>
+
+  <p>We do not use your data for marketing or advertising.</p>
+
+
+  <!-- ========================================================= -->
+  <div class="section-break"></div>
+  <h2 id="security">4. Data Protection & Security</h2>
+  <!-- ========================================================= -->
+
+  <ul>
+    <li>All communication uses encrypted HTTPS/TLS connections.</li>
+    <li>OAuth permissions are limited to the minimum required scope.</li>
+    <li>Your files are stored only in your Drive or your browser’s local storage.</li>
+    <li>No organizer data is stored on Made by Maggie servers.</li>
+    <li>Dashboard data is tied only to teacher-created session codes.</li>
+    <li>No data is ever shared or sold to third parties.</li>
+  </ul>
+
+
+  <!-- ========================================================= -->
+  <div class="section-break"></div>
+  <h2 id="student-privacy">5. Student Privacy & Compliance</h2>
+  <!-- ========================================================= -->
+
+  <p>
+    Made by Maggie tools follow COPPA- and FERPA-aligned practices:
+  </p>
+  <ul>
+    <li>No direct student accounts</li>
+    <li>No persistent identifiers stored across sessions</li>
+    <li>No student emails collected</li>
+    <li>No advertising or tracking</li>
+    <li>Teachers control how student data is labeled and saved</li>
+  </ul>
+
+
+  <!-- ========================================================= -->
+  <div class="section-break"></div>
+  <h2 id="choices">6. Your Choices</h2>
+  <!-- ========================================================= -->
+
+  <ul>
+    <li>Use organizers without signing in</li>
+    <li>Remove files from Google Drive at any time</li>
+    <li>Clear browser storage to erase local organizer data</li>
+    <li>Delete dashboard sessions to remove student attempt history</li>
+  </ul>
+
+
+  <!-- ========================================================= -->
+  <div class="section-break"></div>
+  <h2 id="changes">7. Changes to This Policy</h2>
+  <!-- ========================================================= -->
+
+  <p>
+    We may update this policy occasionally. 
+    The “Last Updated” date will always reflect the latest revision.
+  </p>
+
+
+  <!-- ========================================================= -->
+  <div class="section-break"></div>
+  <h2 id="contact">8. Contact</h2>
+  <!-- ========================================================= -->
 
   <p>
     For any questions about this privacy policy, please 
-    <a href="https://madebymaggie.org/#contact" target="_blank" rel="noopener noreferrer">contact us here</a>.
+    <a href="https://madebymaggie.org/#contact" target="_blank" rel="noopener noreferrer">
+      contact us here
+    </a>.
   </p>
+
 </body>
 </html>
