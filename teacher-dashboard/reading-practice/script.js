@@ -779,25 +779,14 @@ let questions = [
   }
 ];
 
-// ===== QUESTION SET CONFIG (full vs mini, future-friendly) =====
+// ====== QUESTION SET CONFIG (full vs mini, future-friendly) =====
 const ALL_QUESTIONS = questions.slice(); // keep an untouched copy
 
-// Define which IDs belong to which set.
-// You can add more sets later (e.g., "reteach", "challenge") by adding keys here.
 const QUESTION_SETS = {
   full: null, // null means "use all questions"
-  mini: [3, 5, 7, 9, 11, 15, 17, 19, 22, 24]
-  // NOTE:
-  // 3  - multi
-  // 5  - order
-  // 7  - match
-  // 9  - highlight
-  // 11 - dropdown
-  // 15 - partAB
-  // 17 - classify
-  // 19 - revise
-  // 22 - audio-based mcq
-  // 24 - video-based mcq
+
+  // Mini set: mixed Passage 1 + Passage 2 + audio + video
+  mini: [3, 6, 7, 10, 11, 16, 17, 20, 22, 24],
 };
 
 // Apply the set from the URL (?set=mini or ?set=full)
@@ -821,6 +810,12 @@ const QUESTION_SETS = {
     console.warn("[Reading Trainer] Could not apply question set from URL:", e);
   }
 })();
+
+// ✅ NOW the `questions` array is finalized (full or mini)
+if (typeof window !== "undefined") {
+  window.RP_TOTAL_QUESTIONS = questions.length;
+}
+
 
 
 function logQuestionResult(q, extra = {}) {
@@ -885,8 +880,16 @@ function getClassCodeFromUrl() {
   return val ? val.trim() : "";
 }
 
+function getOwnerEmailFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const val = params.get("owner") || params.get("ownerEmail");
+  return val ? val.trim() : "";
+}
+
 const SESSION_CODE = getSessionCodeFromUrl();
 const URL_CLASS_CODE = getClassCodeFromUrl();
+const URL_OWNER_EMAIL = getOwnerEmailFromUrl();
+
 
 let rpSessionInitialized = false;
 
@@ -902,13 +905,25 @@ function beginTrainerSession({ studentName, classCode, sessionCode }) {
     console.warn("[RP] beginTrainerSession called without a sessionCode.");
   }
 
-  // Tell reporting who this is
+  // Resolve ownerEmail for this attempt
+  let ownerEmail = URL_OWNER_EMAIL;
+  if (!ownerEmail) {
+    try {
+      // optional fallback if same browser was used to start session
+      ownerEmail =
+        window.localStorage.getItem("rp_lastOwnerEmail") || "";
+    } catch (e) {
+      // ignore
+    }
+  }
+
   if (window.RP_REPORT && typeof RP_REPORT.setSessionInfo === "function") {
     RP_REPORT.setSessionInfo({
       studentName: cleanName,
       classCode: cleanClass,
       sessionCode: cleanSession,
-      assessmentName: ASSESSMENT_NAME
+      assessmentName: ASSESSMENT_NAME,
+      ownerEmail // 🔒 NEW: this ties attempts to the teacher
     });
   }
 
@@ -926,6 +941,7 @@ function beginTrainerSession({ studentName, classCode, sessionCode }) {
     renderQuestion();
   }
 }
+
 
 
 // Optional screen containers (if you still use them)
@@ -2805,18 +2821,36 @@ async function autosaveProgress() {
     studentName: info.studentName || "",
     classCode: info.classCode || "",
     assessmentName: info.assessmentName || "",
+    ownerEmail: info.ownerEmail || "",
     // progress
     startedAt: state.startedAt,
     lastSavedAt: new Date().toISOString(),
-    currentQuestionIndex: typeof currentQuestionIndex === "number" ? currentQuestionIndex : null,
+    currentQuestionIndex:
+      typeof currentQuestionIndex === "number" ? currentQuestionIndex : null,
     questionResults: state.questionResults || [],
+    // lightweight summary so the backend can log partial attempts
+    totalQuestions:
+      (typeof window !== "undefined" && window.RP_TOTAL_QUESTIONS != null)
+        ? Number(window.RP_TOTAL_QUESTIONS) || 0
+        : (Array.isArray(state.questionResults)
+          ? state.questionResults.length
+          : 0),
+    answeredCount: Array.isArray(state.questionResults)
+      ? state.questionResults.length
+      : 0,
+    numCorrect: Array.isArray(state.questionResults)
+      ? state.questionResults.filter((r) => r && r.isCorrect).length
+      : 0,
     // optional Google user info
-    user: (window.RP_AUTH && RP_AUTH.currentUser) ? {
-      email: RP_AUTH.currentUser.email,
-      name: RP_AUTH.currentUser.name,
-      sub: RP_AUTH.currentUser.sub
-    } : null
+    user: (window.RP_AUTH && RP_AUTH.currentUser)
+      ? {
+          email: RP_AUTH.currentUser.email,
+          name: RP_AUTH.currentUser.name,
+          sub: RP_AUTH.currentUser.sub,
+        }
+      : null,
   };
+
 
   // Local fallback
   try {

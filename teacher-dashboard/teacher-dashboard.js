@@ -191,6 +191,90 @@ function formatDate(iso) {
   });
 }
 
+// ---------- ATTEMPT STATUS HELPERS ----------
+
+// Status label: Completed vs In Progress
+function formatAttemptStatus(attempt) {
+  const total = Number(
+    attempt.totalQuestions ??
+    attempt.answeredCount ??
+    0
+  );
+
+  const answered = Number(
+    attempt.answeredCount != null
+      ? attempt.answeredCount
+      : (attempt.totalQuestions ?? 0)
+  );
+
+  if (!answered) {
+    // They opened it but haven't checked anything yet
+    return "Not started";
+  }
+
+  // Treat either isComplete=true OR answered >= total as completed
+  if (
+    attempt.isComplete ||
+    (total > 0 && answered >= total)
+  ) {
+    return "Completed";
+  }
+
+  if (total > 0 && answered < total) {
+    return "In progress";
+  }
+
+  // Fallback if we can't tell
+  return "Partial";
+}
+
+// Answered label: "X of Y" + hint if partial
+function formatAnsweredLabel(attempt) {
+  const total = Number(
+    attempt.totalQuestions ??
+    attempt.answeredCount ??
+    0
+  );
+
+  const answered = Number(
+    attempt.answeredCount != null
+      ? attempt.answeredCount
+      : (attempt.totalQuestions ?? 0)
+  );
+
+  if (!total && !answered) return "—";
+
+  if (total > 0) {
+    if (answered < total) {
+      return `${answered} of ${total} (partial)`;
+    }
+    return `${answered} of ${total}`;
+  }
+
+  // Older data that only had answeredCount
+  return `${answered} answered`;
+}
+
+
+// Answered label: "X of Y" + hint if partial
+function formatAnsweredLabel(attempt) {
+  const total = Number(attempt.totalQuestions || 0);
+  const answered = Number(attempt.answeredCount || 0);
+
+  if (!total && !answered) return "—";
+
+  if (total > 0) {
+    if (answered < total) {
+      return `${answered} of ${total} (partial)`;
+    }
+    return `${answered} of ${total}`;
+  }
+
+  // Older data that only had answeredCount
+  return `${answered} answered`;
+}
+
+
 function updateViewSummary() {
   if (!currentViewSummaryEl) return;
 
@@ -1209,11 +1293,19 @@ function renderDashboard(attempts) {
   downloadCsvBtn.disabled = !hasData;
 
   const totalAttempts = attempts.length;
-  const totalCorrect = attempts.reduce((sum, a) => sum + (a.numCorrect || 0), 0);
-  const totalQuestions = attempts.reduce(
-    (sum, a) => sum + (a.totalQuestions || 0),
+  const totalCorrect = attempts.reduce(
+    (sum, a) => sum + (a.numCorrect || 0),
     0
   );
+
+  // Sum how many questions were actually answered across attempts
+  const totalAnswered = attempts.reduce((sum, a) => {
+    if (a.answeredCount != null) {
+      return sum + Number(a.answeredCount);
+    }
+    return sum + Number(a.totalQuestions || 0);
+  }, 0);
+
 
   const uniqueStudentNames = new Set(
     attempts.map(a => (a.studentName || "").trim()).filter(Boolean)
@@ -1258,14 +1350,16 @@ function renderDashboard(attempts) {
   }
 
   if (summaryAccuracyEl) {
-    summaryAccuracyEl.textContent = formatPercent(totalCorrect, totalQuestions);
+    summaryAccuracyEl.textContent = formatPercent(totalCorrect, totalAnswered);
   }
   if (summaryCorrectTallyEl) {
-    summaryCorrectTallyEl.textContent = `${totalCorrect} of ${totalQuestions} questions correct`;
+    summaryCorrectTallyEl.textContent =
+      `${totalCorrect} of ${totalAnswered} questions answered correct`;
   }
 
-  const avgQuestions = totalAttempts ? totalQuestions / totalAttempts : 0;
+  const avgQuestions = totalAttempts ? totalAnswered / totalAttempts : 0;
   const avgCorrect = totalAttempts ? totalCorrect / totalAttempts : 0;
+
 
   if (summaryAvgQuestionsEl) {
     summaryAvgQuestionsEl.textContent = avgQuestions.toFixed(1);
@@ -1287,20 +1381,35 @@ function renderDashboard(attempts) {
   attempts.forEach(a => {
     const tr = document.createElement("tr");
 
-    const scorePct = a.totalQuestions
-      ? Math.round((a.numCorrect / a.totalQuestions) * 100)
-      : 0;
-
     const studentName = (a.studentName || "—").trim();
+
+    // How many were really answered on this attempt?
+    const answeredForRow =
+      a.answeredCount != null
+        ? Number(a.answeredCount)
+        : Number(a.totalQuestions || 0);
+
+    const numCorrect = Number(a.numCorrect || 0);
+
+    // Prefer server-computed accuracy (based on answered questions),
+    // but fall back to local calculation if needed (demo data).
+    const scorePct =
+      typeof a.accuracy === "number"
+        ? a.accuracy
+        : (answeredForRow
+            ? Math.round((numCorrect / answeredForRow) * 100)
+            : 0);
 
     tr.innerHTML = `
       <td>${studentName || "—"}</td>
       <td>${a.classCode || "—"}</td>
       <td>${a.sessionCode || "—"}</td>
-      <td>${a.numCorrect || 0} / ${a.totalQuestions || 0}</td>
+      <td>${formatAttemptStatus(a)}</td>
       <td>
         <span class="${accuracyTagClass(scorePct)}">${scorePct}%</span>
       </td>
+      <td>${formatAnsweredLabel(a)}</td>
+      <td>${numCorrect}</td>
       <td>${formatDate(a.startedAt)}</td>
       <td>${formatDate(a.finishedAt)}</td>
     `;
@@ -1325,6 +1434,7 @@ function renderDashboard(attempts) {
 
     attemptsTableBody.appendChild(tr);
   });
+
 
   // Skills aggregation – class vs selected student
   const skillTotalsAll = {};
@@ -1679,16 +1789,35 @@ function buildStudentLink(sessionCode, classCode) {
   }
 
   // tie this student link to the signed-in teacher (owner of attempts)
-  const ownerEmail =
-    OWNER_EMAIL_FOR_VIEW ||
-    (teacherUser && teacherUser.email) ||
-    "";
-  if (ownerEmail) {
-    params.set("teacher", ownerEmail);
+  let ownerEmail = null;
+  if (teacherUser && teacherUser.email) {
+    ownerEmail = teacherUser.email;
+  } else if (OWNER_EMAIL_FOR_VIEW) {
+    // Fallback for co-teacher viewing another teacher’s sessions
+    ownerEmail = OWNER_EMAIL_FOR_VIEW;
   }
 
-  return `${baseUrl}?${params.toString()}`;
+  if (ownerEmail) {
+    params.set("owner", ownerEmail);
+  }
+
+  const link = `${baseUrl}?${params.toString()}`;
+
+  try {
+    window.localStorage.setItem("rp_lastSessionCode", cleanSession);
+    if (cleanClass) {
+      window.localStorage.setItem("rp_lastSessionClass", cleanClass);
+    }
+    if (ownerEmail) {
+      window.localStorage.setItem("rp_lastOwnerEmail", ownerEmail);
+    }
+  } catch (e) {
+    // non-fatal
+  }
+
+  return link;
 }
+
 
 function buildCoTeacherLink(sessionCode, classCode) {
   const cleanSession = sessionCode.trim().toUpperCase();

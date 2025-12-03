@@ -34,8 +34,27 @@
 
   function decodeJwtResponse(token) {
     try {
-      const payload = token.split(".")[1];
-      const decoded = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
+      const parts = token.split(".");
+      if (parts.length < 2) {
+        console.warn("[RP_AUTH] Invalid ID token format");
+        return null;
+      }
+
+      let payload = parts[1];
+
+      // Convert from URL-safe Base64
+      payload = payload.replace(/-/g, "+").replace(/_/g, "/");
+
+      // Add padding if needed
+      const pad = payload.length % 4;
+      if (pad === 2) payload += "==";
+      else if (pad === 3) payload += "=";
+      else if (pad === 1) {
+        console.warn("[RP_AUTH] Unexpected base64 payload length");
+        return null;
+      }
+
+      const decoded = atob(payload);
       return JSON.parse(decoded);
     } catch (e) {
       console.warn("[RP_AUTH] Failed to decode ID token:", e);
@@ -83,26 +102,32 @@
       callback: handleCredentialResponse,
       auto_select: false,
       cancel_on_tap_outside: true
+      // itp_support: true, // optional for Safari
     });
 
     googleAuthInitialized = true;
     console.log("[RP_AUTH] Google Auth initialized.");
-
-    // Optional: you could also render a button somewhere here if needed
-    // google.accounts.id.renderButton(...);
   }
 
   function promptSignIn() {
+    // If not initialized yet, try to init and then retry the prompt shortly
     if (!googleAuthInitialized) {
       console.warn("[RP_AUTH] Google Auth not initialized yet; attempting init before prompt...");
       initGoogleAuth();
-    }
 
-    if (!googleAuthInitialized) {
-      console.warn("[RP_AUTH] Still no Google Auth after retry; aborting prompt.");
+      // Give initGoogleAuth a moment to attach once the GIS script is ready
+      setTimeout(() => {
+        if (!googleAuthInitialized) {
+          console.warn("[RP_AUTH] Still no Google Auth after retry; aborting prompt.");
+          return;
+        }
+        google.accounts.id.prompt();
+      }, 300);
+
       return;
     }
 
+    // Normal case: already initialized
     google.accounts.id.prompt();
   }
 
@@ -137,7 +162,7 @@
     onAuthChange
   };
 
-  // Optional: try to restore a user immediately on load (in case they signed
+  // Try to restore a user immediately on load (in case they signed
   // in from another page already in this domain)
   try {
     const raw = window.localStorage.getItem(AUTH_STORAGE_KEY);

@@ -30,7 +30,9 @@ exports.handler = async function (event, context) {
     // NEW: optional co-teacher sharing
     let sharedWithEmails = [];
     if (Array.isArray(body.sharedWithEmails)) {
-      sharedWithEmails = body.sharedWithEmails.map(email => String(email).trim()).filter(Boolean);
+      sharedWithEmails = body.sharedWithEmails
+        .map(email => String(email).trim())
+        .filter(Boolean);
     }
 
     // NEW: assessment metadata
@@ -58,6 +60,25 @@ exports.handler = async function (event, context) {
     connectLambda(event);
     const store = getStore("reading-attempts");
 
+    // ------------- NEW: normalize questionResults + answeredCount -------------
+    const questionResultsArray = Array.isArray(body.questionResults)
+      ? body.questionResults
+      : [];
+
+    const totalQuestions = Number(body.totalQuestions || 0);
+
+    const answeredCount =
+      typeof body.answeredCount === "number"
+        ? body.answeredCount
+        : (questionResultsArray.length || totalQuestions || 0);
+
+    const numCorrect = Number(body.numCorrect || 0);
+
+    const isComplete =
+      answeredCount > 0 &&
+      totalQuestions > 0 &&
+      answeredCount >= totalQuestions;
+
     // --------- BUILD ATTEMPT OBJECT (dashboard-ready) ----------
     const attempt = {
       attemptId,
@@ -65,17 +86,19 @@ exports.handler = async function (event, context) {
       classCode,
       sessionCode,
 
-      // === NEW: Ownership ===
-      ownerEmail: ownerEmail || "",      // who owns this assessment
-      sharedWithEmails,                  // co-teachers with view access
+      // === Ownership ===
+      ownerEmail: ownerEmail || "",
+      sharedWithEmails,
 
-      // === NEW: Assessment Metadata ===
+      // === Assessment Metadata ===
       assessmentName,
       assessmentType,
 
       // Main stats
-      numCorrect: Number(body.numCorrect || 0),
-      totalQuestions: Number(body.totalQuestions || 0),
+      numCorrect,
+      totalQuestions,
+      answeredCount,
+      isComplete,
 
       // Per-skill & per-type breakdowns
       bySkill: body.perSkill || body.bySkill || {},
@@ -86,9 +109,7 @@ exports.handler = async function (event, context) {
       finishedAt: body.finishedAt || new Date().toISOString(),
 
       // Detailed item-level results
-      questionResults: Array.isArray(body.questionResults)
-        ? body.questionResults
-        : []
+      questionResults: questionResultsArray
     };
 
     // Store JSON

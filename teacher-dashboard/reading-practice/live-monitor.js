@@ -165,16 +165,17 @@
     try {
       const progressDocs = await fetchProgress();
 
-      if (!progressDocs || !progressDocs.length) {
-        if (gridEl) {
-          gridEl.innerHTML =
-            "<p style='padding:1rem;'>No students joined yet. As they start, you’ll see them appear here.</p>";
-        }
-        if (metaEl) {
-          metaEl.textContent = `Session: ${SESSION_CODE} • ${SET_LABEL} • 0 students`;
-        }
-        return;
-      }
+    if (!progressDocs || !progressDocs.length) {
+    if (gridEl) {
+        gridEl.innerHTML =
+        "<p style='padding:1rem;'>No responses yet — students may still be reading or reviewing the passage. Student names will appear here after they submit their first answer.</p>";
+    }
+    if (metaEl) {
+        metaEl.textContent = `Session: ${SESSION_CODE} • ${SET_LABEL} • 0 students responding yet`;
+    }
+    return;
+    }
+
 
       const rows = progressDocs
         .filter((doc) => (!CLASS_FILTER || doc.classCode === CLASS_FILTER))

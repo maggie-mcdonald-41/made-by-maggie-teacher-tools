@@ -9,12 +9,12 @@
       classCode: "",
       sessionCode: "",
       assessmentName: "",
-      // NEW: who owns this assessment (dashboard owner)
       ownerEmail: ""
     },
     startedAt: null,
     // Each entry: { questionId, type, linkedPassage, skills[], isCorrect, raw }
-    questionResults: []
+    questionResults: [],
+    attemptSent: false
   };
 
   // ---------- Helpers ----------
@@ -28,49 +28,72 @@
   }
 
   // Build summary stats for this attempt
-  function buildSummary() {
-    const totalQuestions = state.questionResults.length;
-    let numCorrect = 0;
+function buildSummary() {
+  // How many questions did the student actually answer (i.e., we have a first attempt logged)?
+  const answeredCount = Array.isArray(state.questionResults)
+    ? state.questionResults.length
+    : 0;
 
-    const perType = {};   // { mcq: { correct, total }, multi: {...}, ... }
-    const perSkill = {};  // { "main-idea": { correct, total }, ... }
+  // Try to get the total number of questions in the set from a global or state,
+  // and fall back to answeredCount if we truly don't know.
+  let totalQuestions = 0;
 
-    state.questionResults.forEach((r) => {
-      if (r.isCorrect) numCorrect++;
-
-      // Per-type stats
-      const t = r.type || "unknown";
-      if (!perType[t]) {
-        perType[t] = { correct: 0, total: 0 };
-      }
-      perType[t].total++;
-      if (r.isCorrect) perType[t].correct++;
-
-      // Per-skill stats
-      if (Array.isArray(r.skills)) {
-        r.skills.forEach((skill) => {
-          const key = String(skill);
-          if (!perSkill[key]) {
-            perSkill[key] = { correct: 0, total: 0 };
-          }
-          perSkill[key].total++;
-          if (r.isCorrect) perSkill[key].correct++;
-        });
-      }
-    });
-
-    const numIncorrect = Math.max(0, totalQuestions - numCorrect);
-    const accuracy = totalQuestions > 0 ? numCorrect / totalQuestions : 0;
-
-    return {
-      totalQuestions,
-      numCorrect,
-      numIncorrect,
-      accuracy,   // 0–1, you can format as % on the teacher side
-      perType,
-      perSkill
-    };
+  if (typeof window !== "undefined" && window.RP_TOTAL_QUESTIONS != null) {
+    totalQuestions = Number(window.RP_TOTAL_QUESTIONS) || 0;
+  } else if (typeof state.totalQuestions === "number") {
+    totalQuestions = state.totalQuestions;
+  } else {
+    // Fallback: if nothing else is available, treat the answered count as total.
+    totalQuestions = answeredCount;
   }
+
+  let numCorrect = 0;
+
+  const perType = {};   // { mcq: { correct, total }, multi: {...}, ... }
+  const perSkill = {};  // { "main-idea": { correct, total }, ... }
+
+  // Walk through first-attempt results for each answered question
+  state.questionResults.forEach((r) => {
+    if (r.isCorrect) numCorrect++;
+
+    // Per-type stats
+    const t = r.type || "unknown";
+    if (!perType[t]) {
+      perType[t] = { correct: 0, total: 0 };
+    }
+    perType[t].total++;
+    if (r.isCorrect) perType[t].correct++;
+
+    // Per-skill stats
+    if (Array.isArray(r.skills)) {
+      r.skills.forEach((skill) => {
+        const key = String(skill);
+        if (!perSkill[key]) {
+          perSkill[key] = { correct: 0, total: 0 };
+        }
+        perSkill[key].total++;
+        if (r.isCorrect) perSkill[key].correct++;
+      });
+    }
+  });
+
+  // Incorrect is based on answered questions, not totalQuestions
+  const numIncorrect = Math.max(0, answeredCount - numCorrect);
+
+  // Accuracy is "of the questions they actually answered"
+  const accuracy = answeredCount > 0 ? numCorrect / answeredCount : 0;
+
+  return {
+    totalQuestions,  // how many were in the set (when known)
+    answeredCount,   // how many they actually attempted
+    numCorrect,
+    numIncorrect,
+    accuracy,        // 0–1, you can format as % on the teacher side
+    perType,
+    perSkill,
+  };
+}
+
 
   // ---------- Public API ----------
 
@@ -128,13 +151,18 @@
       raw: payload
     };
 
-    const idx = findResultIndex(q.id);
-    if (idx === -1) {
-      state.questionResults.push(entry);
-    } else {
-      // Just in case, overwrite if the same question is logged again
-      state.questionResults[idx] = entry;
-    }
+  const idx = findResultIndex(q.id);
+  if (idx === -1) {
+    // ✅ First time this question has been checked – record it
+    state.questionResults.push(entry);
+  } else {
+    // ✅ Already have a result for this question – keep the original
+    console.log(
+      "[RP_REPORT] Question already has a recorded first attempt; ignoring later checks.",
+      entry
+    );
+  }
+
 
     console.log("[RP_REPORT] Recorded result:", entry);
 
@@ -148,57 +176,63 @@
    * Called at the end of the question set (from script.js).
    * Builds a summary + sends it to the Netlify function.
    */
-  async function sendFinalReport() {
-    const summary = buildSummary();
-    const finishedAt = new Date().toISOString();
-
-    const payload = {
-      ...state.sessionInfo,   // includes ownerEmail now 🎯
-      ...summary,
-      startedAt: state.startedAt || null,
-      finishedAt,
-      questionResults: state.questionResults
-    };
-
-    console.log("[RP_REPORT] Final attempt summary:", payload);
-
-    // Graceful no-op if fetch is not available (very old browsers)
-    if (typeof fetch !== "function") {
-      console.warn("[RP_REPORT] fetch() not available; skipping network send.");
-      return;
-    }
-
-    try {
-      const res = await fetch("/.netlify/functions/logReadingAttempt", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      let json = null;
-      try {
-        json = await res.json();
-      } catch (_) {
-        // ignore if no JSON body
-      }
-
-      if (!res.ok) {
-        console.error(
-          "[RP_REPORT] Netlify function returned error:",
-          res.status,
-          json
-        );
-      } else {
-        console.log(
-          "[RP_REPORT] Report successfully sent to Netlify:",
-          res.status,
-          json
-        );
-      }
-    } catch (err) {
-      console.error("[RP_REPORT] Error sending final report:", err);
-    }
+async function sendFinalReport() {
+  // 🔒 Only log the first full attempt for this session
+  if (state.attemptSent) {
+    console.log("[RP_REPORT] Final report already sent once; skipping.");
+    return;
   }
+
+  const summary = buildSummary();
+  const finishedAt = new Date().toISOString();
+
+  const payload = {
+    ...state.sessionInfo,  // includes ownerEmail
+    ...summary,
+    startedAt: state.startedAt || null,
+    finishedAt,
+    questionResults: state.questionResults
+  };
+
+  console.log("[RP_REPORT] Final attempt summary:", payload);
+
+  if (typeof fetch !== "function") {
+    console.warn("[RP_REPORT] fetch() not available; skipping network send.");
+    return;
+  }
+
+  try {
+    const res = await fetch("/.netlify/functions/logReadingAttempt", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    let json = null;
+    try {
+      json = await res.json();
+    } catch (_) {}
+
+    if (!res.ok) {
+      console.error(
+        "[RP_REPORT] Netlify function returned error:",
+        res.status,
+        json
+      );
+    } else {
+      console.log(
+        "[RP_REPORT] Report successfully sent to Netlify:",
+        res.status,
+        json
+      );
+      // ✅ Lock it
+      state.attemptSent = true;
+    }
+  } catch (err) {
+    console.error("[RP_REPORT] Error sending final report:", err);
+  }
+}
+
 
   // Optional: quick dev helper so you can inspect in the console
   function _debugGetState() {

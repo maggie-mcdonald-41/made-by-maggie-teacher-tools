@@ -9,6 +9,82 @@ function sanitizeFragment(value) {
     .slice(0, 64);
 }
 
+function buildPartialAttemptFromProgress(
+  sessionCode,
+  safeSession,
+  safeStudentKey,
+  payload
+) {
+  const questionResults = Array.isArray(payload.questionResults)
+    ? payload.questionResults
+    : [];
+
+  const answeredCount = Array.isArray(questionResults)
+    ? questionResults.length
+    : 0;
+
+  let numCorrect = 0;
+  const bySkill = {};
+  const byType = {};
+
+  for (const r of questionResults) {
+    if (!r) continue;
+    if (r.isCorrect) numCorrect += 1;
+
+    const skills = Array.isArray(r.skills) ? r.skills : [];
+    for (const skill of skills) {
+      if (!skill) continue;
+      if (!bySkill[skill]) {
+        bySkill[skill] = { correct: 0, total: 0 };
+      }
+      bySkill[skill].total += 1;
+      if (r.isCorrect) {
+        bySkill[skill].correct += 1;
+      }
+    }
+
+    const qType = r.type || r.questionType || null;
+    if (qType) {
+      if (!byType[qType]) {
+        byType[qType] = { correct: 0, total: 0 };
+      }
+      byType[qType].total += 1;
+      if (r.isCorrect) {
+        byType[qType].correct += 1;
+      }
+    }
+  }
+
+  const totalQuestions =
+    typeof payload.totalQuestions === "number" && payload.totalQuestions > 0
+      ? payload.totalQuestions
+      : answeredCount;
+
+  const attemptId = `${safeSession}_${safeStudentKey}`;
+
+  return {
+    attemptId,
+    studentName: payload.studentName || "",
+    classCode: payload.classCode || "",
+    sessionCode,
+    ownerEmail: payload.ownerEmail || "",
+    sharedWithEmails: Array.isArray(payload.sharedWithEmails)
+      ? payload.sharedWithEmails
+      : [],
+    assessmentName: payload.assessmentName || "",
+    assessmentType: payload.assessmentType || "",
+    numCorrect,
+    totalQuestions,
+    answeredCount,
+    bySkill,
+    byType,
+    startedAt: payload.startedAt || null,
+    finishedAt: payload.lastSavedAt || new Date().toISOString(),
+    questionResults,
+  };
+}
+
+
 exports.handler = async function (event, context) {
   if (event.httpMethod !== "POST") {
     return {
@@ -63,18 +139,67 @@ exports.handler = async function (event, context) {
       // Optional Google auth info
       user: payload.user || null,
     };
-
     console.log("[saveReadingProgress] Writing key:", key);
 
     await store.setJSON(key, dataToStore);
 
     console.log("[saveReadingProgress] Saved OK:", key);
 
+    // Also upsert a partial attempt into the reading-attempts store
+    try {
+      const attemptsStore = getStore("reading-attempts");
+
+      const answeredCount =
+        typeof payload.answeredCount === "number"
+          ? payload.answeredCount
+          : Array.isArray(payload.questionResults)
+          ? payload.questionResults.length
+          : 0;
+
+      const totalQuestions =
+        typeof payload.totalQuestions === "number" && payload.totalQuestions > 0
+          ? payload.totalQuestions
+          : answeredCount;
+
+      // Only write a partial attempt if the student has started
+      // but has NOT finished the full set. Completed attempts are
+      // logged separately via logReadingAttempt/sendFinalReport.
+      if (answeredCount > 0 && answeredCount < totalQuestions) {
+        const partialAttempt = buildPartialAttemptFromProgress(
+          sessionCode,
+          safeSession,
+          safeStudentKey,
+          payload
+        );
+        const attemptKey = `session/${safeSession}/${partialAttempt.attemptId}.json`;
+        console.log(
+          "[saveReadingProgress] Upserting partial attempt:",
+          attemptKey
+        );
+        await attemptsStore.setJSON(attemptKey, partialAttempt);
+      } else {
+        console.log(
+          "[saveReadingProgress] Skipping partial attempt upsert (answeredCount:",
+          answeredCount,
+          "totalQuestions:",
+          totalQuestions,
+          ")"
+        );
+      }
+    } catch (attemptErr) {
+      console.warn(
+        "[saveReadingProgress] Failed to upsert partial attempt:",
+        attemptErr
+      );
+    }
+
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ success: true }),
     };
+
+
   } catch (err) {
     console.error("[saveReadingProgress] Error details:", {
       message: err.message,

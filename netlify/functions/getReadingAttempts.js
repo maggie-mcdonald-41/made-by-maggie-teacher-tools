@@ -23,7 +23,7 @@ exports.handler = async function (event, context) {
     const rawOwnerEmail =
       (params.ownerEmail || params.teacherEmail || params.owner || "").trim();
 
-    // NEW: viewerEmail = "show me attempts I own OR that are shared with me"
+    // viewerEmail = "show me attempts I own OR that are shared with me"
     const rawViewerEmail = (params.viewerEmail || "").trim();
 
     // --- Sanitize for folder prefixes ---
@@ -67,19 +67,36 @@ exports.handler = async function (event, context) {
 
     // ---------- Normalize for Teacher Dashboard ----------
     let attempts = attemptsRaw.map(({ key, data }) => {
-      const totalQuestions = Number(
+      // New: answeredCount = how many they actually attempted
+      const answeredCount = Number(
+        data.answeredCount ??
+          data.totalQuestions ?? // legacy fallback
+          data.numQuestions ??
+          0
+      );
+
+      // Total questions in the set (when known)
+      let totalQuestions = Number(
         data.totalQuestions ?? data.numQuestions ?? 0
       );
+      if (!totalQuestions && answeredCount) {
+        // fallback so older data still looks sane
+        totalQuestions = answeredCount;
+      }
 
       const numCorrect = Number(data.numCorrect ?? 0);
-      const numIncorrect = Number(
-        data.numIncorrect ?? (totalQuestions ? totalQuestions - numCorrect : 0)
-      );
+
+      // New: incorrect and accuracy are based on ANSWERED questions
+      const numIncorrect = Math.max(0, answeredCount - numCorrect);
 
       const accuracy =
-        totalQuestions > 0
-          ? Math.round((numCorrect / totalQuestions) * 100)
+        answeredCount > 0
+          ? Math.round((numCorrect / answeredCount) * 100)
           : 0;
+
+      // Optional: mark complete vs partial
+      const isComplete =
+        totalQuestions > 0 && answeredCount >= totalQuestions;
 
       const bySkill = data.bySkill || data.perSkill || {};
       const byType = data.byType || data.perType || {};
@@ -128,7 +145,7 @@ exports.handler = async function (event, context) {
         (data.sessionInfo && data.sessionInfo.teacherEmail) ||
         "";
 
-      // NEW: normalize shared-with list (for co-teachers)
+      // Normalize shared-with list (for co-teachers)
       const sharedWithEmails = Array.isArray(data.sharedWithEmails)
         ? data.sharedWithEmails
         : Array.isArray(
@@ -144,10 +161,15 @@ exports.handler = async function (event, context) {
         sessionCode,
         startedAt,
         finishedAt,
+
+        // core stats
         totalQuestions,
+        answeredCount,
         numCorrect,
         numIncorrect,
         accuracy,
+        isComplete,
+
         bySkill,
         byType,
         assessmentName,
@@ -160,37 +182,36 @@ exports.handler = async function (event, context) {
 
     // ---------- Filtering ----------
 
-    // NEW: viewerEmail takes priority and includes:
+    // viewerEmail takes priority and includes:
     //  - attempts where viewer is the owner
     //  - attempts where viewer is in sharedWithEmails
-if (rawViewerEmail) {
-  const viewerLower = rawViewerEmail.toLowerCase();
+    if (rawViewerEmail) {
+      const viewerLower = rawViewerEmail.toLowerCase();
 
-  attempts = attempts.filter((a) => {
-    const ownerLower = (a.ownerEmail || "").toLowerCase();
-    const shared = Array.isArray(a.sharedWithEmails)
-      ? a.sharedWithEmails.map((e) => String(e).toLowerCase())
-      : [];
+      attempts = attempts.filter((a) => {
+        const ownerLower = (a.ownerEmail || "").toLowerCase();
+        const shared = Array.isArray(a.sharedWithEmails)
+          ? a.sharedWithEmails.map((e) => String(e).toLowerCase())
+          : [];
 
-    const hasOwnershipInfo = !!ownerLower || shared.length > 0;
+        const hasOwnershipInfo = !!ownerLower || shared.length > 0;
 
-    // Backwards compatibility:
-    // If this attempt has NO owner/shared info at all, keep it visible
-    // so we don't hide older data.
-    if (!hasOwnershipInfo) {
-      return true;
+        // Backwards compatibility:
+        // If this attempt has NO owner/shared info at all, keep it visible
+        // so we don't hide older data.
+        if (!hasOwnershipInfo) {
+          return true;
+        }
+
+        if (ownerLower === viewerLower) return true;
+        return shared.includes(viewerLower);
+      });
+    } else if (rawOwnerEmail) {
+      const ownerLower = rawOwnerEmail.toLowerCase();
+      attempts = attempts.filter(
+        (a) => (a.ownerEmail || "").toLowerCase() === ownerLower
+      );
     }
-
-    if (ownerLower === viewerLower) return true;
-    return shared.includes(viewerLower);
-  });
-} else if (rawOwnerEmail) {
-  const ownerLower = rawOwnerEmail.toLowerCase();
-  attempts = attempts.filter(
-    (a) => (a.ownerEmail || "").toLowerCase() === ownerLower
-  );
-}
-
 
     // Filter by class if requested
     if (rawClass) {

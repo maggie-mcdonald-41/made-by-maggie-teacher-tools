@@ -1561,21 +1561,47 @@ body.dark-theme .rp-modal {
 .rp-modal-section {
   margin-bottom: 1rem;
 }
-
+/* Base shared styling */
 .rp-modal-google-btn,
 .rp-modal-continue-btn {
   width: 100%;
-  padding: 0.65rem 0.75rem;
+  padding: 0.9rem 1rem; /* larger */
   border-radius: 999px;
   border: none;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
+/* Make Google button the clear primary CTA */
 .rp-modal-google-btn {
-  background: #0f9d58;
+  background: #4285f4; /* Google Blue */
   color: white;
+  font-size: 1.1rem;
+  letter-spacing: 0.5px;
+  box-shadow:
+    0 3px 8px rgba(66, 133, 244, 0.35),
+    0 0 0 3px rgba(66, 133, 244, 0.15);
+  border: 2px solid #2b73e6;
 }
+
+/* Hover interaction */
+.rp-modal-google-btn:hover {
+  background: #2b73e6;
+  box-shadow:
+    0 4px 10px rgba(66, 133, 244, 0.45),
+    0 0 0 4px rgba(66, 133, 244, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Make it map to “click this first!” */
+.rp-modal-google-btn:active {
+  transform: translateY(0);
+  box-shadow:
+    0 2px 6px rgba(66, 133, 244, 0.35),
+    0 0 0 2px rgba(66, 133, 244, 0.1);
+}
+
 
 .rp-modal-continue-btn {
   background: var(--bright-teal, #05c1b8);
