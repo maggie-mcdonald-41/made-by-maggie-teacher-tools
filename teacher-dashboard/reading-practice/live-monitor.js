@@ -6,7 +6,8 @@
   const CLASS_FILTER = params.get("class") || "";
   const SET_PARAM = (params.get("set") || "full").toLowerCase();
   const SET_LABEL = SET_PARAM === "mini" ? "Mini set" : "Full set";
-
+  // 🔑 NEW: the teacher who owns this data
+  const OWNER_EMAIL = params.get("owner") || "";
   const gridEl = document.getElementById("monitor-grid");
   const metaEl = document.getElementById("monitor-meta");
   const refreshBtn = document.getElementById("monitor-refresh");
@@ -89,6 +90,14 @@
       url.searchParams.set("classCode", CLASS_FILTER);
     }
 
+    // 🔑 NEW: scope progress to the correct teacher
+    if (OWNER_EMAIL) {
+      // depending on how the function is written, it may check ownerEmail or viewerEmail;
+      // we send both to be safe.
+      url.searchParams.set("ownerEmail", OWNER_EMAIL);
+      url.searchParams.set("viewerEmail", OWNER_EMAIL);
+    }
+
     const res = await fetch(url.toString());
     if (!res.ok) {
       throw new Error("Failed to load progress");
@@ -97,6 +106,7 @@
     // Our function returns { success, progress: [...] }
     return Array.isArray(data.progress) ? data.progress : data;
   }
+
 
   // Convert questionResults → array of { status } for each question in the active set
   function buildSlots(questionResults) {

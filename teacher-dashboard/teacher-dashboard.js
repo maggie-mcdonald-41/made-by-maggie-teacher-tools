@@ -91,6 +91,11 @@ const DEMO_ATTEMPTS = [
 let CURRENT_ATTEMPTS = [];
 // Which student's data is being overlaid on the charts (if any)
 let CURRENT_STUDENT_FOR_CHARTS = null;
+// ---- Live Monitor shared state ----
+let currentSessionCode = "";   // e.g. "MONDAY EVENING"
+let currentClassFilter = "";   // e.g. "7TH", or "" for all
+let currentSetParam = "full";  // "full" or "mini"
+
 
 // ---------- HISTORY STORAGE KEY ----------
 const HISTORY_KEY = "rp_teacherSessionHistory_v1";
@@ -1721,6 +1726,8 @@ function enableMonitorButton(sessionCodeRaw, classCodeRaw) {
 
   monitorSessionBtn.onclick = requireTeacherSignedIn(() => {
     const params = new URLSearchParams();
+
+    // Live monitor expects `session`, `class`, `set`
     params.set("session", session.toUpperCase());
     if (classCode) {
       params.set("class", classCode);
@@ -1734,10 +1741,24 @@ function enableMonitorButton(sessionCodeRaw, classCodeRaw) {
       params.set("set", "full");
     }
 
-    const url = `./reading-practice/live-monitor.html?${params.toString()}`;
+    // 🔑 NEW: tie the live monitor to the same owner as the student link
+    let ownerEmail = null;
+    if (teacherUser && teacherUser.email) {
+      ownerEmail = teacherUser.email;
+    } else if (OWNER_EMAIL_FOR_VIEW) {
+      // co-teacher viewing another teacher’s data
+      ownerEmail = OWNER_EMAIL_FOR_VIEW;
+    }
+
+    if (ownerEmail) {
+      params.set("owner", ownerEmail);
+    }
+
+    const url = `${window.location.origin}/teacher-dashboard/reading-practice/live-monitor.html?${params.toString()}`;
     window.open(url, "_blank");
   });
 }
+
 
 async function exportDashboardPDF() {
   try {
