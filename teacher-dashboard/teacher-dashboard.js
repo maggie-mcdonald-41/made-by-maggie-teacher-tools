@@ -1839,7 +1839,6 @@ function buildStudentLink(sessionCode, classCode) {
   return link;
 }
 
-
 function buildCoTeacherLink(sessionCode, classCode) {
   const cleanSession = sessionCode.trim().toUpperCase();
   const cleanClass = (classCode || "").trim();
@@ -1857,6 +1856,14 @@ function buildCoTeacherLink(sessionCode, classCode) {
   params.set("sessionCode", cleanSession);
   if (cleanClass) {
     params.set("classCode", cleanClass);
+  }
+
+  // 🔹 NEW: include mini/full choice in the co-teacher link
+  const miniCheckbox = document.getElementById("use-mini-set");
+  if (miniCheckbox && miniCheckbox.checked) {
+    params.set("set", "mini");
+  } else {
+    params.set("set", "full");
   }
 
   // the teacher who actually OWNS this data (for co-teacher access)
@@ -1886,6 +1893,7 @@ function buildCoTeacherLink(sessionCode, classCode) {
 
   return link;
 }
+
 
 function startNewSession() {
   const rawSession = sessionInput.value.trim();
@@ -2284,21 +2292,36 @@ renderSessionHistory(loadHistoryFromStorage());
     const urlSession = params.get("sessionCode") || params.get("session");
     const urlClass = params.get("classCode") || params.get("class");
     const urlOwner = params.get("owner") || params.get("ownerEmail");
+    const urlSet = (params.get("set") || "").toLowerCase(); // "mini" | "full" | ""
 
+    // Owner email for co-teacher / shared view
     if (urlOwner) {
       OWNER_EMAIL_FOR_VIEW = urlOwner;
     }
 
+    // Prefill session + pill
     if (urlSession && sessionInput) {
       sessionInput.value = urlSession;
       sessionPill.textContent = `Session: ${urlSession}`;
     }
 
+    // Prefill class
     if (urlClass && classInput) {
       classInput.value = urlClass;
     }
 
-    // Auto-load if a session was provided
+    // 🔹 Sync mini/full set with the checkbox
+    const miniCheckbox = document.getElementById("use-mini-set");
+    if (miniCheckbox) {
+      if (urlSet === "mini") {
+        miniCheckbox.checked = true;
+      } else if (urlSet === "full") {
+        miniCheckbox.checked = false;
+      }
+      // if urlSet is empty, leave whatever default state you have
+    }
+
+    // Auto-load if a session or class was provided
     if ((urlSession || urlClass) && typeof loadAttempts === "function") {
       loadAttempts();
     }
@@ -2306,6 +2329,7 @@ renderSessionHistory(loadHistoryFromStorage());
     console.warn("[Dashboard] Could not parse URL filters:", e);
   }
 })();
+
 
 // Optional: restore last session info into the UI on load
 (function restoreLastSession() {
