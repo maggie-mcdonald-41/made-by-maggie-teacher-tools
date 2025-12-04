@@ -20,9 +20,10 @@
     return;
   }
 
-  // Which questions belong to the mini set
-  // (must match the IDs used in reading-practice/script.js)
-  const MINI_IDS = [3, 5, 7, 9, 11, 15, 17, 19, 22, 24];
+// Which questions belong to the mini set
+// (must match the IDs used in reading-practice/script.js → QUESTION_SETS.mini)
+const MINI_IDS = [3, 6, 7, 10, 11, 16, 17, 20, 22, 24];
+
 
   // Question types in order for your reading trainer (questions 1–25)
   // Index 0 = Q1, index 1 = Q2, etc.
