@@ -1348,6 +1348,61 @@ if (questionTotalEl) {
 // Safe even if the strip doesn’t exist (function exits early)
 initQuestionNavStrip();
 
+// ======================================
+// 🎉 Confetti Helpers (Reading Trainer)
+// Requires canvas-confetti to be loaded
+// ======================================
+function fireCorrectAnswerConfetti() {
+  if (typeof confetti !== "function") return;
+
+  // Small on-brand burst for correct answers
+  confetti({
+    particleCount: 45,
+    spread: 70,
+    startVelocity: 45,
+    scalar: 0.9,
+    origin: { x: 0.5, y: 0.6 }, // center-ish
+    colors: [
+      "#05c1b8", // teal
+      "#ff8f85", // pink
+      "#f97316", // orange-y accent
+      "#4f46e5"  // indigo
+    ]
+  });
+}
+
+function fireSetCompleteConfetti() {
+  if (typeof confetti !== "function") return;
+
+  // Bigger, longer celebration – based on your original snippet
+  const duration = 4000; // 4 seconds
+  const end = Date.now() + duration;
+
+  (function frame() {
+    confetti({
+      particleCount: 10,
+      spread: 80,
+      startVelocity: 50,
+      scalar: 1,
+      origin: {
+        x: Math.random(),          // random across the top
+        y: Math.random() * 0.6     // upper ~60% of screen
+      },
+      colors: [
+        "#05c1b8",
+        "#ff8f85",
+        "#f97316",
+        "#4f46e5"
+      ]
+    });
+
+    if (Date.now() < end) {
+      requestAnimationFrame(frame);
+    }
+  })();
+}
+// ===== end confetti helpers =====
+
 
 // ====== MEDIA RENDERING (audio / video with subtitles support) ======
 function renderMediaIfPresent(q) {
@@ -1552,6 +1607,7 @@ checkAnswerBtn.onclick = () => {
 
   if (isCorrect) {
     setFeedback("Nice work! That’s the correct answer.", true);
+    fireCorrectAnswerConfetti(); 
   } else {
     setFeedback("Not quite. Check the passage again and think about the main idea.", false);
   }
@@ -1664,6 +1720,7 @@ checkAnswerBtn.onclick = () => {
 
   if (allCorrectSelected) {
     setFeedback("Great job! You selected all the correct statements.", true);
+    fireCorrectAnswerConfetti(); 
   } else {
     setFeedback(
       "Some of your choices are off. Revisit the passage and think about the author’s point of view.",
@@ -1788,6 +1845,7 @@ function renderOrder(q) {
 
     if (allCorrect) {
       setFeedback("Yes! You placed all the events in the correct order.", true);
+      fireCorrectAnswerConfetti(); 
     } else {
       setFeedback(
         "Some events are out of order. Use the passage to double-check the sequence.",
@@ -1938,6 +1996,7 @@ function renderMatch(q) {
 
     if (allCorrect) {
       setFeedback("Awesome! All your matches are correct.", true);
+      fireCorrectAnswerConfetti(); 
     } else {
       setFeedback("Some matches are not correct yet. Recheck how each description fits the term.", false);
     }
@@ -2105,6 +2164,7 @@ function renderClassify(q) {
         "Awesome sorting! Each detail is in the correct category.",
         true
       );
+      fireCorrectAnswerConfetti(); 
     } else {
       setFeedback(
         "Some details are in the wrong category. Reread the passage and think about what each statement mainly supports.",
@@ -2218,6 +2278,7 @@ function renderHighlight(q) {
 
     if (allCorrect) {
       setFeedback("You highlighted the correct evidence. Nice close reading!", true);
+      fireCorrectAnswerConfetti(); 
     } else {
       setFeedback("Some evidence is missing or incorrect. Reread and think about which sentences show feelings or opinions.", false);
     }
@@ -2305,6 +2366,7 @@ function renderDropdown(q) {
     if (isCorrect) {
       select.classList.add("correct");
       setFeedback("Nice work! You chose the best replacement.", true);
+      fireCorrectAnswerConfetti(); 
     } else {
       select.classList.add("incorrect");
       setFeedback(
@@ -2508,6 +2570,7 @@ function renderPartAB(q) {
         "Excellent! You chose the correct answer in Part A and the best supporting evidence in Part B.",
         true
       );
+      fireCorrectAnswerConfetti(); 
     } else if (aCorrect && !bCorrect) {
       setFeedback(
         "You chose a strong answer for Part A, but the evidence in Part B doesn’t best support it. Revisit the passage and look for a sentence that proves your Part A choice.",
@@ -2643,6 +2706,7 @@ function renderRevise(q) {
         "Nice revision! Your wording is strong and matches the author’s meaning.",
         true
       );
+      fireCorrectAnswerConfetti(); 
     } else {
       select.classList.add("incorrect");
       setFeedback(
@@ -2673,7 +2737,7 @@ if (nextQuestionBtn) {
     } else {
       // End of set
       setFeedback("You’ve reached the end of this practice set. 🎉", true);
-
+      fireSetCompleteConfetti();
       // 🔹 REPORTING HOOK – send summary to Netlify/Google Sheet
       if (window.RP_REPORT && typeof window.RP_REPORT.sendFinalReport === "function") {
         window.RP_REPORT.sendFinalReport();

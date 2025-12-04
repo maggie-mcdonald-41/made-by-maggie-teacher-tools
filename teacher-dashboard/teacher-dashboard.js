@@ -1682,8 +1682,6 @@ async function loadAttempts() {
     ? `Session: ${sessionCodeRaw}`
     : "Session: all sessions";
 
-    updateSessionHistory(sessionCodeRaw, classCodeRaw, []);
-
   loadBtn.disabled = true;
   loadStatusEl.textContent = "Loading attempts…";
 
@@ -1722,7 +1720,6 @@ async function loadAttempts() {
       }
     );
 
-
     if (!res.ok) {
       throw new Error(`Server error: ${res.status}`);
     }
@@ -1737,66 +1734,26 @@ async function loadAttempts() {
         "No attempts found yet. Once students complete the practice, load again.";
     } else {
       renderDashboard(attempts);
+      // Hydrate session history with real attempts
       updateSessionHistory(sessionCodeRaw, classCodeRaw, attempts);
       loadStatusEl.textContent = `Loaded ${attempts.length} attempt${
         attempts.length === 1 ? "" : "s"
       } from server. (first attempt per student)`;
     }
 
-
     // Enable live monitor for this session
     enableMonitorButton(sessionCodeRaw, classCodeRaw);
   } catch (err) {
-    console.error(
-      "[Dashboard] Error loading attempts, falling back to demo:",
-      err
-    );
+    console.error("[Dashboard] Error loading attempts:", err);
 
-    // --------- SMART DEMO FALLBACK ---------
-    // Start with all demo attempts
-    const allDemo = DEMO_ATTEMPTS.slice();
+    // No demo fallback: show an empty state + clear message
+    renderDashboard([]);
+    loadStatusEl.textContent =
+      "Could not reach the server. Please check your connection or try again.";
 
-    const sessionCodeRaw2 = sessionInput.value.trim();
-    const classCodeRaw2 = classInput.value.trim();
-
-    let filtered = allDemo;
-
-    // Apply filters to demo data, if any
-    if (sessionCodeRaw2) {
-      const codeUpper = sessionCodeRaw2.toUpperCase();
-      filtered = filtered.filter(
-        (a) => (a.sessionCode || "").toUpperCase() === codeUpper
-      );
-    }
-
-    if (classCodeRaw2) {
-      const classUpper = classCodeRaw2.toUpperCase();
-      filtered = filtered.filter(
-        (a) => (a.classCode || "").toUpperCase() === classUpper
-      );
-    }
-
-    let attemptsToShow = filtered;
-    let statusMessage =
-      "Could not reach the server. Showing demo data instead.";
-
-    // If filters wipe everything out, show full demo so you still see samples
-    if (!attemptsToShow.length) {
-      attemptsToShow = allDemo;
-      statusMessage =
-        "Could not reach the server. Showing all demo data (no real attempts stored yet).";
-    } else if (sessionCodeRaw2 || classCodeRaw2) {
-      statusMessage =
-        "Could not reach the server. Showing demo data filtered by your choices.";
-    }
-
-    const demoFirstAttempts = getFirstAttemptsPerStudent(attemptsToShow);
-    renderDashboard(demoFirstAttempts);
-    loadStatusEl.textContent = statusMessage;
-
-
-    // Using demo data – live monitor should stay disabled
-    enableMonitorButton(sessionCodeRaw2, classCodeRaw2);
+    // You can still allow live monitor; if the server is fully down,
+    // that page will show the same issue.
+    enableMonitorButton(sessionCodeRaw, classCodeRaw);
   } finally {
     loadBtn.disabled = false;
   }

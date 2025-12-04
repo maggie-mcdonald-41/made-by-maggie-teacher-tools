@@ -404,7 +404,7 @@ body.dashboard-dark .pill-button-accent {
     border-color: rgba(0, 168, 181, 0.5);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
   }
-  
+
 /* Make the text block take the full width on the first line */
 .history-main {
   flex: 1 1 100%;
@@ -985,6 +985,49 @@ body.dashboard-dark .tag-mid {
     background: rgba(132, 235, 230, 0.35);
     color: var(--violet);
     font-weight: 600;
+  }
+  /* === Dark mode tweaks for Skill Heat Map === */
+  body.dashboard-dark .heatmap-table th,
+  body.dashboard-dark .heatmap-table td,
+  :root[data-theme="dark"] .heatmap-table th,
+  :root[data-theme="dark"] .heatmap-table td {
+    border-bottom: 1px solid rgba(148, 163, 184, 0.4);
+  }
+
+  body.dashboard-dark .heatmap-table th:first-child,
+  body.dashboard-dark .heatmap-table td:first-child,
+  :root[data-theme="dark"] .heatmap-table th:first-child,
+  :root[data-theme="dark"] .heatmap-table td:first-child {
+    background: #020617; /* match dark shell */
+  }
+
+  body.dashboard-dark .heat-empty,
+  :root[data-theme="dark"] .heat-empty {
+    color: #9ca3af;
+  }
+
+  body.dashboard-dark .heat-low,
+  :root[data-theme="dark"] .heat-low {
+    /* low accuracy = strong warm red/orange */
+    background: rgba(248, 113, 113, 0.55);
+    color: #f9fafb;
+    font-weight: 700;
+  }
+
+  body.dashboard-dark .heat-mid,
+  :root[data-theme="dark"] .heat-mid {
+    /* medium accuracy = bright amber */
+    background: rgba(251, 191, 36, 0.55);
+    color: #111827;
+    font-weight: 700;
+  }
+
+  body.dashboard-dark .heat-high,
+  :root[data-theme="dark"] .heat-high {
+    /* higher accuracy = bright teal */
+    background: rgba(45, 212, 191, 0.6);
+    color: #022c22;
+    font-weight: 700;
   }
 
   /* ===== FOOTER ===== */
