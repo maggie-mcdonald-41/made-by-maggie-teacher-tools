@@ -379,33 +379,10 @@ body.dashboard-dark .pill-button-accent {
     gap: 0.35rem;
   }
 
-  .history-item {
-    width: 100%;
-    text-align: left;
-    border-radius: 9px;
-    border: 1px solid var(--gray-light);
-    background: #ffffff;
-    padding: 0.3rem 0.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-    font-size: 0.82rem;
-    transition: 0.15s ease;
-  }
 
-  .history-item:hover {
-    border-color: rgba(0, 168, 181, 0.5);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-  }
 
-  .history-main {
-    display: flex;
-    flex-direction: column;
-    gap: 0.1rem;
-  }
 
+ 
   .history-title {
     font-weight: 700;
     font-size: 0.86rem;
@@ -416,15 +393,33 @@ body.dashboard-dark .pill-button-accent {
     color: var(--gray-mid);
   }
 
-  .history-pill {
-    border-radius: 999px;
-    padding: 0.1rem 0.5rem;
-    font-size: 0.75rem;
-    border: 1px solid rgba(0, 168, 181, 0.35);
-    background: rgba(0, 168, 181, 0.08);
-    color: var(--teal-dark);
-    white-space: nowrap;
+/* Let the title + pill wrap instead of overflowing */
+.history-item {
+  display: flex;
+  flex-wrap: wrap;       /* allow pill to move to a new line */
+  align-items: flex-start;
+}
+
+  .history-item:hover {
+    border-color: rgba(0, 168, 181, 0.5);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
   }
+  
+/* Make the text block take the full width on the first line */
+.history-main {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+/* Pill sits on its own line when space is tight */
+.history-pill {
+  margin-top: 0.2rem;
+  margin-left: auto;     /* keeps it right-aligned when there's room */
+  /* optional: allow wrapping inside pill if it ever needs it */
+  white-space: normal;
+  text-align: right;
+}
+
 
   @media (min-width: 901px) {
     .history-sidebar.collapsed {

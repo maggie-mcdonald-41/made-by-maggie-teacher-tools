@@ -1610,17 +1610,24 @@ async function loadAttempts() {
     if (sessionCodeRaw) params.set("sessionCode", sessionCodeRaw);
     if (classCodeRaw) params.set("classCode", classCodeRaw);
 
-    // UPDATED: scope results based on sign-in state
-    // - If teacher is signed in, use viewerEmail → get all owned + shared sessions
-    // - If not signed in but we have an OWNER_EMAIL_FOR_VIEW (co-teacher link),
-    //   use ownerEmail → show the owner's data for that session
-    if (teacherUser && teacherUser.email) {
+    // Determine if we're in a co-teacher view:
+    // - There is an OWNER_EMAIL_FOR_VIEW from the URL
+    // - And it's different from the currently signed-in teacher (if any)
+    const ownerEmail = OWNER_EMAIL_FOR_VIEW || "";
+    const isCoTeacherView =
+      ownerEmail && (!teacherUser || teacherUser.email !== ownerEmail);
+
+    // 🔐 Scoping rules:
+    // - Co-teacher view → always use ownerEmail + sessionCode/classCode
+    // - Regular signed-in teacher → use viewerEmail (owned + shared)
+    // - Not signed in but we know an owner (e.g. owner opens link before sign-in)
+    //   → fall back to ownerEmail
+    if (isCoTeacherView) {
+      params.set("ownerEmail", ownerEmail);
+    } else if (teacherUser && teacherUser.email) {
       params.set("viewerEmail", teacherUser.email);
-    } else {
-      const ownerEmail = OWNER_EMAIL_FOR_VIEW || "";
-      if (ownerEmail) {
-        params.set("ownerEmail", ownerEmail);
-      }
+    } else if (ownerEmail) {
+      params.set("ownerEmail", ownerEmail);
     }
 
     const res = await fetch(
@@ -1632,6 +1639,7 @@ async function loadAttempts() {
         },
       }
     );
+
 
     if (!res.ok) {
       throw new Error(`Server error: ${res.status}`);
@@ -2148,9 +2156,14 @@ if (window.RP_AUTH) {
         OWNER_EMAIL_FOR_VIEW = teacherUser.email;
       }
 
-      // NEW: hydrate Session History with all sessions this teacher owns
-      // or that are shared with them
-      if (typeof hydrateSessionHistoryFromServer === "function") {
+      // Figure out if this is a co-teacher view:
+      // owner from URL exists and is NOT the signed-in teacher.
+      const isCoTeacherView =
+        OWNER_EMAIL_FOR_VIEW && OWNER_EMAIL_FOR_VIEW !== teacherUser.email;
+
+      // Hydrate server-side Session History ONLY for the main teacher view.
+      // Co-teachers should build up history only from sessions they open via links.
+      if (!isCoTeacherView && typeof hydrateSessionHistoryFromServer === "function") {
         hydrateSessionHistoryFromServer(teacherUser.email);
       }
     } else {
@@ -2162,6 +2175,7 @@ if (window.RP_AUTH) {
 
   RP_AUTH.initGoogleAuth();
 }
+
 
 
 // ====== FULLSCREEN CHARTS ======
