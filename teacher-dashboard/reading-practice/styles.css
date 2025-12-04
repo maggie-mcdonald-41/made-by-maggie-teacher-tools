@@ -39,6 +39,18 @@ body {
   color: var(--navy);
 }
 
+/* === Dyslexia-friendly font === */
+@font-face {
+  font-family: "OpenDyslexic";
+  src: url("./OpenDyslexic-Regular.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+/* When dyslexia font is enabled */
+body.dyslexia-font {
+  font-family: "OpenDyslexic", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
 /* App Shell */
 .app-shell {
   max-width: 1200px;
@@ -694,9 +706,11 @@ body {
 /* Header right container (optional, keeps it tidy) */
 .header-right {
   display: flex;
-  align-items: center;
   gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
 }
+
 
 /* Dark mode toggle – label acts as inline-flex wrapper */
 .theme-switch {

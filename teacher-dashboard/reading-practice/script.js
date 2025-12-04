@@ -2804,6 +2804,51 @@ if (SESSION_CODE && questionStemEl && questionOptionsEl && identityModalEl) {
   }
 })();
 
+// ====== THEME + DYSLEXIA FONT TOGGLES ======
+(function initThemeAndFontToggles() {
+  const bodyEl = document.body;
+
+  // --- Dark mode toggle ---
+  const themeToggleInput = document.getElementById("theme-toggle");
+  if (themeToggleInput) {
+    const savedTheme = localStorage.getItem("rp-theme");
+    if (savedTheme === "dark") {
+      bodyEl.classList.add("dark-theme");
+      themeToggleInput.checked = true;
+    }
+
+    themeToggleInput.addEventListener("change", () => {
+      if (themeToggleInput.checked) {
+        bodyEl.classList.add("dark-theme");
+        localStorage.setItem("rp-theme", "dark");
+      } else {
+        bodyEl.classList.remove("dark-theme");
+        localStorage.setItem("rp-theme", "light");
+      }
+    });
+  }
+
+  // --- Dyslexia font toggle (page-wide text) ---
+  const dyslexiaToggleInput = document.getElementById("dyslexia-toggle");
+  if (dyslexiaToggleInput) {
+    const savedDyslexia = localStorage.getItem("rp-dyslexia-font");
+
+    if (savedDyslexia === "on") {
+      bodyEl.classList.add("dyslexia-font");
+      dyslexiaToggleInput.checked = true;
+    }
+
+    dyslexiaToggleInput.addEventListener("change", () => {
+      if (dyslexiaToggleInput.checked) {
+        bodyEl.classList.add("dyslexia-font");
+        localStorage.setItem("rp-dyslexia-font", "on");
+      } else {
+        bodyEl.classList.remove("dyslexia-font");
+        localStorage.setItem("rp-dyslexia-font", "off");
+      }
+    });
+  }
+})();
 // ====== PROGRESS AUTOSAVE ======
 
 // Build a stable key so each student (name + class + session)
