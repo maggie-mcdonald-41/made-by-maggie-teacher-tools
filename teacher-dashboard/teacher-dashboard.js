@@ -197,12 +197,18 @@ function getFirstAttemptsPerStudent(attempts) {
   });
 
   const perStudent = new Map();
+  const noKeyAttempts = [];
 
   for (const a of sorted) {
     const rawId = (a.studentId || "").toString().trim();
     const rawName = (a.studentName || "").trim();
     const key = (rawId || rawName).toLowerCase();
-    if (!key) continue;
+
+    if (!key) {
+      // No reliable identity → include it, but don't dedupe
+      noKeyAttempts.push(a);
+      continue;
+    }
 
     // Only keep the FIRST attempt we see for this student
     if (!perStudent.has(key)) {
@@ -210,8 +216,10 @@ function getFirstAttemptsPerStudent(attempts) {
     }
   }
 
-  return Array.from(perStudent.values());
+  // Students we can identify (deduped) + anonymous attempts (all kept)
+  return [...perStudent.values(), ...noKeyAttempts];
 }
+
 function formatPercent(numerator, denominator) {
   if (!denominator || denominator === 0) return "0%";
   const pct = Math.round((numerator / denominator) * 100);
@@ -441,6 +449,7 @@ function updateSessionHistory(sessionCodeRaw, classCodeRaw, attempts) {
 
   if (Array.isArray(attempts) && attempts.length > 0) {
     const perStudent = new Map();
+    const noKeyAttempts = [];
 
     for (const a of attempts) {
       const rawId = (a.studentId || "").toString().trim();
@@ -448,7 +457,12 @@ function updateSessionHistory(sessionCodeRaw, classCodeRaw, attempts) {
 
       // Build a stable key: prefer id, fallback to name
       const key = (rawId || rawName).toLowerCase();
-      if (!key) continue;
+
+      if (!key) {
+        // No reliable identity → include, but don't dedupe
+        noKeyAttempts.push(a);
+        continue;
+      }
 
       // Only keep the FIRST attempt we see for this student
       if (!perStudent.has(key)) {
@@ -456,7 +470,7 @@ function updateSessionHistory(sessionCodeRaw, classCodeRaw, attempts) {
       }
     }
 
-    dedupedAttempts = Array.from(perStudent.values());
+    dedupedAttempts = [...perStudent.values(), ...noKeyAttempts];
   }
 
   // ---------- AGGREGATE STATS FROM DEDUPED ATTEMPTS ----------
@@ -511,6 +525,7 @@ function updateSessionHistory(sessionCodeRaw, classCodeRaw, attempts) {
   saveHistoryToStorage(history);
   renderSessionHistory(history);
 }
+
 
 // ---------- SERVER-HYDRATED SESSION HISTORY (owned + shared) ----------
 
