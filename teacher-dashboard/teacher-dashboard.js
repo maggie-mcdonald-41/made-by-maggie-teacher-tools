@@ -178,6 +178,40 @@ let teacherUser = null;
 let OWNER_EMAIL_FOR_VIEW = null;
 
 // ---------- UTILITIES ----------
+// ---------- ATTEMPT DEDUPE HELPER (FIRST ATTEMPT PER STUDENT) ----------
+function getFirstAttemptsPerStudent(attempts) {
+  if (!Array.isArray(attempts) || !attempts.length) return [];
+
+  // Sort by timestamp so "first" is truly the earliest run
+  const sorted = attempts.slice().sort((a, b) => {
+    const aTime =
+      a.finishedAt || a.startedAt || a.createdAt || a.completedAt || "";
+    const bTime =
+      b.finishedAt || b.startedAt || b.createdAt || b.completedAt || "";
+
+    if (aTime && bTime) {
+      if (aTime < bTime) return -1;
+      if (aTime > bTime) return 1;
+    }
+    return 0;
+  });
+
+  const perStudent = new Map();
+
+  for (const a of sorted) {
+    const rawId = (a.studentId || "").toString().trim();
+    const rawName = (a.studentName || "").trim();
+    const key = (rawId || rawName).toLowerCase();
+    if (!key) continue;
+
+    // Only keep the FIRST attempt we see for this student
+    if (!perStudent.has(key)) {
+      perStudent.set(key, a);
+    }
+  }
+
+  return Array.from(perStudent.values());
+}
 function formatPercent(numerator, denominator) {
   if (!denominator || denominator === 0) return "0%";
   const pct = Math.round((numerator / denominator) * 100);
@@ -290,6 +324,9 @@ function updateViewSummary() {
     ? `Session: ${sessionCodeRaw}`
     : "Session: all sessions";
 
+      // Create/refresh a history entry right away (0 attempts, 0 students)
+  updateSessionHistory(sessionCodeRaw, classCodeRaw, []);
+
   const classPart = classCodeRaw
     ? `Class: ${classCodeRaw}`
     : "Class: all classes";
@@ -399,18 +436,46 @@ function updateSessionHistory(sessionCodeRaw, classCodeRaw, attempts) {
 
   const history = loadHistoryFromStorage() || [];
 
-  // Calculate aggregates if we have attempts, otherwise use zeros
+  // ---------- DEDUPE ATTEMPTS BY STUDENT (FIRST ATTEMPT ONLY) ----------
+  let dedupedAttempts = [];
+
+  if (Array.isArray(attempts) && attempts.length > 0) {
+    const perStudent = new Map();
+
+    for (const a of attempts) {
+      const rawId = (a.studentId || "").toString().trim();
+      const rawName = (a.studentName || "").trim();
+
+      // Build a stable key: prefer id, fallback to name
+      const key = (rawId || rawName).toLowerCase();
+      if (!key) continue;
+
+      // Only keep the FIRST attempt we see for this student
+      if (!perStudent.has(key)) {
+        perStudent.set(key, a);
+      }
+    }
+
+    dedupedAttempts = Array.from(perStudent.values());
+  }
+
+  // ---------- AGGREGATE STATS FROM DEDUPED ATTEMPTS ----------
   let attemptsCount = 0;
   let totalQuestions = 0;
   let totalCorrect = 0;
   const uniqueStudentNames = new Set();
 
-  if (Array.isArray(attempts) && attempts.length > 0) {
-    attemptsCount = attempts.length;
+  if (dedupedAttempts.length > 0) {
+    attemptsCount = dedupedAttempts.length;
 
-    attempts.forEach((a) => {
-      totalQuestions += Number(a.totalQuestions || 0);
-      totalCorrect += Number(a.numCorrect || 0);
+    dedupedAttempts.forEach((a) => {
+      // Use totalQuestions if present; otherwise fall back to answeredCount
+      const questionsForThisAttempt =
+        Number(a.totalQuestions || a.answeredCount || 0);
+      const correctForThisAttempt = Number(a.numCorrect || 0);
+
+      totalQuestions += questionsForThisAttempt;
+      totalCorrect += correctForThisAttempt;
 
       if (a.studentName) {
         uniqueStudentNames.add(String(a.studentName).trim());
@@ -418,8 +483,9 @@ function updateSessionHistory(sessionCodeRaw, classCodeRaw, attempts) {
     });
   }
 
-  const uniqueStudentsCount = uniqueStudentNames.size;
+  const uniqueStudentsCount = uniqueStudentNames.size || attemptsCount;
 
+  // ---------- MERGE INTO HISTORY ----------
   const idx = history.findIndex(
     (entry) =>
       entry.sessionCode === sessionCode &&
@@ -445,7 +511,6 @@ function updateSessionHistory(sessionCodeRaw, classCodeRaw, attempts) {
   saveHistoryToStorage(history);
   renderSessionHistory(history);
 }
-
 
 // ---------- SERVER-HYDRATED SESSION HISTORY (owned + shared) ----------
 
@@ -1602,6 +1667,8 @@ async function loadAttempts() {
     ? `Session: ${sessionCodeRaw}`
     : "Session: all sessions";
 
+    updateSessionHistory(sessionCodeRaw, classCodeRaw, []);
+
   loadBtn.disabled = true;
   loadStatusEl.textContent = "Loading attempts…";
 
@@ -1646,7 +1713,8 @@ async function loadAttempts() {
     }
 
     const data = await res.json();
-    const attempts = Array.isArray(data.attempts) ? data.attempts : [];
+    const rawAttempts = Array.isArray(data.attempts) ? data.attempts : [];
+    const attempts = getFirstAttemptsPerStudent(rawAttempts);
 
     if (!attempts.length) {
       renderDashboard([]);
@@ -1657,8 +1725,9 @@ async function loadAttempts() {
       updateSessionHistory(sessionCodeRaw, classCodeRaw, attempts);
       loadStatusEl.textContent = `Loaded ${attempts.length} attempt${
         attempts.length === 1 ? "" : "s"
-      } from server.`;
+      } from server. (first attempt per student)`;
     }
+
 
     // Enable live monitor for this session
     enableMonitorButton(sessionCodeRaw, classCodeRaw);
@@ -1706,8 +1775,10 @@ async function loadAttempts() {
         "Could not reach the server. Showing demo data filtered by your choices.";
     }
 
-    renderDashboard(attemptsToShow);
+    const demoFirstAttempts = getFirstAttemptsPerStudent(attemptsToShow);
+    renderDashboard(demoFirstAttempts);
     loadStatusEl.textContent = statusMessage;
+
 
     // Using demo data – live monitor should stay disabled
     enableMonitorButton(sessionCodeRaw2, classCodeRaw2);
