@@ -1873,12 +1873,25 @@ function buildCoTeacherLink(sessionCode, classCode) {
   } else {
     params.set("set", "full");
   }
-
   // the teacher who actually OWNS this data (for co-teacher access)
-  const ownerEmail =
-    OWNER_EMAIL_FOR_VIEW ||
-    (teacherUser && teacherUser.email) ||
-    "";
+  let ownerEmail = null;
+
+  // Prefer the currently signed-in teacher
+  if (teacherUser && teacherUser.email) {
+    ownerEmail = teacherUser.email;
+  } else if (OWNER_EMAIL_FOR_VIEW) {
+    // Fallback: e.g. if coming from a URL before sign-in
+    ownerEmail = OWNER_EMAIL_FOR_VIEW;
+  } else {
+    // Last-resort fallback from localStorage, if available
+    try {
+      const lastOwner = window.localStorage.getItem("rp_lastOwnerEmail");
+      if (lastOwner) ownerEmail = lastOwner;
+    } catch (e) {
+      // ignore
+    }
+  }
+
   if (ownerEmail) {
     params.set("owner", ownerEmail);
   }
@@ -1901,6 +1914,7 @@ function buildCoTeacherLink(sessionCode, classCode) {
 
   return link;
 }
+
 
 
 function startNewSession() {
