@@ -53,11 +53,17 @@ body.dyslexia-font {
 }
 
 /* Force Dyslexia font on answer choice content */
+/* Strong override for answer choices + question text */
+body.dyslexia-font .question-panel,
+body.dyslexia-font .question-panel *,
+body.dyslexia-font .choice-btn,
+body.dyslexia-font .choice-btn *,
 body.dyslexia-font .choice-btn-content,
 body.dyslexia-font .choice-btn-content * {
   font-family: "OpenDyslexic", system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif !important;
 }
+
 
 /* App Shell */
 .app-shell {
