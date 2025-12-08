@@ -245,12 +245,22 @@
     </span>
     <span id="question-type-label" class="question-type-label">Multiple Choice</span>
   </div>
+  <!--Later add
+      <div class="question-header-right">
+      <div id="streak-indicator" class="streak-indicator">
+        🔥 Streak: <span id="streak-count">0</span>
+      </div>-->
   <div id="linked-passage-label" class="linked-passage-label">
     <!-- Filled in by JS if a question is tied to a specific passage -->
   </div>
 </div>
+<!-- NEW: Overall set progress bar (same as organizers) -->
+<div class="progress-wrapper">
+  <div class="progress-bar" id="progress-bar"></div>
+  <div class="progress-message" id="progress-message"></div>
+</div>
 
-<!-- NEW: scrollable question picker -->
+<!-- scrollable question picker -->
 <div class="question-nav-strip" id="question-nav-strip" aria-label="Jump to question"></div>
 <!-- NEW: Question Tools Row -->
 <div class="question-tools-row">
@@ -268,7 +278,12 @@
     Tip: Shift-click or right-click an answer choice to cross it out.
   </span>
 </div>
-
+<!-- later add
+<div id="question-skill-tags"
+     class="question-skill-tags"
+     aria-label="Skills you are practicing">
+</div>
+-->
         <div class="question-body">
           <div id="question-stem" class="question-stem">
             <!-- Filled by JS -->
@@ -296,6 +311,12 @@
         </div>
       </section>
     </main>
+  <button id="sasquatch-helper" class="sasquatch-helper" type="button">
+  <span class="sr-only">
+    Squatch says: Keep going, you’ve got this!
+  </span>
+</button>
+
   </div>
     <script>
     window.GOOGLE_CLIENT_ID = "780192379486-tje7g4n83knjptkubsf8ur1g1rqb5ta6.apps.googleusercontent.com";

@@ -842,6 +842,9 @@ function logQuestionResult(q, extra = {}) {
 let currentQuestionIndex = 0;
 let answered = false;
 let answeredQuestions = new Array(questions.length).fill(false);
+// NEW: streak state
+let currentStreak = 0;
+let bestStreak = 0;
 
 // DOM references
 const questionNumberEl = document.getElementById("question-number");
@@ -854,6 +857,14 @@ const questionOptionsEl = document.getElementById("question-options");
 const questionFeedbackEl = document.getElementById("question-feedback");
 const checkAnswerBtn = document.getElementById("check-answer-btn");
 const nextQuestionBtn = document.getElementById("next-question-btn");
+
+// NEW: streak + skills + progress + Squatch
+const streakIndicatorEl = document.getElementById("streak-indicator");
+const streakCountEl = document.getElementById("streak-count");
+const questionSkillTagsEl = document.getElementById("question-skill-tags");
+const progressBarEl = document.getElementById("progress-bar");
+const progressMessageEl = document.getElementById("progress-message");
+const sasquatchHelperEl = document.getElementById("sasquatch-helper");
 
 const passageTabs = document.querySelectorAll(".passage-tab");
 const passages = document.querySelectorAll(".passage");
@@ -1296,6 +1307,45 @@ function getTypeLabel(type) {
   }
 }
 
+// ====== SKILL TAGS ======
+const SKILL_LABELS = {
+  "central-idea": "Central Idea",
+  "claim": "Claim / Argument",
+  "text-evidence": "Text Evidence",
+  "details": "Supporting Details",
+  "graph-analysis": "Graphs & Data",
+  "compare-passages": "Compare Passages",
+  "listening-comprehension": "Listening",
+  "multimedia-analysis": "Multimedia",
+  "revise-sentence": "Sentence Revision",
+  "chronological-order": "Text Structure",
+  "argument-structure": "Argument Structure"
+};
+
+function prettifySkillKey(key) {
+  if (SKILL_LABELS[key]) return SKILL_LABELS[key];
+
+  return key
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function renderSkillTags(q) {
+  if (!questionSkillTagsEl) return;
+  questionSkillTagsEl.innerHTML = "";
+
+  if (!q.skills || !Array.isArray(q.skills) || !q.skills.length) return;
+
+  const unique = Array.from(new Set(q.skills));
+  unique.slice(0, 4).forEach((key) => {
+    const tag = document.createElement("span");
+    tag.className = "skill-tag";
+    tag.textContent = prettifySkillKey(key);
+    questionSkillTagsEl.appendChild(tag);
+  });
+}
+
+
 function initQuestionNavStrip() {
   const strip = document.getElementById("question-nav-strip");
   if (!strip) return;
@@ -1333,10 +1383,73 @@ function updateQuestionNavStrip() {
   });
 }
 
+// NEW: overall set progress bar (like the organizers)
+function updateProgressBar() {
+  if (!progressBarEl || !progressMessageEl) return;
+
+  const total = questions.length || 0;
+  const answeredCount = answeredQuestions.filter(Boolean).length;
+  const percent = total > 0 ? Math.round((answeredCount / total) * 100) : 0;
+
+  progressBarEl.style.width = `${percent}%`;
+
+  if (percent >= 100 && total > 0) {
+    progressBarEl.classList.add("complete");
+    progressMessageEl.innerText = "🎉 You finished this practice set! 🎉";
+  } else {
+    progressBarEl.classList.remove("complete");
+    progressMessageEl.innerText = "";
+  }
+}
+
+function triggerProgressPulse() {
+  if (!progressBarEl) return;
+  progressBarEl.classList.remove("pulse");
+  // force reflow so the animation can replay
+  void progressBarEl.offsetWidth;
+  progressBarEl.classList.add("pulse");
+}
+
+function updateStreak(isCorrect) {
+  if (isCorrect) {
+    currentStreak += 1;
+    bestStreak = Math.max(bestStreak, currentStreak);
+  } else {
+    currentStreak = 0;
+  }
+
+  if (streakCountEl) {
+    streakCountEl.textContent = String(currentStreak);
+  }
+
+  if (streakIndicatorEl) {
+    streakIndicatorEl.classList.remove("pop");
+    void streakIndicatorEl.offsetWidth;
+    streakIndicatorEl.classList.add("pop");
+  }
+
+  // Give Squatch a little bounce every 3 correct in a row
+  if (sasquatchHelperEl && isCorrect && currentStreak > 0 && currentStreak % 3 === 0) {
+    sasquatchHelperEl.classList.remove("squatch-celebrate");
+    void sasquatchHelperEl.offsetWidth;
+    sasquatchHelperEl.classList.add("squatch-celebrate");
+  }
+}
+
+function onQuestionAnsweredResult(isCorrect) {
+  updateStreak(isCorrect);
+  if (isCorrect) {
+    triggerProgressPulse();
+  }
+}
+
+
 function markQuestionAnswered() {
   answeredQuestions[currentQuestionIndex] = true;
   updateQuestionNavStrip();
+  updateProgressBar();
 }
+
 
 const questionTotalEl = document.getElementById("question-total");
 
@@ -1347,6 +1460,7 @@ if (questionTotalEl) {
 
 // Safe even if the strip doesn’t exist (function exits early)
 initQuestionNavStrip();
+updateProgressBar();
 
 // ======================================
 // 🎉 Confetti Helpers (Reading Trainer)
@@ -1472,6 +1586,8 @@ function renderQuestion() {
   }
   const q = questions[currentQuestionIndex];
   answered = false;
+  // NEW: update skill bar
+renderSkillTags(q);
 
   // Progress + type label
   questionNumberEl.textContent = (currentQuestionIndex + 1).toString();
@@ -1531,10 +1647,17 @@ function renderQuestion() {
   } else if (q.type === "revise") {
     renderRevise(q);    
   }
+  // Smooth fade-in for each new question
+  const bodyEl = document.querySelector(".question-body");
+  if (bodyEl) {
+    bodyEl.classList.remove("fade-in");
+    void bodyEl.offsetWidth;
+    bodyEl.classList.add("fade-in");
+  }
 
   updateQuestionNavStrip();
-
 }
+
 
 // ====== TYPE: MCQ ======
 function renderMCQ(q) {
@@ -1611,6 +1734,8 @@ checkAnswerBtn.onclick = () => {
   } else {
     setFeedback("Not quite. Check the passage again and think about the main idea.", false);
   }
+  onQuestionAnsweredResult(isCorrect);
+
 
   // 🔹 REPORTING HOOK
   logQuestionResult(q, {
@@ -1727,6 +1852,8 @@ checkAnswerBtn.onclick = () => {
       false
     );
   }
+
+onQuestionAnsweredResult(allCorrectSelected);
 
   // 🔹 REPORTING HOOK
   logQuestionResult(q, {
@@ -1852,6 +1979,7 @@ function renderOrder(q) {
         false
       );
     }
+onQuestionAnsweredResult(allCorrect);
 
     // 🔹 REPORTING HOOK
     logQuestionResult(q, {
@@ -2007,6 +2135,8 @@ dropZones.forEach((dz) => {
   const chip = dz.firstElementChild;
   mapping[leftId] = chip ? chip.dataset.id : null;
 });
+
+onQuestionAnsweredResult(allCorrect);
 
 // 🔹 REPORTING HOOK
 logQuestionResult(q, {
@@ -2184,6 +2314,8 @@ function renderClassify(q) {
       placements[item.id] = parentZone ? parentZone.dataset.categoryId : null;
     });
 
+    onQuestionAnsweredResult(allCorrect);
+
     // 🔹 REPORTING HOOK
     logQuestionResult(q, {
       isCorrect: allCorrect,
@@ -2282,6 +2414,7 @@ function renderHighlight(q) {
     } else {
       setFeedback("Some evidence is missing or incorrect. Reread and think about which sentences show feelings or opinions.", false);
     }
+    onQuestionAnsweredResult(allCorrect);
     logQuestionResult(q, {
       isCorrect: allCorrect,
       selectedSentenceIds: Array.from(selectedSet)
@@ -2374,7 +2507,7 @@ function renderDropdown(q) {
         false
       );
     }
-
+  onQuestionAnsweredResult(isCorrect);
     // 🔹 REPORTING HOOK
     logQuestionResult(q, {
       isCorrect,
@@ -2587,7 +2720,7 @@ function renderPartAB(q) {
         false
       );
     }
-
+onQuestionAnsweredResult(aCorrect && bCorrect);
     // 🔹 REPORTING HOOK
     logQuestionResult(q, {
       isCorrect: aCorrect && bCorrect,
@@ -2601,7 +2734,6 @@ function renderPartAB(q) {
     nextQuestionBtn.disabled = false;
   };
 }
-
 
 // ====== TYPE: REVISE (Sentence Revision / Stronger Phrasing) ======
 function renderRevise(q) {
@@ -2714,6 +2846,8 @@ function renderRevise(q) {
         false
       );
     }
+onQuestionAnsweredResult(isCorrect);
+
 
     // 🔹 REPORTING HOOK
     logQuestionResult(q, {
@@ -2979,6 +3113,12 @@ async function autosaveProgress() {
   } catch (e) {
     console.warn("[RP] Autosave to server failed (will retry later).", e);
   }
+}
+
+if (sasquatchHelperEl) {
+  sasquatchHelperEl.addEventListener("click", () => {
+    setFeedback("Squatch says: Keep going, you’re doing great! 🐾", true);
+  });
 }
 
 // Debounced wrapper used by reporting.js
