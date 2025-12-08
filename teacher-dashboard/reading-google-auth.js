@@ -159,8 +159,17 @@
     initGoogleAuth,
     promptSignIn,
     signOut,
-    onAuthChange
+    onAuthChange,
+    // Preferred: explicit getter
+    getCurrentUser: () => currentUser
   };
+
+  // Backwards-compatible: allow RP_AUTH.currentUser reads
+  Object.defineProperty(window.RP_AUTH, "currentUser", {
+    get() {
+      return currentUser;
+    }
+  });
 
   // Try to restore a user immediately on load (in case they signed
   // in from another page already in this domain)

@@ -2989,7 +2989,12 @@ if (SESSION_CODE && questionStemEl && questionOptionsEl && identityModalEl) {
 // gets their own row in the live monitor.
 function getStudentKey() {
   // If they're signed in with Google, keep using the Google sub.
-  const user = window.RP_AUTH && RP_AUTH.currentUser;
+  const user =
+    window.RP_AUTH &&
+    (typeof RP_AUTH.getCurrentUser === "function"
+      ? RP_AUTH.getCurrentUser()
+      : RP_AUTH.currentUser);
+
   if (user && user.sub) {
     return `google-${user.sub}`;
   }
