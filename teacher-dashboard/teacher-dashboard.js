@@ -563,7 +563,7 @@ async function hydrateSessionHistoryFromServer(viewerEmail) {
       return;
     }
 
-    // Group attempts by (sessionCode + classCode)
+        // Group attempts by (sessionCode + classCode)
     const grouped = new Map();
 
     attempts.forEach((a) => {
@@ -576,23 +576,13 @@ async function hydrateSessionHistoryFromServer(viewerEmail) {
         grouped.set(key, {
           sessionCode,
           classCode,
-          lastLoadedAt: a.finishedAt || a.startedAt || null,
-          attemptsCount: 0,
-          totalQuestions: 0,
-          totalCorrect: 0,
-          uniqueStudents: new Set(),
+          lastLoadedAt: null,
+          rawAttempts: []
         });
       }
 
       const entry = grouped.get(key);
-
-      entry.attemptsCount += 1;
-      entry.totalQuestions += Number(a.totalQuestions || 0);
-      entry.totalCorrect += Number(a.numCorrect || 0);
-
-      if (a.studentName) {
-        entry.uniqueStudents.add(String(a.studentName).trim());
-      }
+      entry.rawAttempts.push(a);
 
       const t = a.finishedAt || a.startedAt;
       if (t && (!entry.lastLoadedAt || t > entry.lastLoadedAt)) {
@@ -600,16 +590,79 @@ async function hydrateSessionHistoryFromServer(viewerEmail) {
       }
     });
 
-    const serverHistory = Array.from(grouped.values()).map((entry) => ({
-      sessionCode: entry.sessionCode,
-      classCode: entry.classCode,
-      lastLoadedAt:
-        entry.lastLoadedAt || new Date().toISOString(),
-      attemptsCount: entry.attemptsCount,
-      totalQuestions: entry.totalQuestions,
-      totalCorrect: entry.totalCorrect,
-      uniqueStudentsCount: entry.uniqueStudents.size,
-    }));
+    // Dedupe by student (per session + classCode) and aggregate stats
+    const serverHistory = Array.from(grouped.values()).map((entry) => {
+      const perStudent = new Map();
+      const noKeyAttempts = [];
+
+      entry.rawAttempts.forEach((a) => {
+        const rawId = (a.studentId || "").toString().trim();
+        const rawName = (a.studentName || "").trim();
+        const key = (rawId || rawName).toLowerCase();
+
+        if (!key) {
+          // No reliable identity → include, but don't dedupe
+          noKeyAttempts.push(a);
+          return;
+        }
+
+        const existing = perStudent.get(key);
+        if (!existing) {
+          perStudent.set(key, a);
+        } else {
+          // Prefer the attempt with the most questions answered/completed
+          const prevAnswered = Number(
+            existing.answeredCount || existing.totalQuestions || 0
+          );
+          const currAnswered = Number(
+            a.answeredCount || a.totalQuestions || 0
+          );
+
+          if (currAnswered >= prevAnswered) {
+            perStudent.set(key, a);
+          }
+        }
+      });
+
+      const dedupedAttempts = [...perStudent.values(), ...noKeyAttempts];
+
+      let attemptsCount = 0;
+      let totalQuestions = 0;
+      let totalCorrect = 0;
+      const uniqueStudentNames = new Set();
+
+      if (dedupedAttempts.length > 0) {
+        attemptsCount = dedupedAttempts.length;
+
+        dedupedAttempts.forEach((a) => {
+          // Use totalQuestions if present; otherwise fall back to answeredCount
+          const questionsForThisAttempt = Number(
+            a.totalQuestions || a.answeredCount || 0
+          );
+          const correctForThisAttempt = Number(a.numCorrect || 0);
+
+          totalQuestions += questionsForThisAttempt;
+          totalCorrect += correctForThisAttempt;
+
+          if (a.studentName) {
+            uniqueStudentNames.add(String(a.studentName).trim());
+          }
+        });
+      }
+
+      const uniqueStudentsCount = uniqueStudentNames.size || attemptsCount;
+
+      return {
+        sessionCode: entry.sessionCode,
+        classCode: entry.classCode,
+        lastLoadedAt: entry.lastLoadedAt || new Date().toISOString(),
+        attemptsCount,
+        totalQuestions,
+        totalCorrect,
+        uniqueStudentsCount
+      };
+    });
+
 
     // Merge with whatever is in localStorage already
     const localHistory = loadHistoryFromStorage();

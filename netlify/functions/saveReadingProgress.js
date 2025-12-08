@@ -62,17 +62,34 @@ function buildPartialAttemptFromProgress(
 
   const attemptId = `${safeSession}_${safeStudentKey}`;
 
+  // 🔐 NEW: robust ownership for partial attempts
+  const ownerEmail = (
+    payload.ownerEmail ||
+    payload.teacherEmail ||
+    (payload.user && payload.user.email) ||
+    ""
+  ).trim();
+
+  const sharedWithEmails = Array.isArray(payload.sharedWithEmails)
+    ? payload.sharedWithEmails
+        .map((e) => String(e).trim())
+        .filter(Boolean)
+    : [];
+
   return {
     attemptId,
     studentName: payload.studentName || "",
     classCode: payload.classCode || "",
     sessionCode,
-    ownerEmail: payload.ownerEmail || "",
-    sharedWithEmails: Array.isArray(payload.sharedWithEmails)
-      ? payload.sharedWithEmails
-      : [],
+
+    // Ownership
+    ownerEmail,
+    sharedWithEmails,
+
+    // Assessment metadata
     assessmentName: payload.assessmentName || "",
     assessmentType: payload.assessmentType || "",
+
     numCorrect,
     totalQuestions,
     answeredCount,
@@ -83,7 +100,6 @@ function buildPartialAttemptFromProgress(
     questionResults,
   };
 }
-
 
 exports.handler = async function (event, context) {
   if (event.httpMethod !== "POST") {
@@ -114,7 +130,8 @@ exports.handler = async function (event, context) {
     const safeStudentKey = sanitizeFragment(studentKey);
 
     const key = `session/${safeSession}/${safeStudentKey}.json`;
-      connectLambda(event);  
+
+    connectLambda(event);
     const store = getStore("reading-progress");
 
     const dataToStore = {
@@ -198,7 +215,6 @@ exports.handler = async function (event, context) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ success: true }),
     };
-
 
   } catch (err) {
     console.error("[saveReadingProgress] Error details:", {

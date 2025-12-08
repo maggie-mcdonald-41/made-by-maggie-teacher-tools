@@ -182,36 +182,40 @@ exports.handler = async function (event, context) {
 
     // ---------- Filtering ----------
 
-    // viewerEmail takes priority and includes:
-    //  - attempts where viewer is the owner
-    //  - attempts where viewer is in sharedWithEmails
-    if (rawViewerEmail) {
-      const viewerLower = rawViewerEmail.toLowerCase();
+// viewerEmail takes priority and includes:
+//  - attempts where viewer is the owner
+//  - attempts where viewer is in sharedWithEmails
+if (rawViewerEmail) {
+  const viewerLower = rawViewerEmail.toLowerCase();
 
-      attempts = attempts.filter((a) => {
-        const ownerLower = (a.ownerEmail || "").toLowerCase();
-        const shared = Array.isArray(a.sharedWithEmails)
-          ? a.sharedWithEmails.map((e) => String(e).toLowerCase())
-          : [];
+  attempts = attempts.filter((a) => {
+    const ownerLower = (a.ownerEmail || "").toLowerCase();
+    const shared = Array.isArray(a.sharedWithEmails)
+      ? a.sharedWithEmails.map((e) => String(e).toLowerCase())
+      : [];
 
-        const hasOwnershipInfo = !!ownerLower || shared.length > 0;
+    const hasOwnershipInfo = !!ownerLower || shared.length > 0;
 
-        // Backwards compatibility:
-        // If this attempt has NO owner/shared info at all, keep it visible
-        // so we don't hide older data.
-        if (!hasOwnershipInfo) {
-          return true;
-        }
-
-        if (ownerLower === viewerLower) return true;
-        return shared.includes(viewerLower);
-      });
-    } else if (rawOwnerEmail) {
-      const ownerLower = rawOwnerEmail.toLowerCase();
-      attempts = attempts.filter(
-        (a) => (a.ownerEmail || "").toLowerCase() === ownerLower
-      );
+    // NEW: secure behavior
+    // If there is NO ownership info, do NOT show the attempt.
+    if (!hasOwnershipInfo) {
+      return false; 
     }
+
+    // Allow if viewer is owner
+    if (ownerLower === viewerLower) return true;
+
+    // Allow if viewer is a co-teacher
+    return shared.includes(viewerLower);
+  });
+
+} else if (rawOwnerEmail) {
+  const ownerLower = rawOwnerEmail.toLowerCase();
+  attempts = attempts.filter(
+    (a) => (a.ownerEmail || "").toLowerCase() === ownerLower
+  );
+}
+
 
     // Filter by class if requested
     if (rawClass) {

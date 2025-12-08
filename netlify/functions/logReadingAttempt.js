@@ -24,14 +24,19 @@ exports.handler = async function (event, context) {
     const studentName = (body.studentName || "").trim();
     const classCode   = (body.classCode || "").trim();
 
-    // NEW: teacher ownership
-    const ownerEmail = (body.ownerEmail || body.teacherEmail || "").trim();
+    // NEW: teacher ownership (more robust)
+    const ownerEmail = (
+      body.ownerEmail ||
+      body.teacherEmail ||
+      (body.user && body.user.email) ||
+      ""
+    ).trim();
 
     // NEW: optional co-teacher sharing
     let sharedWithEmails = [];
     if (Array.isArray(body.sharedWithEmails)) {
       sharedWithEmails = body.sharedWithEmails
-        .map(email => String(email).trim())
+        .map((email) => String(email).trim())
         .filter(Boolean);
     }
 
