@@ -3,90 +3,6 @@
 // with a left sidebar session-history panel and a CSV export
 // (one row per student × skill).
 
-// ---------- DEMO DATA FOR LOCAL TESTING (no Netlify functions needed) ----------
-const DEMO_ATTEMPTS = [
-  {
-    studentName: "Avery Johnson",
-    classCode: "6A",
-    sessionCode: "6TH PERIOD",
-    numCorrect: 12,
-    totalQuestions: 18,
-    bySkill: {
-      "Main Idea": { correct: 3, total: 4 },
-      "Vocabulary": { correct: 4, total: 6 },
-      "Structure": { correct: 5, total: 8 }
-    },
-    byType: {
-      mcq:      { correct: 4, total: 6 },
-      multi:    { correct: 3, total: 5 },
-      dropdown: { correct: 2, total: 4 },
-      order:    { correct: 3, total: 3 }
-    },
-    startedAt: "2025-01-10T14:03:11Z",
-    finishedAt: "2025-01-10T14:17:52Z"
-  },
-  {
-    studentName: "Avery Johnson",
-    classCode: "6A",
-    sessionCode: "6TH PERIOD",
-    numCorrect: 14,
-    totalQuestions: 18,
-    bySkill: {
-      "Main Idea": { correct: 3, total: 4 },
-      "Vocabulary": { correct: 5, total: 6 },
-      "Structure": { correct: 6, total: 8 }
-    },
-    byType: {
-      mcq:      { correct: 5, total: 6 },
-      multi:    { correct: 4, total: 5 },
-      dropdown: { correct: 3, total: 4 },
-      order:    { correct: 2, total: 3 }
-    },
-    startedAt: "2025-01-11T14:03:11Z",
-    finishedAt: "2025-01-11T14:17:52Z"
-  },
-  {
-    studentName: "Jordan Lee",
-    classCode: "6A",
-    sessionCode: "6TH PERIOD",
-    numCorrect: 8,
-    totalQuestions: 18,
-    bySkill: {
-      "Main Idea": { correct: 2, total: 4 },
-      "Vocabulary": { correct: 2, total: 6 },
-      "Structure": { correct: 4, total: 8 }
-    },
-    byType: {
-      mcq:      { correct: 2, total: 6 },
-      multi:    { correct: 1, total: 5 },
-      dropdown: { correct: 2, total: 4 },
-      order:    { correct: 3, total: 3 }
-    },
-    startedAt: "2025-01-13T12:15:00Z",
-    finishedAt: "2025-01-13T12:29:10Z"
-  },
-  {
-    studentName: "Emily Parker",
-    classCode: "6B",
-    sessionCode: "6TH PERIOD",
-    numCorrect: 16,
-    totalQuestions: 18,
-    bySkill: {
-      "Main Idea": { correct: 4, total: 4 },
-      "Vocabulary": { correct: 6, total: 6 },
-      "Structure": { correct: 6, total: 8 }
-    },
-    byType: {
-      mcq:      { correct: 6, total: 6 },
-      multi:    { correct: 4, total: 5 },
-      dropdown: { correct: 3, total: 4 },
-      order:    { correct: 3, total: 3 }
-    },
-    startedAt: "2025-01-12T15:45:50Z",
-    finishedAt: "2025-01-12T16:01:05Z"
-  }
-];
-
 // Keeps track of the *currently displayed* attempts for CSV export
 let CURRENT_ATTEMPTS = [];
 // Which student's data is being overlaid on the charts (if any)
@@ -288,25 +204,6 @@ function formatAnsweredLabel(attempt) {
       ? attempt.answeredCount
       : (attempt.totalQuestions ?? 0)
   );
-
-  if (!total && !answered) return "—";
-
-  if (total > 0) {
-    if (answered < total) {
-      return `${answered} of ${total} (partial)`;
-    }
-    return `${answered} of ${total}`;
-  }
-
-  // Older data that only had answeredCount
-  return `${answered} answered`;
-}
-
-
-// Answered label: "X of Y" + hint if partial
-function formatAnsweredLabel(attempt) {
-  const total = Number(attempt.totalQuestions || 0);
-  const answered = Number(attempt.answeredCount || 0);
 
   if (!total && !answered) return "—";
 
@@ -1106,7 +1003,7 @@ function updateSessionTagsFromAttempts(attempts) {
     let worstPct = 101;
 
     Object.entries(totalsObj).forEach(([key, stats]) => {
-      if (!stats.total || stats.total < 3) return; // ignore tiny samples
+      if (!stats.total || stats.total < 2) return; // ignore tiny samples
       const pct = (stats.correct / stats.total) * 100;
       if (pct < worstPct) {
         worstPct = pct;
@@ -1161,11 +1058,37 @@ function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelec
   studentDetailPanel.classList.add("is-open");
   studentDetailNameEl.textContent = studentName;
 
-  // Overall stats across all attempts
+  // ===== Overall stats across all attempts =====
   const totals = studentAttempts.reduce(
     (acc, a) => {
-      acc.correct += a.numCorrect || 0;
-      acc.total += a.totalQuestions || 0;
+      // Prefer explicit counts from the backend
+      let correct = typeof a.numCorrect === "number" ? a.numCorrect : 0;
+
+      // Prefer totalQuestions, then answeredCount, then derive from bySkill
+      let total = 0;
+
+      if (typeof a.totalQuestions === "number" && a.totalQuestions > 0) {
+        total = a.totalQuestions;
+      } else if (typeof a.answeredCount === "number" && a.answeredCount > 0) {
+        total = a.answeredCount;
+      }
+
+      // If we *still* don't have good totals, derive from bySkill if present
+      if ((!total || !correct) && a.bySkill && typeof a.bySkill === "object") {
+        let derivedCorrect = 0;
+        let derivedTotal = 0;
+        Object.values(a.bySkill).forEach((stats) => {
+          if (!stats) return;
+          derivedCorrect += Number(stats.correct || 0);
+          derivedTotal += Number(stats.total || 0);
+        });
+
+        if (!total && derivedTotal) total = derivedTotal;
+        if (!correct && derivedCorrect) correct = derivedCorrect;
+      }
+
+      acc.correct += correct;
+      acc.total += total;
       return acc;
     },
     { correct: 0, total: 0 }
@@ -1181,10 +1104,9 @@ function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelec
   studentDetailAttemptsEl.textContent =
     `Attempts counted: ${studentAttempts.length}.`;
 
-  // === Progress-over-time chart ===
+  // ===== Progress-over-time chart =====
   const chartCanvas = document.getElementById("student-detail-progress-chart");
   if (chartCanvas && typeof Chart !== "undefined") {
-    // Sort attempts by finishedAt/startedAt ascending
     const sortedAttempts = studentAttempts
       .slice()
       .sort((a, b) => {
@@ -1199,14 +1121,13 @@ function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelec
       return `${idx + 1}. ${labelDate}`;
     });
 
-    // Overall %
     const overallData = sortedAttempts.map((a) => {
       const total = a.totalQuestions || 0;
       const correct = a.numCorrect || 0;
       return total ? Math.round((correct / total) * 100) : 0;
     });
 
-    // Aggregate skills to pick the top 2–3 for lines
+    // Aggregate skills across attempts to pick top 2–3 lines
     const aggregateBySkill = {};
     sortedAttempts.forEach((a) => {
       const map = a.bySkill || {};
@@ -1290,47 +1211,132 @@ function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelec
       });
     }
   }
-  // Build per-skill list from skillTotalsSelected
-  const entries = Object.entries(skillTotalsSelected || {});
-  if (!entries.length) {
-    studentDetailNeedsWorkEl.innerHTML = '<li class="muted">Not enough skill data yet.</li>';
-    studentDetailStrengthsEl.innerHTML = '<li class="muted">Not enough skill data yet.</li>';
-  } else {
-    const skillsWithPct = entries
-      .filter(([, stats]) => stats.total && stats.total >= 3) // require some data
-      .map(([skill, stats]) => ({
-        skill,
-        pct: (stats.correct / stats.total) * 100,
-        total: stats.total
-      }));
 
-    if (!skillsWithPct.length) {
-      studentDetailNeedsWorkEl.innerHTML = '<li class="muted">Not enough skill data yet.</li>';
-      studentDetailStrengthsEl.innerHTML = '<li class="muted">Not enough skill data yet.</li>';
-      return;
-    }
+  // ===== Per-skill & per-type lists (Needs Work / Strengths) =====
+  const MIN_QUESTIONS = 2;
 
-    // Sort ascending for "needs work", descending for strengths
-    const sortedByLow = [...skillsWithPct].sort((a, b) => a.pct - b.pct);
-    const sortedByHigh = [...skillsWithPct].sort((a, b) => b.pct - a.pct);
+  // ---- Skills: using skillTotalsSelected (already per-student) ----
+  const skillEntries = Object.entries(skillTotalsSelected || {});
+  const skillsWithPct = skillEntries
+    .filter(([, stats]) => stats.total && stats.total >= MIN_QUESTIONS)
+    .map(([skill, stats]) => ({
+      skill,
+      pct: (stats.correct / stats.total) * 100,
+      total: stats.total
+    }));
 
-    const needsWork = sortedByLow.slice(0, 2);
-    const strengths = sortedByHigh.slice(0, 2);
+  // ---- Question types: aggregate from this student's attempts ----
+  const typeTotalsSelected = {};
+  studentAttempts.forEach((a) => {
+    if (!a.byType) return;
+    Object.entries(a.byType).forEach(([typeKey, stats]) => {
+      if (!typeTotalsSelected[typeKey]) {
+        typeTotalsSelected[typeKey] = { correct: 0, total: 0 };
+      }
+      typeTotalsSelected[typeKey].correct += stats.correct || 0;
+      typeTotalsSelected[typeKey].total += stats.total || 0;
+    });
+  });
 
-    const makeLi = ({ skill, pct, total }) =>
-      `<li>${skill}: ${Math.round(pct)}% (${total} questions)</li>`;
+  const friendlyTypeLabels = {
+    mcq: "MCQ",
+    multi: "Select All",
+    order: "Order",
+    match: "Matching",
+    highlight: "Highlight Evidence",
+    dropdown: "Inline Choice",
+    classify: "Classification",
+    partAB: "Part A/B",
+    revise: "Sentence Revision"
+  };
 
-    studentDetailNeedsWorkEl.innerHTML =
-      needsWork.length
-        ? needsWork.map(makeLi).join("")
-        : '<li class="muted">No clear weaknesses yet.</li>';
+  const typeEntries = Object.entries(typeTotalsSelected);
+  const typesWithPct = typeEntries
+    .filter(([, stats]) => stats.total && stats.total >= MIN_QUESTIONS)
+    .map(([key, stats]) => ({
+      key,
+      label: friendlyTypeLabels[key] || key,
+      pct: (stats.correct / stats.total) * 100,
+      total: stats.total
+    }));
 
-    studentDetailStrengthsEl.innerHTML =
-      strengths.length
-        ? strengths.map(makeLi).join("")
-        : '<li class="muted">No clear strengths yet.</li>';
+  // If no usable skills or types, bail with "not enough data"
+  if (!skillsWithPct.length && !typesWithPct.length) {
+    studentDetailNeedsWorkEl.innerHTML = '<li class="muted">Not enough data yet.</li>';
+    studentDetailStrengthsEl.innerHTML = '<li class="muted">Not enough data yet.</li>';
+    return;
   }
+
+  // ---- Sort + pick needs work & strengths for skills ----
+  const sortedSkillLow = [...skillsWithPct].sort((a, b) => a.pct - b.pct);
+  const sortedSkillHigh = [...skillsWithPct].sort((a, b) => b.pct - a.pct);
+
+  const needsWorkSkills = sortedSkillLow.slice(0, 2);
+  const needsWorkSkillNames = new Set(needsWorkSkills.map((s) => s.skill));
+
+  const strengthsSkills = [];
+  for (const s of sortedSkillHigh) {
+    if (!needsWorkSkillNames.has(s.skill)) {
+      strengthsSkills.push(s);
+    }
+    if (strengthsSkills.length >= 2) break;
+  }
+
+  // ---- Sort + pick needs work & strengths for types ----
+  const sortedTypeLow = [...typesWithPct].sort((a, b) => a.pct - b.pct);
+  const sortedTypeHigh = [...typesWithPct].sort((a, b) => b.pct - a.pct);
+
+  const needsWorkTypes = sortedTypeLow.slice(0, 2);
+  const needsWorkTypeKeys = new Set(needsWorkTypes.map((t) => t.key));
+
+  const strengthsTypes = [];
+  for (const t of sortedTypeHigh) {
+    if (!needsWorkTypeKeys.has(t.key)) {
+      strengthsTypes.push(t);
+    }
+    if (strengthsTypes.length >= 2) break;
+  }
+
+  const makeSkillLi = ({ skill, pct, total }) =>
+    `<li>Skill – ${skill}: ${Math.round(pct)}% (${total} questions)</li>`;
+
+  const makeTypeLi = ({ label, pct, total }) =>
+    `<li>Type – ${label}: ${Math.round(pct)}% (${total} questions)</li>`;
+
+  // Build Needs Work list HTML
+  let needsWorkHtml = "";
+
+  if (needsWorkSkills.length) {
+    needsWorkHtml += '<li class="drawer-subheading">Skills</li>';
+    needsWorkHtml += needsWorkSkills.map(makeSkillLi).join("");
+  }
+  if (needsWorkTypes.length) {
+    needsWorkHtml += '<li class="drawer-subheading">Question Types</li>';
+    needsWorkHtml += needsWorkTypes.map(makeTypeLi).join("");
+  }
+  if (!needsWorkHtml) {
+    needsWorkHtml = '<li class="muted">No clear weaknesses yet.</li>';
+  }
+  studentDetailNeedsWorkEl.innerHTML = needsWorkHtml;
+
+  // Build Strengths list HTML
+  let strengthsHtml = "";
+
+  if (strengthsSkills.length) {
+    strengthsHtml += '<li class="drawer-subheading">Skills</li>';
+    strengthsHtml += strengthsSkills.map(makeSkillLi).join("");
+  }
+  if (strengthsTypes.length) {
+    strengthsHtml += '<li class="drawer-subheading">Question Types</li>';
+    strengthsHtml += strengthsTypes.map(makeTypeLi).join("");
+  }
+  if (!strengthsHtml) {
+    strengthsHtml = '<li class="muted">No clear strengths yet.</li>';
+  }
+  studentDetailStrengthsEl.innerHTML = strengthsHtml;
 }
+
+
 
 function renderSkillHeatmap(attempts) {
   if (!heatmapHeadEl || !heatmapBodyEl) return;
@@ -2370,10 +2376,20 @@ function initChartFullscreen() {
     if (!OWNER_EMAIL_FOR_VIEW) {
       OWNER_EMAIL_FOR_VIEW = teacherUser.email;
     }
+
+    // NEW: hydrate history for the main teacher view
+    const isCoTeacherView =
+      OWNER_EMAIL_FOR_VIEW && OWNER_EMAIL_FOR_VIEW !== teacherUser.email;
+
+    if (!isCoTeacherView &&
+        typeof hydrateSessionHistoryFromServer === "function") {
+      hydrateSessionHistoryFromServer(teacherUser.email);
+    }
   } catch (e) {
     console.warn("[Dashboard] Could not restore teacher from localStorage:", e);
   }
 })();
+
 
 // Sidebar collapse / expand
 historyToggleBtn.addEventListener("click", () => {

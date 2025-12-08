@@ -300,98 +300,97 @@ body.dashboard-dark .pill-button-accent {
     }
   }
 
-  /* ===== LEFT SIDEBAR: SESSION HISTORY ===== */
+ /* ===== LEFT SIDEBAR: SESSION HISTORY ===== */
+.history-sidebar {
+  background: var(--bg-card);
+  border-radius: 0 0 0 18px;
+  border: 1px solid var(--gray-light);
+  box-shadow: var(--shadow-soft);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width 0.2s ease, min-width 0.2s ease;
+  width: 260px;
+}
+
+@media (max-width: 900px) {
   .history-sidebar {
-    background: var(--bg-card);
-    border-radius: 0 0 0 18px;
-    border: 1px solid var(--gray-light);
-    box-shadow: var(--shadow-soft);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    transition: width 0.2s ease, min-width 0.2s ease;
-    width: 260px;
+    width: 100%;
   }
+}
 
-  @media (max-width: 900px) {
-    .history-sidebar {
-      width: 100%;
-    }
-  }
+.history-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--gray-light);
+  background: #f9fbff;
+}
 
-  .history-sidebar-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.4rem 0.5rem;
-    border-bottom: 1px solid var(--gray-light);
-    background: #f9fbff;
-  }
+.history-sidebar-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
 
-  .history-sidebar-title {
-    font-size: 0.9rem;
-    font-weight: 700;
-  }
+.history-sidebar-toggle {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--gray-mid);
+  padding: 0.2rem 0.4rem;
+  border-radius: 999px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
 
-  .history-sidebar-toggle {
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    font-size: 0.8rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    color: var(--gray-mid);
-    padding: 0.2rem 0.4rem;
-    border-radius: 999px;
-    transition: background 0.15s ease, color 0.15s ease;
-  }
+.history-sidebar-toggle:hover {
+  background: rgba(0, 168, 181, 0.08);
+  color: var(--teal-dark);
+}
 
-  .history-sidebar-toggle:hover {
-    background: rgba(0, 168, 181, 0.08);
-    color: var(--teal-dark);
-  }
+.history-sidebar-body {
+  padding: 0.45rem 0.5rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1 1 auto;     /* let the body stretch */
+  min-height: 0;      /* allow inner panel to size + scroll */
+}
 
-  .history-sidebar-body {
-    padding: 0.45rem 0.5rem 0.6rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-  }
+.history-help {
+  font-size: 0.78rem;
+  color: var(--gray-mid);
+}
 
-  .history-help {
-    font-size: 0.78rem;
-    color: var(--gray-mid);
-  }
+.history-panel {
+  border-radius: 8px;
+  border: 1px solid var(--gray-light);
+  background: #f9fbff;
+  padding: 0.35rem 0.45rem;
+  flex: 1 1 auto;     /* fill the remaining height */
+  min-height: 0;      /* required for flex children to scroll */
+  overflow-y: auto;   /* keep internal scroll */
+}
 
-  .history-panel {
-    border-radius: 8px;
-    border: 1px solid var(--gray-light);
-    background: #f9fbff;
-    padding: 0.35rem 0.45rem;
-    max-height: 260px;
-    overflow-y: auto;
-  }
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
 
-  .history-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-  }
+.history-title {
+  font-weight: 700;
+  font-size: 0.86rem;
+}
 
-
-
-
- 
-  .history-title {
-    font-weight: 700;
-    font-size: 0.86rem;
-  }
-
-  .history-meta {
-    font-size: 0.75rem;
-    color: var(--gray-mid);
-  }
+.history-meta {
+  font-size: 0.75rem;
+  color: var(--gray-mid);
+}
 
 /* Let the title + pill wrap instead of overflowing */
 .history-item {
@@ -400,10 +399,10 @@ body.dashboard-dark .pill-button-accent {
   align-items: flex-start;
 }
 
-  .history-item:hover {
-    border-color: rgba(0, 168, 181, 0.5);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-  }
+.history-item:hover {
+  border-color: rgba(0, 168, 181, 0.5);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
 
 /* Make the text block take the full width on the first line */
 .history-main {
@@ -415,27 +414,26 @@ body.dashboard-dark .pill-button-accent {
 .history-pill {
   margin-top: 0.2rem;
   margin-left: auto;     /* keeps it right-aligned when there's room */
-  /* optional: allow wrapping inside pill if it ever needs it */
   white-space: normal;
   text-align: right;
 }
 
-
-  @media (min-width: 901px) {
-    .history-sidebar.collapsed {
-      width: 42px;
-      min-width: 42px;
-    }
-
-    .history-sidebar.collapsed .history-sidebar-body,
-    .history-sidebar.collapsed .history-sidebar-title {
-      display: none;
-    }
-
-    .history-sidebar.collapsed .history-sidebar-header {
-      justify-content: center;
-    }
+@media (min-width: 901px) {
+  .history-sidebar.collapsed {
+    width: 42px;
+    min-width: 42px;
   }
+
+  .history-sidebar.collapsed .history-sidebar-body,
+  .history-sidebar.collapsed .history-sidebar-title {
+    display: none;
+  }
+
+  .history-sidebar.collapsed .history-sidebar-header {
+    justify-content: center;
+  }
+}
+
 
   /* ===== RIGHT MAIN DASHBOARD CONTENT ===== */
   .dashboard-main {
