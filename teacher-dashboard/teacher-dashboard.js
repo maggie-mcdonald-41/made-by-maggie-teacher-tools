@@ -321,7 +321,6 @@ function formatAnsweredLabel(attempt) {
   return `${answered} answered`;
 }
 
-
 function updateViewSummary() {
   if (!currentViewSummaryEl) return;
 
@@ -331,9 +330,6 @@ function updateViewSummary() {
   const sessionPart = sessionCodeRaw
     ? `Session: ${sessionCodeRaw}`
     : "Session: all sessions";
-
-      // Create/refresh a history entry right away (0 attempts, 0 students)
-  updateSessionHistory(sessionCodeRaw, classCodeRaw, []);
 
   const classPart = classCodeRaw
     ? `Class: ${classCodeRaw}`
@@ -348,6 +344,7 @@ function updateViewSummary() {
 
   currentViewSummaryEl.textContent = `${sessionPart} · ${classPart} · ${studentPart}`;
 }
+
 
 function accuracyTagClass(pct) {
   if (pct < 40) return "tag tag-low";
