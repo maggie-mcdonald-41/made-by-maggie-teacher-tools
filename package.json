@@ -18,6 +18,6 @@
   "homepage": "https://github.com/maggie-mcdonald-41/made-by-maggie-teacher-tools#readme",
   "description": "",
   "dependencies": {
-    "@netlify/blobs": "^10.4.1"
+    "@netlify/blobs": "^10.4.3"
   }
 }
