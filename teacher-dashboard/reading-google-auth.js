@@ -8,6 +8,9 @@
   const listeners = [];
   let googleAuthInitialized = false;
 
+  // To avoid spamming alerts if FedCM keeps failing
+  let hasShownFedCmHelp = false;
+
   function notifyListeners() {
     listeners.forEach((fn) => {
       try {
@@ -87,48 +90,135 @@
   function initGoogleAuth() {
     // Wait for Google Identity script to be ready
     if (!window.google || !google.accounts || !google.accounts.id) {
-      console.warn("[RP_AUTH] Google Identity script not loaded yet. Retrying in 200ms...");
+      console.warn(
+        "[RP_AUTH] Google Identity script not loaded yet. Retrying in 200ms..."
+      );
       setTimeout(initGoogleAuth, 200);
       return;
     }
 
     if (!window.GOOGLE_CLIENT_ID) {
-      console.error("[RP_AUTH] Missing global window.GOOGLE_CLIENT_ID; cannot initialize Google Auth.");
+      console.error(
+        "[RP_AUTH] Missing global window.GOOGLE_CLIENT_ID; cannot initialize Google Auth."
+      );
       return;
     }
+
+    console.log(
+      "[RP_AUTH] Initializing Google Auth with client:",
+      window.GOOGLE_CLIENT_ID
+    );
 
     google.accounts.id.initialize({
       client_id: window.GOOGLE_CLIENT_ID,
       callback: handleCredentialResponse,
       auto_select: false,
       cancel_on_tap_outside: true
-      // itp_support: true, // optional for Safari
+      // itp_support: true, // optional
     });
 
     googleAuthInitialized = true;
     console.log("[RP_AUTH] Google Auth initialized.");
   }
 
+  function explainFedCmNotification(notification) {
+    if (!notification || typeof notification !== "object") return;
+
+    const momentType =
+      typeof notification.getMomentType === "function"
+        ? notification.getMomentType()
+        : undefined;
+    const notDisplayedReason =
+      typeof notification.getNotDisplayedReason === "function"
+        ? notification.getNotDisplayedReason()
+        : undefined;
+    const skippedReason =
+      typeof notification.getSkippedReason === "function"
+        ? notification.getSkippedReason()
+        : undefined;
+
+    console.warn("[RP_AUTH] FedCM / One Tap status:", {
+      momentType,
+      notDisplayedReason,
+      skippedReason
+    });
+
+    if (hasShownFedCmHelp) return;
+    hasShownFedCmHelp = true;
+
+    // Only bother the user if nothing was displayed or it was skipped.
+    if (
+      notDisplayedReason ||
+      skippedReason ||
+      momentType === "skipped" ||
+      momentType === "dismissed"
+    ) {
+      alert(
+        "We couldn’t show the Google sign-in prompt.\n\n" +
+          "Please make sure:\n" +
+          "• You’re signed into your Google account in this browser\n" +
+          "• Pop-ups and third-party cookies aren’t blocked for this site\n" +
+          "Then try again."
+      );
+    }
+  }
+
+  function doPromptInternal() {
+    if (!googleAuthInitialized) {
+      console.warn(
+        "[RP_AUTH] google.accounts.id.prompt() called before init; aborting."
+      );
+      return;
+    }
+
+    try {
+      // Attach a moment listener so we can see what FedCM is doing
+      google.accounts.id.prompt((notification) => {
+        explainFedCmNotification(notification);
+      });
+    } catch (e) {
+      console.error("[RP_AUTH] Error calling google.accounts.id.prompt():", e);
+      if (!hasShownFedCmHelp) {
+        hasShownFedCmHelp = true;
+        alert(
+          "We ran into a problem opening the Google sign-in window.\n\n" +
+            "Try closing this tab, reopening the link from your teacher, " +
+            "and making sure you’re signed into your Google account in Chrome."
+        );
+      }
+    }
+  }
+
   function promptSignIn() {
     // If not initialized yet, try to init and then retry the prompt shortly
     if (!googleAuthInitialized) {
-      console.warn("[RP_AUTH] Google Auth not initialized yet; attempting init before prompt...");
+      console.warn(
+        "[RP_AUTH] Google Auth not initialized yet; attempting init before prompt..."
+      );
       initGoogleAuth();
 
-      // Give initGoogleAuth a moment to attach once the GIS script is ready
       setTimeout(() => {
         if (!googleAuthInitialized) {
-          console.warn("[RP_AUTH] Still no Google Auth after retry; aborting prompt.");
+          console.warn(
+            "[RP_AUTH] Still no Google Auth after retry; aborting prompt."
+          );
+          if (!hasShownFedCmHelp) {
+            hasShownFedCmHelp = true;
+            alert(
+              "Google sign-in is not ready yet. " +
+                "Please wait a few seconds and try again, or refresh the page."
+            );
+          }
           return;
         }
-        google.accounts.id.prompt();
+        doPromptInternal();
       }, 300);
 
       return;
     }
 
     // Normal case: already initialized
-    google.accounts.id.prompt();
+    doPromptInternal();
   }
 
   function signOut() {
@@ -160,7 +250,6 @@
     promptSignIn,
     signOut,
     onAuthChange,
-    // Preferred: explicit getter
     getCurrentUser: () => currentUser
   };
 
@@ -179,6 +268,10 @@
       const parsed = JSON.parse(raw);
       if (parsed && parsed.email) {
         currentUser = parsed;
+        console.log(
+          "[RP_AUTH] Restored previous user from localStorage:",
+          parsed.email
+        );
         notifyListeners();
       }
     }

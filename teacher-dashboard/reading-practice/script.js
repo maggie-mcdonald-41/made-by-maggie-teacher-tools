@@ -1009,7 +1009,8 @@ if (identityContinueBtn) {
     if (rpSessionInitialized) return;
     const name = (identityNameInput?.value || "").trim();
     const classCode = (identityClassInput?.value || "").trim();
-    const sessionCode = (sessionCodeInput?.value || SESSION_CODE || "").trim();
+    const sessionCode = (SESSION_CODE || "").trim();
+
 
     if (!name) {
       if (identityErrorEl) {
@@ -1061,7 +1062,7 @@ if (startBtn) {
     if (rpSessionInitialized) return;
     const name = (studentNameInput?.value || "").trim();
     const classCode = (classCodeInput?.value || "").trim();
-    const sessionCode = (sessionCodeInput?.value || SESSION_CODE || "").trim();
+    const sessionCode = (SESSION_CODE || "").trim();
 
     if (!name) {
       if (startErrorMsg) {
@@ -1095,8 +1096,9 @@ if (startBtn) {
 if (window.RP_AUTH) {
   RP_AUTH.onAuthChange((user) => {
     if (user) {
-      // Auto-fill name field(s)
       const displayName = user.name || user.email || "";
+
+      // Auto-fill name field(s)
       const nameInput = document.getElementById("rp-student-name");
       if (nameInput && !nameInput.value.trim()) {
         nameInput.value = displayName;
@@ -1109,9 +1111,48 @@ if (window.RP_AUTH) {
         authStatusEl.textContent = `Signed in as ${user.email}. Your progress will sync across devices.`;
       }
 
-      // If we haven't started the session yet, and we have a session code, auto-start.
-      const sessionCode = (sessionCodeInput?.value || SESSION_CODE || "").trim();
-      if (!rpSessionInitialized && sessionCode) {
+      const sessionCode = (SESSION_CODE || "").trim();
+      if (!sessionCode) {
+        // No session in the URL – nothing else to do yet
+        return;
+      }
+
+      // If we haven't started the session yet, check for a previous autosave
+      if (!rpSessionInitialized) {
+        const saved = tryLoadLocalAutosaveForGoogleUser(sessionCode, user);
+
+        if (saved && Array.isArray(saved.questionResults) && saved.questionResults.length > 0) {
+          const resume = window.confirm(
+            "It looks like you already started this practice set.\n\n" +
+              "Click OK to jump back in where you left off, or Cancel to start a fresh attempt."
+          );
+
+          if (!resume) {
+            // Teacher still keeps the earlier attempt in the dashboard,
+            // but we clear the local resume record for this browser.
+            try {
+              const studentKey = `google-${user.sub}`;
+              const localKey = `rp_progress_${sessionCode}_${studentKey}`;
+              localStorage.removeItem(localKey);
+            } catch (_) {
+              // ignore
+            }
+          } else {
+            // Start session, then apply resume
+            const classCode = (classCodeInput?.value || URL_CLASS_CODE || "").trim();
+            hideIdentityModal();
+            beginTrainerSession({
+              studentName: displayName,
+              classCode,
+              sessionCode
+            });
+
+            applyResumeFromAutosave(saved);
+            return; // ✅ We're done – session started + resumed
+          }
+        }
+
+        // If no autosave or they chose "start fresh", just auto-start like before
         const classCode = (classCodeInput?.value || URL_CLASS_CODE || "").trim();
         hideIdentityModal();
         beginTrainerSession({
@@ -2983,6 +3024,68 @@ if (SESSION_CODE && questionStemEl && questionOptionsEl && identityModalEl) {
     });
   }
 })();
+
+// ---- RESTORE FROM LOCAL AUTOSAVE (same browser) ----
+function tryLoadLocalAutosaveForGoogleUser(sessionCode, user) {
+  if (!sessionCode || !user || !user.sub) return null;
+
+  try {
+    const studentKey = `google-${user.sub}`;
+    const localKey = `rp_progress_${sessionCode}_${studentKey}`;
+    const raw = localStorage.getItem(localKey);
+    if (!raw) return null;
+
+    const payload = JSON.parse(raw);
+    console.log("[RP] Found local autosave for session/user:", {
+      sessionCode,
+      studentKey,
+      answeredCount: Array.isArray(payload.questionResults)
+        ? payload.questionResults.length
+        : 0
+    });
+    return payload;
+  } catch (e) {
+    console.warn("[RP] Failed to read local autosave:", e);
+    return null;
+  }
+}
+function applyResumeFromAutosave(payload) {
+  if (!payload) return;
+
+  // Use the last saved question index, or 0 as a fallback
+  const savedIndex =
+    typeof payload.currentQuestionIndex === "number"
+      ? payload.currentQuestionIndex
+      : 0;
+
+  // Clamp just in case
+  currentQuestionIndex = Math.min(
+    Math.max(savedIndex, 0),
+    Math.max(questions.length - 1, 0)
+  );
+
+  // For now, we only resume "where you left off":
+  // - We do NOT try to reconstruct every past answer in the UI.
+  // - We may later extend this to re-mark answered questions using payload.questionResults.
+
+  console.log("[RP] Resuming trainer at question index:", currentQuestionIndex);
+  if (questionStemEl && questionOptionsEl) {
+    renderQuestion();
+  }
+
+  // Optional: Update the progress bar based on how many results existed.
+  try {
+    if (Array.isArray(payload.questionResults)) {
+      const answeredCount = payload.questionResults.length;
+      answeredQuestions = answeredQuestions.map((_, idx) => idx < answeredCount);
+      updateQuestionNavStrip();
+      updateProgressBar();
+    }
+  } catch (e) {
+    console.warn("[RP] Could not rebuild progress from autosave:", e);
+  }
+}
+
 // ====== PROGRESS AUTOSAVE ======
 
 // Build a stable key so each student (name + class + session)
