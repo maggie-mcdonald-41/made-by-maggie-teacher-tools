@@ -286,6 +286,117 @@ body.dashboard-dark .pill-button-accent {
     border-color: transparent;
   }
 
+  /* === Student search controls === */
+.student-search-group {
+  min-width: 260px;
+}
+
+.filter-inline-row {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.filter-inline-row .filter-input {
+  flex: 1;
+}
+
+/* === Student search card === */
+.student-search-card {
+  margin-top: 1.2rem;
+}
+
+.student-search-results {
+  margin-top: 0.4rem;
+}
+
+/* Table styling reused for search results */
+.student-search-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.student-search-table th,
+.student-search-table td {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.student-search-table th {
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--gray-mid);
+}
+
+.student-search-table td.right {
+  text-align: right;
+}
+
+.student-search-row {
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.student-search-row:hover {
+  background-color: rgba(132, 235, 230, 0.12); /* soft aqua highlight */
+}
+
+.student-search-name {
+  font-weight: 700;
+}
+
+.student-search-empty {
+  font-size: 0.8rem;
+  color: var(--gray-mid);
+}
+
+@media (max-width: 800px) {
+  .student-search-group {
+    width: 100%;
+  }
+
+  .student-search-table {
+    font-size: 0.75rem;
+  }
+
+  .student-search-table th,
+  .student-search-table td {
+    padding: 0.35rem;
+  }
+}
+
+.student-search-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.35rem;
+  font-size: 0.8rem;
+}
+
+.student-search-label {
+  font-weight: 600;
+  color: var(--navy);
+}
+
+.student-search-clear {
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-size: 0.78rem;
+  color: var(--gray-mid);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.student-search-clear:hover {
+  color: var(--teal-dark);
+}
+
   /* ===== MAIN LAYOUT ===== */
   .dashboard-layout {
     display: grid;
@@ -385,6 +496,7 @@ body.dashboard-dark .pill-button-accent {
 .history-title {
   font-weight: 700;
   font-size: 0.86rem;
+  color: var(--navy);
 }
 
 .history-meta {
@@ -392,16 +504,36 @@ body.dashboard-dark .pill-button-accent {
   color: var(--gray-mid);
 }
 
-/* Let the title + pill wrap instead of overflowing */
+
+/* History list item / session pill card */
 .history-item {
+  width: 100%;
+  text-align: left;
   display: flex;
-  flex-wrap: wrap;       /* allow pill to move to a new line */
+  flex-wrap: wrap;
   align-items: flex-start;
+  gap: 0.1rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 10px;
+  border: 1px solid var(--gray-light);
+  background: #ffffff;
+  cursor: pointer;
+  color: var(--navy);
+  /* color stripe on the left; gets overridden by .history-color-* */
+  border-left-width: 4px;
+  border-left-color: transparent;
+
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease,
+    transform 0.08s ease;
 }
 
 .history-item:hover {
-  border-color: rgba(0, 168, 181, 0.5);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  background: #f9fbff;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+  transform: translateY(-1px);
 }
 
 /* Make the text block take the full width on the first line */
@@ -413,9 +545,125 @@ body.dashboard-dark .pill-button-accent {
 /* Pill sits on its own line when space is tight */
 .history-pill {
   margin-top: 0.2rem;
-  margin-left: auto;     /* keeps it right-aligned when there's room */
+  margin-left: auto;
   white-space: normal;
   text-align: right;
+}
+
+/* Toolbar above the history list */
+.history-actions {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 0.4rem;
+  flex-wrap: wrap;
+}
+
+/* Selected session row */
+.history-item.is-selected {
+  box-shadow: 0 0 0 2px rgba(5, 193, 184, 0.35);
+  background: rgba(132, 235, 230, 0.12);
+}
+
+/* Color-coded variants using your palette */
+.history-item.history-color-teal {
+  border-left-color: var(--teal);
+}
+
+.history-item.history-color-pink {
+  border-left-color: var(--pink);
+}
+
+.history-item.history-color-gold {
+  border-left-color: #fbbf24; /* warm gold */
+}
+
+.history-item.history-color-purple {
+  border-left-color: #a855f7; /* soft purple/violet */
+}
+
+
+
+.history-action-btn {
+  border-radius: 999px;
+  border: 1px solid var(--gray-light);
+  background: #ffffff;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+}
+
+.history-action-btn.danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.history-action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Make sure colors still pop in dark mode */
+body.dashboard-dark .history-item.history-color-teal {
+  border-left-color: var(--teal);
+   color: #e5e7eb;
+}
+
+body.dashboard-dark .history-item.history-color-pink {
+  border-left-color: var(--pink);
+}
+
+body.dashboard-dark .history-item.history-color-gold {
+  border-left-color: #facc15;
+}
+
+body.dashboard-dark .history-item.history-color-purple {
+  border-left-color: #a855f7;
+}
+
+body.dashboard-dark .history-item {
+  background: #020617;
+  border-color: #1f2937;
+  color: #e5e7eb;
+}
+
+body.dashboard-dark .history-item:hover {
+  background: #020617;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.75);
+}
+
+body.dashboard-dark .history-item.is-selected {
+  background: rgba(15, 23, 42, 0.9);
+}
+body.dashboard-dark .history-title {
+  color: #e5e7eb;
+}
+
+body.dashboard-dark .history-meta {
+  color: #9ca3af;
+}
+/* Dark mode: sidebar title */
+body.dashboard-dark .history-sidebar-header {
+  color: var(--indigo) !important;        /* gray-400 */
+}
+body.dashboard-dark .history-sidebar-toggle {
+  color: var(--indigo);
+  background: rgba(45, 212, 191, 0.12);
+}
+body.dashboard-dark .history-sidebar-toggle:hover {
+  color: #2dd4bf !important;        /* bright aqua hover */
+  background: rgba(45, 212, 191, 0.12);
+}
+
+/* Dark mode: Session tags text + background */
+body.dashboard-dark .session-tag {
+  background: rgba(45, 212, 191, 0.10) !important; /* soft teal glow */
+  color: #e5e7eb !important;                       /* bright readable text */
+  border-color: rgba(45, 212, 191, 0.25) !important;
+}
+
+/* The <span> inside should also brighten */
+body.dashboard-dark .session-tag span {
+  color: #a5f3fc !important;   /* teal-light for emphasis */
 }
 
 @media (min-width: 901px) {
@@ -1555,6 +1803,7 @@ body.dashboard-dark .tag-mid {
       </button>
 
         </div>
+
           <!-- D. OPTIONAL CLASS FILTER -->
   <div class="filter-group">
     <label for="filter-class" class="filter-label">Filter by Class (optional)</label>
@@ -1566,13 +1815,45 @@ body.dashboard-dark .tag-mid {
     />
   </div>
         <p class="history-help">
-          Click a past session to reload its data. Saved only on this device.
-        </p>
-        <div class="history-panel">
-          <div id="history-list" class="history-list">
-            <!-- filled by JS -->
-          </div>
-        </div>
+  Click a past session to reload its data. Saved only on this device.
+  Select one and use the buttons below to rename, color-code, or delete it.
+</p>
+<div class="history-panel">
+  <div class="history-actions">
+    <button
+      type="button"
+      id="history-rename-btn"
+      class="history-action-btn"
+      disabled
+      title="Rename selected session"
+    >
+      Rename
+    </button>
+    <button
+      type="button"
+      id="history-color-btn"
+      class="history-action-btn"
+      disabled
+      title="Color-code selected session"
+    >
+      Color
+    </button>
+    <button
+      type="button"
+      id="history-delete-btn"
+      class="history-action-btn danger"
+      disabled
+      title="Remove selected session from this list"
+    >
+      Delete
+    </button>
+  </div>
+
+  <div id="history-list" class="history-list">
+    <!-- filled by JS -->
+  </div>
+</div>
+
       </div>
     </aside>
 
@@ -1688,6 +1969,46 @@ body.dashboard-dark .tag-mid {
             <span class="muted link-status" id="copy-co-teacher-status"></span>
           </div>
         </div>
+        <!-- === Student Search (global, cross-session) === -->
+<div class="filter-group student-search-group">
+  <label class="filter-label" for="student-search-input">
+    Student search
+  </label>
+<div class="filter-inline-row">
+  <input
+    id="student-search-input"
+    type="text"
+    class="filter-input"
+    placeholder="Type a student name…"
+    autocomplete="off"
+  />
+  <button
+    id="student-search-btn"
+    class="btn-small btn-primary-small"
+    type="button"
+  >
+    Search
+  </button>
+</div>
+
+  <p class="filter-help">
+    Look up a student by name to see all of their practice sessions.
+  </p>
+</div>
+<!-- === Student Search Results Card === -->
+<section class="card student-search-card" id="student-search-card">
+  <header class="card-header">
+    <h2 class="card-title">Student search results</h2>
+    <p class="card-subtitle">
+      Click a row to jump into that session and open the student detail drawer.
+    </p>
+  </header>
+  <div id="student-search-results" class="student-search-results">
+    <p class="muted small">
+      No search yet. Type a student name above and click <strong>Search</strong>.
+    </p>
+  </div>
+</section>
 
         <!-- ROW 3: Actions (Clear / PDF / CSV) -->
         <div class="filters-row filters-row-actions">

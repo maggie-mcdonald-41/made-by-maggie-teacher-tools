@@ -82,6 +82,24 @@ const historySidebar = document.getElementById("history-sidebar");
 const historyToggleBtn = document.getElementById("history-sidebar-toggle");
 const historyListEl = document.getElementById("history-list");
 
+//  student search controls
+const studentSearchInput = document.getElementById("student-search-input");
+const studentSearchBtn = document.getElementById("student-search-btn");
+const studentSearchResultsEl = document.getElementById("student-search-results");
+
+// We'll use this to focus the student after loadAttempts() runs
+let PENDING_STUDENT_FOCUS_NAME = null;
+
+// history customization controls
+const historyRenameBtn = document.getElementById("history-rename-btn");
+const historyColorBtn = document.getElementById("history-color-btn");
+const historyDeleteBtn = document.getElementById("history-delete-btn");
+
+// Key format "SESSIONCODE||CLASSCODE"
+let CURRENT_HISTORY_KEY = null;
+
+// Simple color cycle using your palette
+const HISTORY_COLOR_SEQUENCE = ["", "teal", "pink", "gold", "purple"];
 // Auth DOM
 const teacherSignInBtn = document.getElementById("teacher-signin-btn");
 const teacherSignOutBtn = document.getElementById("teacher-signout-btn");
@@ -325,6 +343,39 @@ function saveHistoryToStorage(history) {
     console.warn("[Dashboard] Could not save session history:", e);
   }
 }
+// Helper for consistent keys
+function getHistoryKey(sessionCode, classCode) {
+  return `${(sessionCode || "").trim()}||${(classCode || "").trim()}`;
+}
+
+const HISTORY_DELETED_KEY = "rp_teacherSessionHistoryDeleted_v1";
+
+function loadDeletedHistoryKeys() {
+  try {
+    const raw = window.localStorage.getItem(HISTORY_DELETED_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveDeletedHistoryKeys(keys) {
+  try {
+    window.localStorage.setItem(HISTORY_DELETED_KEY, JSON.stringify(keys));
+  } catch (e) {
+    // non-fatal
+  }
+}
+
+function updateHistoryActionButtonsState() {
+  const disabled = !CURRENT_HISTORY_KEY;
+  if (historyRenameBtn) historyRenameBtn.disabled = disabled;
+  if (historyColorBtn) historyColorBtn.disabled = disabled;
+  if (historyDeleteBtn) historyDeleteBtn.disabled = disabled;
+}
+
 
 /**
  * Update history based on the latest loaded attempts.
@@ -338,6 +389,13 @@ function updateSessionHistory(sessionCodeRaw, classCodeRaw, attempts) {
 
   const history = loadHistoryFromStorage() || [];
 
+// if this session was previously deleted, clear its tombstone
+const key = getHistoryKey(sessionCode, classCode);
+let deletedKeys = loadDeletedHistoryKeys();
+if (deletedKeys.includes(key)) {
+  deletedKeys = deletedKeys.filter((k) => k !== key);
+  saveDeletedHistoryKeys(deletedKeys);
+}
   // ---------- DEDUPE ATTEMPTS BY STUDENT (FIRST ATTEMPT ONLY) ----------
   let dedupedAttempts = [];
 
@@ -400,6 +458,7 @@ function updateSessionHistory(sessionCodeRaw, classCodeRaw, attempts) {
       (entry.classCode || "") === classCode
   );
 
+  
   const entry = {
     sessionCode,
     classCode,
@@ -583,14 +642,22 @@ async function hydrateSessionHistoryFromServer(viewerEmail) {
     addEntries(localHistory || []);
     addEntries(serverHistory);
 
-    const mergedHistory = Array.from(mergedByKey.values()).sort((a, b) =>
-      (b.lastLoadedAt || "").toString().localeCompare(
-        (a.lastLoadedAt || "").toString()
-      )
-    );
+const mergedHistory = Array.from(mergedByKey.values()).sort((a, b) =>
+  (b.lastLoadedAt || "").toString().localeCompare(
+    (a.lastLoadedAt || "").toString()
+  )
+);
 
-    saveHistoryToStorage(mergedHistory);
-    renderSessionHistory(mergedHistory);
+// NEW: respect deleted sessions on this device
+const deletedKeys = loadDeletedHistoryKeys();
+const filteredMerged = mergedHistory.filter((h) => {
+  const key = getHistoryKey(h.sessionCode, h.classCode || "");
+  return !deletedKeys.includes(key);
+});
+
+saveHistoryToStorage(filteredMerged);
+renderSessionHistory(filteredMerged);
+
   } catch (err) {
     console.warn(
       "[Dashboard] Could not hydrate session history from server:",
@@ -606,19 +673,30 @@ async function hydrateSessionHistoryFromServer(viewerEmail) {
 function renderSessionHistory(history) {
   historyListEl.innerHTML = "";
 
-  if (!history || !history.length) {
+  const deletedKeys = loadDeletedHistoryKeys();
+  const visibleHistory = (history || []).filter((entry) => {
+    const key = getHistoryKey(entry.sessionCode, entry.classCode || "");
+    return !deletedKeys.includes(key);
+  });
+
+  if (!visibleHistory || !visibleHistory.length) {
     const p = document.createElement("p");
     p.className = "history-empty muted";
     p.textContent = "No sessions saved yet. Load a session to add it here.";
     historyListEl.appendChild(p);
+    // If nothing is visible, clear selection + disable buttons
+    CURRENT_HISTORY_KEY = null;
+    updateHistoryActionButtonsState();
     return;
   }
 
-  const sorted = history.slice().sort((a, b) => {
+  const sorted = visibleHistory.slice().sort((a, b) => {
     const ta = new Date(a.lastLoadedAt).getTime();
     const tb = new Date(b.lastLoadedAt).getTime();
     return tb - ta; // newest first
   });
+
+  const currentKey = CURRENT_HISTORY_KEY;
 
   sorted.forEach((entry) => {
     const accuracy = entry.totalQuestions
@@ -629,19 +707,38 @@ function renderSessionHistory(history) {
     btn.type = "button";
     btn.className = "history-item";
 
+    const key = getHistoryKey(entry.sessionCode, entry.classCode || "");
+    btn.dataset.key = key;
+
+    // Apply any saved color
+    if (entry.color) {
+      btn.classList.add(`history-color-${entry.color}`);
+    }
+
+    // Re-apply selection if it matches
+    if (currentKey && key === currentKey) {
+      btn.classList.add("is-selected");
+    }
+
     const main = document.createElement("div");
     main.className = "history-main";
 
     const title = document.createElement("div");
     title.className = "history-title";
-    title.textContent = entry.sessionCode;
+    // NEW: use label if present, otherwise the raw session code
+    title.textContent = entry.label || entry.sessionCode;
 
     const meta = document.createElement("div");
     meta.className = "history-meta";
-    const classPart = entry.classCode ? `Class: ${entry.classCode} · ` : "";
-    meta.textContent =
-      `${classPart}${entry.attemptsCount} attempt${entry.attemptsCount === 1 ? "" : "s"} · ` +
-      `${entry.uniqueStudentsCount || 0} student${(entry.uniqueStudentsCount || 0) === 1 ? "" : "s"}`;
+    const parts = [];
+    if (entry.classCode) parts.push(entry.classCode);
+    if (entry.uniqueStudentsCount) {
+      parts.push(`${entry.uniqueStudentsCount} students`);
+    }
+    if (entry.attemptsCount) {
+      parts.push(`${entry.attemptsCount} attempts`);
+    }
+    meta.textContent = parts.join(" · ");
 
     main.appendChild(title);
     main.appendChild(meta);
@@ -654,6 +751,14 @@ function renderSessionHistory(history) {
     btn.appendChild(pill);
 
     btn.addEventListener("click", () => {
+      // Highlight this item
+      document.querySelectorAll(".history-item").forEach((el) => {
+        el.classList.toggle("is-selected", el === btn);
+      });
+
+      CURRENT_HISTORY_KEY = key;
+      updateHistoryActionButtonsState();
+
       // Load this session into the filters and refresh dashboard
       sessionInput.value = entry.sessionCode;
       classInput.value = entry.classCode || "";
@@ -664,6 +769,98 @@ function renderSessionHistory(history) {
     historyListEl.appendChild(btn);
   });
 }
+// ---------- HISTORY CUSTOMIZATION HANDLERS ----------
+
+function findHistoryEntryByKey(key) {
+  if (!key) return { history: [], index: -1 };
+  const history = loadHistoryFromStorage() || [];
+  const index = history.findIndex(
+    (h) => getHistoryKey(h.sessionCode, h.classCode || "") === key
+  );
+  return { history, index };
+}
+
+if (historyRenameBtn) {
+  historyRenameBtn.addEventListener("click", () => {
+    if (!CURRENT_HISTORY_KEY) return;
+
+    const { history, index } = findHistoryEntryByKey(CURRENT_HISTORY_KEY);
+    if (index === -1) return;
+
+    const entry = history[index];
+    const currentLabel = entry.label || entry.sessionCode;
+    const newLabel = window.prompt(
+      "Rename this session (for your eyes only):",
+      currentLabel
+    );
+    if (!newLabel || !newLabel.trim()) return;
+
+    entry.label = newLabel.trim();
+    saveHistoryToStorage(history);
+    renderSessionHistory(history);
+  });
+}
+
+if (historyColorBtn) {
+  historyColorBtn.addEventListener("click", () => {
+    if (!CURRENT_HISTORY_KEY) return;
+
+    const { history, index } = findHistoryEntryByKey(CURRENT_HISTORY_KEY);
+    if (index === -1) return;
+
+    const entry = history[index];
+    const current = entry.color || "";
+    const currentIdx = HISTORY_COLOR_SEQUENCE.indexOf(current);
+    const nextIdx = (currentIdx + 1 + HISTORY_COLOR_SEQUENCE.length) %
+      HISTORY_COLOR_SEQUENCE.length;
+    const nextColor = HISTORY_COLOR_SEQUENCE[nextIdx];
+
+    if (!nextColor) {
+      delete entry.color; // back to default
+    } else {
+      entry.color = nextColor;
+    }
+
+    saveHistoryToStorage(history);
+    renderSessionHistory(history);
+  });
+}
+
+if (historyDeleteBtn) {
+  historyDeleteBtn.addEventListener("click", () => {
+    if (!CURRENT_HISTORY_KEY) return;
+
+    const confirmDelete = window.confirm(
+      "Remove this session from your Session History list? " +
+        "This does not delete any student data — only this shortcut on this device."
+    );
+    if (!confirmDelete) return;
+
+    const { history, index } = findHistoryEntryByKey(CURRENT_HISTORY_KEY);
+    if (index === -1) return;
+
+    const key = CURRENT_HISTORY_KEY;
+
+    // Remove from local history
+    history.splice(index, 1);
+    saveHistoryToStorage(history);
+
+    // Record the deletion so server hydration won’t re-add it
+    let deletedKeys = loadDeletedHistoryKeys();
+    if (!deletedKeys.includes(key)) {
+      deletedKeys.push(key);
+      saveDeletedHistoryKeys(deletedKeys);
+    }
+
+    CURRENT_HISTORY_KEY = null;
+    updateHistoryActionButtonsState();
+    renderSessionHistory(history);
+  });
+}
+
+// Initialize button state on first load
+updateHistoryActionButtonsState();
+
 
 // ---------- CHARTS ----------
 function updateScoreBandsChart(allAttempts, studentAttempts = [], studentName = null) {
@@ -1433,6 +1630,18 @@ function renderDashboard(attempts) {
   const hasData = CURRENT_ATTEMPTS.length > 0;
   downloadCsvBtn.disabled = !hasData;
 
+    // If a pending student focus name was set (e.g. from global student search)
+  // and the current attempts contain that student, make them the selected student.
+  if (PENDING_STUDENT_FOCUS_NAME) {
+    const match = attempts.find(
+      (a) => (a.studentName || "").trim() === PENDING_STUDENT_FOCUS_NAME
+    );
+    if (match) {
+      CURRENT_STUDENT_FOR_CHARTS = PENDING_STUDENT_FOCUS_NAME;
+    }
+    PENDING_STUDENT_FOCUS_NAME = null;
+  }
+
   const totalAttempts = attempts.length;
   const totalCorrect = attempts.reduce(
     (sum, a) => sum + (a.numCorrect || 0),
@@ -1727,6 +1936,245 @@ function exportCombinedCSV() {
 
   downloadCSV(filename, rows);
 }
+
+// ---------- GLOBAL STUDENT SEARCH (cross-session) ----------
+// ---------- GLOBAL STUDENT SEARCH (cross-session) ----------
+
+function clearStudentSearch() {
+  if (studentSearchInput) {
+    studentSearchInput.value = "";
+  }
+  // Reset the panel back to the "no search yet" state
+  renderStudentSearchResults("", []);
+}
+
+function renderStudentSearchResults(searchTerm, attempts) {
+  if (!studentSearchResultsEl) return;
+
+  studentSearchResultsEl.innerHTML = "";
+
+  const cleanTerm = (searchTerm || "").trim();
+
+  // --- No active search: show default helper text ---
+  if (!cleanTerm) {
+    const p = document.createElement("p");
+    p.className = "muted small";
+    p.innerHTML =
+      'No search yet. Type a student name above and click <strong>Search</strong>.';
+    studentSearchResultsEl.appendChild(p);
+    return;
+  }
+
+  // --- Header row with "Results for" + Clear link ---
+  const header = document.createElement("div");
+  header.className = "student-search-header";
+
+  const label = document.createElement("span");
+  label.className = "student-search-label";
+  label.textContent = `Results for "${cleanTerm}"`;
+
+  const clearBtn = document.createElement("button");
+  clearBtn.type = "button";
+  clearBtn.className = "student-search-clear";
+  clearBtn.textContent = "Clear search";
+  clearBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    clearStudentSearch();
+  });
+
+  header.appendChild(label);
+  header.appendChild(clearBtn);
+  studentSearchResultsEl.appendChild(header);
+
+  // --- No matches for this term ---
+  if (!Array.isArray(attempts) || !attempts.length) {
+    const p = document.createElement("p");
+    p.className = "student-search-empty";
+    p.textContent = `No sessions found matching "${cleanTerm}".`;
+    studentSearchResultsEl.appendChild(p);
+    return;
+  }
+
+  // Group by session + class + assessment so each row is "one session"
+  const byKey = new Map();
+  attempts.forEach((a) => {
+    const sessionCode = (a.sessionCode || "").trim();
+    const classCode = (a.classCode || "").trim();
+    const assessmentName = (a.assessmentName || "").trim();
+    const key = `${sessionCode}||${classCode}||${assessmentName}`;
+
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, a);
+      return;
+    }
+
+    // Prefer the latest finishedAt
+    const existingTime =
+      existing.finishedAt || existing.startedAt || existing.createdAt || "";
+    const newTime = a.finishedAt || a.startedAt || a.createdAt || "";
+    if (newTime && newTime > existingTime) {
+      byKey.set(key, a);
+    }
+  });
+
+  const rows = Array.from(byKey.values()).sort((a, b) => {
+    const aTime = a.finishedAt || a.startedAt || "";
+    const bTime = b.finishedAt || b.startedAt || "";
+    if (aTime && bTime) {
+      if (aTime > bTime) return -1;
+      if (aTime < bTime) return 1;
+    }
+    return 0;
+  });
+
+  const table = document.createElement("table");
+  table.className = "student-search-table";
+
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>Session</th>
+        <th>Class</th>
+        <th>Assessment</th>
+        <th>Score (%)</th>
+        <th>Answered</th>
+        <th>Finished</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  `;
+
+  const tbody = table.querySelector("tbody");
+
+  rows.forEach((a) => {
+    const tr = document.createElement("tr");
+
+    const numCorrect = Number(a.numCorrect || 0);
+    const answered = Number(
+      a.answeredCount != null
+        ? a.answeredCount
+        : a.totalQuestions != null
+        ? a.totalQuestions
+        : 0
+    );
+    const scorePct =
+      typeof a.accuracy === "number"
+        ? Math.round(a.accuracy)
+        : answered
+        ? Math.round((numCorrect / answered) * 100)
+        : 0;
+
+    tr.innerHTML = `
+      <td>${(a.sessionCode || "—").trim()}</td>
+      <td>${(a.classCode || "—").trim()}</td>
+      <td>${(a.assessmentName || "—").trim()}</td>
+      <td><span class="${accuracyTagClass(scorePct)}">${scorePct}%</span></td>
+      <td>${formatAnsweredLabel(a)}</td>
+      <td>${formatDate(a.finishedAt || a.startedAt)}</td>
+    `;
+
+    tr.addEventListener("click", () => {
+      const studentName = (a.studentName || "").trim();
+      const sessionCode = (a.sessionCode || "").trim();
+      const classCode = (a.classCode || "").trim();
+
+      if (!sessionCode) return;
+
+      // Remember who we want to focus once loadAttempts() finishes
+      PENDING_STUDENT_FOCUS_NAME = studentName || null;
+
+      // Set filters and load that session
+      if (sessionInput) sessionInput.value = sessionCode;
+      if (classInput) classInput.value = classCode;
+
+      // Update the pill right away so teachers see where they're going
+      if (sessionPill) {
+        sessionPill.textContent = sessionCode
+          ? `Session: ${sessionCode}`
+          : "Session: all sessions";
+      }
+
+      loadAttempts();
+      // Optional: scroll main content into view
+      const mainEl = document.querySelector(".dashboard-main");
+      if (mainEl && typeof mainEl.scrollIntoView === "function") {
+        mainEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+
+    tbody.appendChild(tr);
+  });
+
+  studentSearchResultsEl.appendChild(table);
+}
+
+
+async function runStudentSearch() {
+  if (!studentSearchInput || !studentSearchResultsEl) return;
+
+  const searchTerm = studentSearchInput.value || "";
+  const cleanTerm = searchTerm.trim();
+  if (!cleanTerm) {
+    renderStudentSearchResults("", []);
+    return;
+  }
+
+  // Show "loading" message
+  studentSearchResultsEl.innerHTML = `
+    <p class="muted small">Searching for "${cleanTerm}"…</p>
+  `;
+
+  try {
+    const params = new URLSearchParams();
+
+    const ownerEmail = OWNER_EMAIL_FOR_VIEW || "";
+    const isCoTeacherView =
+      ownerEmail && (!teacherUser || teacherUser.email !== ownerEmail);
+
+    if (isCoTeacherView && ownerEmail) {
+      // Co-teacher view → always scope to the owner
+      params.set("ownerEmail", ownerEmail);
+    } else if (teacherUser && teacherUser.email) {
+      // Main teacher, signed in → owned + shared sessions
+      params.set("viewerEmail", teacherUser.email);
+    } else if (ownerEmail) {
+      // Fallback: owner known but not signed in yet
+      params.set("ownerEmail", ownerEmail);
+    }
+
+    const res = await fetch(
+      `/.netlify/functions/getReadingAttempts?${params.toString()}`,
+      {
+        method: "GET",
+        headers: { Accept: "application/json" }
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error(`Server error: ${res.status}`);
+    }
+
+    const data = await res.json();
+    const allAttempts = Array.isArray(data.attempts) ? data.attempts : [];
+
+    const needle = cleanTerm.toLowerCase();
+    const matching = allAttempts.filter((a) => {
+      const name = (a.studentName || "").toLowerCase();
+      return name && name.includes(needle);
+    });
+
+    renderStudentSearchResults(cleanTerm, matching);
+  } catch (err) {
+    console.error("[Dashboard] Student search error:", err);
+    studentSearchResultsEl.innerHTML = `
+      <p class="student-search-empty">
+        Sorry, something went wrong while searching. Please try again.
+      </p>
+    `;
+  }
+}
+
 
 // ---------- DATA LOADING (real backend + demo fallback) ----------
 async function loadAttempts() {
@@ -2179,6 +2627,34 @@ downloadCsvBtn.addEventListener(
   "click",
   requireTeacherSignedIn(exportCombinedCSV)
 );
+// Global student search (cross-session)
+if (studentSearchBtn) {
+  studentSearchBtn.addEventListener(
+    "click",
+    requireTeacherSignedIn((e) => {
+      e.preventDefault();
+      runStudentSearch();
+    })
+  );
+}
+
+if (studentSearchInput) {
+  studentSearchInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (teacherUser) {
+        runStudentSearch();
+      } else {
+        alert("Please sign in with Google before using the dashboard.");
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      clearStudentSearch();
+      studentSearchInput.blur();
+    }
+  });
+}
+
 
 if (exportPdfBtn) {
   exportPdfBtn.addEventListener(

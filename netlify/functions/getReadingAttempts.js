@@ -174,6 +174,7 @@ exports.handler = async function (event, context) {
         byType,
         assessmentName,
         assessmentType,
+
         // ownership
         ownerEmail,
         sharedWithEmails,
@@ -182,40 +183,39 @@ exports.handler = async function (event, context) {
 
     // ---------- Filtering ----------
 
-// viewerEmail takes priority and includes:
-//  - attempts where viewer is the owner
-//  - attempts where viewer is in sharedWithEmails
-if (rawViewerEmail) {
-  const viewerLower = rawViewerEmail.toLowerCase();
+    // viewerEmail takes priority and includes:
+    //  - attempts where viewer is the owner
+    //  - attempts where viewer is in sharedWithEmails
+    if (rawViewerEmail) {
+      const viewerLower = rawViewerEmail.toLowerCase();
 
-  attempts = attempts.filter((a) => {
-    const ownerLower = (a.ownerEmail || "").toLowerCase();
-    const shared = Array.isArray(a.sharedWithEmails)
-      ? a.sharedWithEmails.map((e) => String(e).toLowerCase())
-      : [];
+      attempts = attempts.filter((a) => {
+        const ownerLower = (a.ownerEmail || "").toLowerCase();
+        const shared = Array.isArray(a.sharedWithEmails)
+          ? a.sharedWithEmails.map((e) => String(e).toLowerCase())
+          : [];
 
-    const hasOwnershipInfo = !!ownerLower || shared.length > 0;
+        const hasOwnershipInfo = !!ownerLower || shared.length > 0;
 
-    // NEW: secure behavior
-    // If there is NO ownership info, do NOT show the attempt.
-    if (!hasOwnershipInfo) {
-      return false; 
+        // Secure behavior:
+        // If there is NO ownership info, do NOT show the attempt.
+        if (!hasOwnershipInfo) {
+          return false;
+        }
+
+        // Allow if viewer is owner
+        if (ownerLower === viewerLower) return true;
+
+        // Allow if viewer is a co-teacher
+        return shared.includes(viewerLower);
+      });
+    } else if (rawOwnerEmail) {
+      // Fallback: explicit owner-only filter (e.g., co-teacher dashboard)
+      const ownerLower = rawOwnerEmail.toLowerCase();
+      attempts = attempts.filter(
+        (a) => (a.ownerEmail || "").toLowerCase() === ownerLower
+      );
     }
-
-    // Allow if viewer is owner
-    if (ownerLower === viewerLower) return true;
-
-    // Allow if viewer is a co-teacher
-    return shared.includes(viewerLower);
-  });
-
-} else if (rawOwnerEmail) {
-  const ownerLower = rawOwnerEmail.toLowerCase();
-  attempts = attempts.filter(
-    (a) => (a.ownerEmail || "").toLowerCase() === ownerLower
-  );
-}
-
 
     // Filter by class if requested
     if (rawClass) {
