@@ -878,6 +878,7 @@ body.dashboard-dark .dashboard-subtitle {
     display: grid;
     grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
     gap: 1rem;
+    margin-top: 0.5rem;
   }
 
   @media (max-width: 900px) {
@@ -885,6 +886,10 @@ body.dashboard-dark .dashboard-subtitle {
       grid-template-columns: 1fr;
     }
   }
+/* Any dashboard section panel that should span the full width of the grid */
+.dash-panel-span-full {
+  grid-column: 1 / -1;
+}
 
   .dash-panel {
     border-radius: 12px;
@@ -917,6 +922,7 @@ body.dashboard-dark .dashboard-subtitle {
     grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.5fr);
     gap: 1rem;
     margin-top: 1.5rem;
+    margin-bottom: 1.25rem;
   }
 
   .chart-wrapper {
@@ -1099,6 +1105,300 @@ body.dashboard-dark .tag-mid {
     background: rgba(5, 193, 184, 0.08);
     box-shadow: 0 0 0 1px rgba(5, 193, 184, 0.18);
   }
+
+/* === Selected student's full attempt (dashboard-main panel) === */
+
+.student-attempt-detail-panel {
+  grid-column: 1 / -1; /* span full width of the grid */
+  margin-top: 0.4rem;
+}
+
+/* Scrollable body */
+.student-attempt-detail-body {
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+/* Optional outer wrapper used in JS */
+.student-attempt-detail-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+/* Summary row at the top (score + date) */
+.student-attempt-summary {
+  padding: 0.4rem 0.55rem;
+  border-radius: 10px;
+  background: var(--bg-pill);
+  border: 1px solid var(--gray-light);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.student-attempt-summary-title {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.student-attempt-summary-meta {
+  margin: 0;
+  font-size: 0.7rem;
+}
+
+/* The list of questions (JS uses an <ol>) */
+.student-attempt-question-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+/* Individual question cards
+   - JS uses .student-attempt-question
+   - Your original CSS uses .attempt-question-card
+   → style both the same so we’re covered either way.
+*/
+.student-attempt-question,
+.attempt-question-card {
+  border-radius: 10px;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.78rem;
+  background: var(--bg-pill);
+  border: 1px solid var(--gray-light);
+  border-left-width: 4px;
+  border-left-color: transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* Color coding (correct / incorrect) */
+.student-attempt-question.is-correct,
+.attempt-question-card.is-correct {
+  border-left-color: var(--teal);
+  background: rgba(5, 193, 184, 0.06);
+}
+
+.student-attempt-question.is-incorrect,
+.attempt-question-card.is-incorrect {
+  border-left-color: var(--pink);
+  background: rgba(255, 143, 133, 0.06);
+}
+
+/* Header row: Question #, tags, Correct/Incorrect chip */
+.attempt-question-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--gray-mid);
+}
+
+.attempt-question-number {
+  font-weight: 700;
+}
+
+/* Skill & type chips (when not using the global .tag class) */
+.attempt-question-skill,
+.attempt-question-type {
+  border-radius: 999px;
+  padding: 0.05rem 0.4rem;
+  background: #f1f5f9;
+}
+
+/* When JS uses .tag tag-skill / tag-type, they’ll inherit the global tag styles */
+
+/* Question stem text */
+.attempt-question-text,
+.attempt-question-prompt {
+  margin: 0.1rem 0 0.2rem;
+  font-size: 0.8rem;
+}
+
+/* Answers area: works with <dl> or manual rows */
+.attempt-answer-row,
+.attempt-question-answers {
+  display: grid;
+  grid-template-columns: minmax(0, 110px) minmax(0, 1fr);
+  gap: 0.25rem;
+  align-items: flex-start;
+  margin: 0.05rem 0;
+}
+
+.attempt-question-answers dt {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--gray-mid);
+}
+
+.attempt-question-answers dd {
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+/* If you ever use these classes directly */
+.attempt-answer-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--gray-mid);
+}
+
+.attempt-answer-value {
+  font-size: 0.78rem;
+}
+
+.attempt-correct-answer .attempt-answer-value {
+  font-weight: 600;
+}
+
+/* === Dark mode tweaks === */
+
+body.dashboard-dark .student-attempt-summary {
+  background: #020617;
+  border-color: #1f2937;
+}
+
+body.dashboard-dark .student-attempt-summary-title {
+  color: #e5e7eb;
+}
+
+body.dashboard-dark .student-attempt-summary-meta {
+  color: #9ca3af;
+}
+
+body.dashboard-dark .student-attempt-question,
+body.dashboard-dark .attempt-question-card {
+  background: #020617;
+  border-color: #1f2937;
+}
+
+body.dashboard-dark .student-attempt-question.is-correct,
+body.dashboard-dark .attempt-question-card.is-correct {
+  background: rgba(34, 197, 94, 0.18);
+  border-left-color: var(--teal);
+}
+
+body.dashboard-dark .student-attempt-question.is-incorrect,
+body.dashboard-dark .attempt-question-card.is-incorrect {
+  background: rgba(248, 113, 113, 0.2);
+  border-left-color: var(--danger);
+}
+
+body.dashboard-dark .attempt-question-header {
+  color: #9ca3af;
+}
+
+body.dashboard-dark .attempt-question-skill,
+body.dashboard-dark .attempt-question-type {
+  background: #020617;
+  border: 1px solid #1f2937;
+}
+
+/* === Mobile tweaks for Selected student's full attempt === */
+
+/* Tablet-ish and down */
+@media (max-width: 900px) {
+  .student-attempt-detail-panel {
+    grid-column: 1 / -1;
+    margin-top: 0.6rem;
+  }
+
+  .student-attempt-detail-body {
+    max-height: 40vh;          /* give it a bit more breathing room vertically */
+    padding-right: 0;          /* avoid weird right gutter on small screens */
+  }
+
+  .student-attempt-summary {
+    padding: 0.5rem 0.6rem;
+  }
+
+  .student-attempt-summary-title {
+    font-size: 0.85rem;
+  }
+
+  .student-attempt-summary-meta {
+    font-size: 0.72rem;
+  }
+
+  .student-attempt-question,
+  .attempt-question-card {
+    padding: 0.5rem 0.65rem;
+    font-size: 0.8rem;
+  }
+
+  .attempt-question-header {
+    font-size: 0.72rem;
+  }
+
+  .attempt-question-text,
+  .attempt-question-prompt {
+    font-size: 0.82rem;
+  }
+}
+
+/* Narrow phones */
+@media (max-width: 640px) {
+  /* Make panel feel like a full-width “card” stack under the charts */
+  .student-attempt-detail-panel {
+    margin-top: 0.75rem;
+  }
+
+  .student-attempt-detail-body {
+    max-height: 45vh;          /* more scroll room on very small devices */
+  }
+
+  /* Stack labels above values so text doesn’t squish */
+  .attempt-question-answers,
+  .attempt-answer-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.15rem;
+  }
+
+  .attempt-question-answers dt,
+  .attempt-answer-label {
+    font-size: 0.7rem;
+  }
+
+  .attempt-question-answers dd,
+  .attempt-answer-value {
+    font-size: 0.8rem;
+  }
+
+  /* Tiny spacing adjustments so cards don’t feel cramped */
+  .student-attempt-question,
+  .attempt-question-card {
+    gap: 0.2rem;
+  }
+}
+
+/* Extra small phones */
+@media (max-width: 480px) {
+  .student-attempt-summary-title {
+    font-size: 0.8rem;
+  }
+
+  .attempt-question-header {
+    gap: 0.2rem;
+  }
+
+  .attempt-question-text,
+  .attempt-question-prompt {
+    font-size: 0.8rem;
+  }
+}
 
   .tag {
     display: inline-flex;
@@ -1684,6 +1984,7 @@ body.dashboard-dark .tag-mid {
   .dashboard-sections {
     grid-template-columns: 1fr;
     gap: 0.6rem;
+    margin-top: 0.5rem;
   }
 
   .table-wrapper {
@@ -2196,7 +2497,6 @@ body.dashboard-dark .tag-mid {
   </section>
 </section>
 
-
       <!-- DETAILS: tables underneath charts -->
       <section class="dashboard-sections">
         <!-- Student Attempts table -->
@@ -2210,17 +2510,17 @@ body.dashboard-dark .tag-mid {
           <div class="table-wrapper">
             <table>
               <thead>
-            <tr>
-              <th>Student</th>
-              <th>Class</th>
-              <th>Session</th>
-              <th>Status</th>
-              <th>Score (%)</th>
-              <th>Answered</th>
-              <th>Correct</th>
-              <th>Started</th>
-              <th>Finished</th>
-            </tr>
+                <tr>
+                  <th>Student</th>
+                  <th>Class</th>
+                  <th>Session</th>
+                  <th>Status</th>
+                  <th>Score (%)</th>
+                  <th>Answered</th>
+                  <th>Correct</th>
+                  <th>Started</th>
+                  <th>Finished</th>
+                </tr>
               </thead>
               <tbody id="attempts-table-body">
                 <!-- Filled by JS -->
@@ -2254,8 +2554,8 @@ body.dashboard-dark .tag-mid {
           </div>
         </article>
 
-                <!-- Skill Heat Map (Students × Skills) -->
-        <article class="dash-panel">
+        <!-- Skill Heat Map (Students × Skills) -->
+        <article class="dash-panel dash-panel-span-full">
           <header class="dash-panel-header">
             <h2 class="dash-panel-title">Skill Heat Map (Students × Skills)</h2>
             <p class="dash-panel-subtitle">
@@ -2274,7 +2574,41 @@ body.dashboard-dark .tag-mid {
             </table>
           </div>
         </article>
+
+        <!-- Selected student's full attempt (question-by-question) -->
+        <article class="dash-panel student-attempt-detail-panel">
+          <header class="dash-panel-header">
+            <div>
+              <h2 class="dash-panel-title">Selected student’s full attempt</h2>
+              <p
+                class="dash-panel-subtitle"
+                id="student-attempt-detail-subtitle"
+              >
+                Click a row in the Student Attempts table to see their answers
+                and the correct answers.
+              </p>
+            </div>
+            <button
+              id="clear-student-detail-btn"
+              class="btn-small btn-secondary-small"
+              type="button"
+            >
+              Clear
+            </button>
+          </header>
+
+          <div
+            id="student-attempt-detail"
+            class="student-attempt-detail-body"
+          >
+            <p class="muted small">
+              No student selected yet. Click a row in the Student Attempts table
+              to view their full attempt.
+            </p>
+          </div>
+        </article>
       </section>
+
 
             <!-- Student detail drawer -->
       <aside id="student-detail-panel" class="student-detail-panel">
