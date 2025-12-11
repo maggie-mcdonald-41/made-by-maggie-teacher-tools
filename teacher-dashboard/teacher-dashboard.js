@@ -183,6 +183,7 @@ function formatDate(iso) {
 
 // ---------- ATTEMPT STATUS HELPERS ----------
 
+
 // Status label: Completed vs In Progress
 function formatAttemptStatus(attempt) {
   const total = Number(
@@ -276,6 +277,194 @@ function accuracyTagClass(pct) {
   return "tag";
 }
 
+// ===== STUDENT DETAIL PANEL (per-student summary + growth chart) =====
+
+function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelected) {
+  if (!studentDetailPanel) return;
+
+  const hasData = studentName && Array.isArray(studentAttempts) && studentAttempts.length > 0;
+
+  if (!hasData) {
+    studentDetailPanel.classList.remove("is-open");
+    studentDetailNameEl.textContent = "No student selected. Click a row in the table.";
+    studentDetailOverallEl.textContent = "Overall accuracy for this session: —.";
+    studentDetailAttemptsEl.textContent = "Attempts counted: —.";
+    studentDetailNeedsWorkEl.innerHTML = '<li class="muted">Not enough data yet.</li>';
+    studentDetailStrengthsEl.innerHTML = '<li class="muted">Not enough data yet.</li>';
+
+    // Clear progress chart if it exists
+    if (studentProgressChart) {
+      studentProgressChart.destroy();
+      studentProgressChart = null;
+    }
+
+    return;
+  }
+
+  // Open panel + name
+  studentDetailPanel.classList.add("is-open");
+  studentDetailNameEl.textContent = studentName;
+
+  // ===== Overall stats across all attempts in THIS view =====
+  const totals = studentAttempts.reduce(
+    (acc, attempt) => {
+      acc.correct += attempt.numCorrect || 0;
+      acc.total += attempt.totalQuestions || 0;
+      return acc;
+    },
+    { correct: 0, total: 0 }
+  );
+
+  const overallPct =
+    totals.total > 0 ? Math.round((totals.correct / totals.total) * 100) : null;
+
+  studentDetailOverallEl.textContent =
+    overallPct === null
+      ? "Overall accuracy for this session: —."
+      : `Overall accuracy for this session: ${overallPct}%`;
+
+  studentDetailAttemptsEl.textContent = `Attempts counted: ${studentAttempts.length}.`;
+
+  // ===== Strengths & Needs Work (skills + question types) =====
+  const MIN_QUESTIONS_FOR_LABEL = 2;  // your "every 2 skills" rule
+
+  const needsWorkItems = [];
+  const strengthItems = [];
+
+  // Helper for pushing items without double-tagging the same thing as both
+  function bucketSkillOrType(label, pct, total) {
+    if (total < MIN_QUESTIONS_FOR_LABEL) return;
+
+    // Needs work: <= 59%
+    if (pct <= 59) {
+      needsWorkItems.push({ label, pct, total });
+      return;
+    }
+
+    // Strength: >= 80%
+    if (pct >= 80) {
+      strengthItems.push({ label, pct, total });
+      return;
+    }
+
+    // Middle zone: ignore (keeps it from being both)
+  }
+
+  if (skillTotalsSelected && skillTotalsSelected.bySkill) {
+    Object.entries(skillTotalsSelected.bySkill).forEach(([skillName, data]) => {
+      const correct = data.correct || 0;
+      const total = data.total || 0;
+      const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+      bucketSkillOrType(skillName, pct, total);
+    });
+  }
+
+  if (skillTotalsSelected && skillTotalsSelected.byType) {
+    const friendlyTypeLabels = {
+      mcq: "Question type – Multiple choice",
+      multi: "Question type – Multi-select",
+      dropdown: "Question type – Dropdown",
+      order: "Question type – Drag & order",
+    };
+
+    Object.entries(skillTotalsSelected.byType).forEach(([rawType, data]) => {
+      const label = friendlyTypeLabels[rawType] || `Question type – ${rawType}`;
+      const correct = data.correct || 0;
+      const total = data.total || 0;
+      const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+      bucketSkillOrType(label, pct, total);
+    });
+  }
+
+  // Render needs work list
+  if (needsWorkItems.length === 0) {
+    studentDetailNeedsWorkEl.innerHTML =
+      '<li class="muted">Not enough data yet.</li>';
+  } else {
+    studentDetailNeedsWorkEl.innerHTML = needsWorkItems
+      .map(
+        (item) =>
+          `<li><strong>${item.label}</strong> (${item.pct}% on ${item.total} questions)</li>`
+      )
+      .join("");
+  }
+
+  // Render strengths list
+  if (strengthItems.length === 0) {
+    studentDetailStrengthsEl.innerHTML =
+      '<li class="muted">Not enough data yet.</li>';
+  } else {
+    studentDetailStrengthsEl.innerHTML = strengthItems
+      .map(
+        (item) =>
+          `<li><strong>${item.label}</strong> (${item.pct}% on ${item.total} questions)</li>`
+      )
+      .join("");
+  }
+
+  // ===== Progress chart (multiple attempts over time) =====
+  const studentProgressCanvas = document.getElementById("chart-student-progress");
+  if (!studentProgressCanvas) return;
+
+  const labels = studentAttempts.map((attempt, idx) => {
+    // You might have attempt.timestamp; if not, just use "Attempt 1", etc.
+    if (attempt.timestamp) {
+      try {
+        const d = new Date(attempt.timestamp);
+        return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+      } catch {
+        return `Attempt ${idx + 1}`;
+      }
+    }
+    return `Attempt ${idx + 1}`;
+  });
+
+  const accuracyData = studentAttempts.map((attempt) => {
+    const correct = attempt.numCorrect || 0;
+    const total = attempt.totalQuestions || 0;
+    return total > 0 ? Math.round((correct / total) * 100) : 0;
+  });
+
+  if (studentProgressChart) {
+    studentProgressChart.destroy();
+  }
+
+  const ctx = studentProgressCanvas.getContext("2d");
+  studentProgressChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "Accuracy per attempt",
+          data: accuracyData,
+          tension: 0.3,
+          pointRadius: 3,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          min: 0,
+          max: 100,
+          ticks: {
+            callback: (value) => value + "%",
+          },
+        },
+      },
+      plugins: {
+        legend: {
+          display: false,
+        },
+      },
+    },
+  });
+}
 
 // ---------- DASHBOARD PREFERENCES ----------
 const DASHBOARD_PREFS_KEY = "readingDashboardPrefs_v1";
