@@ -61,6 +61,20 @@ const studentDetailAttemptsEl = document.getElementById("student-detail-attempts
 const studentDetailNeedsWorkEl = document.getElementById("student-detail-needs-work");
 const studentDetailStrengthsEl = document.getElementById("student-detail-strengths");
 
+// NEW: Selected student's full attempt (question-by-question) panel
+const studentAttemptDetailPanel = document.querySelector(
+  ".student-attempt-detail-panel"
+);
+const studentAttemptDetailBody = document.getElementById(
+  "student-attempt-detail"
+);
+const studentAttemptDetailSubtitleEl = document.getElementById(
+  "student-attempt-detail-subtitle"
+);
+const clearStudentAttemptDetailBtn = document.getElementById(
+  "clear-student-detail-btn"
+);
+
 // Heat map
 const heatmapHeadEl = document.getElementById("skill-heatmap-head");
 const heatmapBodyEl = document.getElementById("skill-heatmap-body");
@@ -1581,6 +1595,214 @@ function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelec
   studentDetailStrengthsEl.innerHTML = strengthsHtml;
 }
 
+// ---------- STUDENT FULL ATTEMPT DETAIL (question-by-question) ----------
+
+function clearStudentAttemptDetail() {
+  if (!studentAttemptDetailBody) return;
+
+  studentAttemptDetailBody.innerHTML = `
+    <p class="muted small">
+      No student selected yet. Click a row in the Student Attempts table
+      to view their full attempt.
+    </p>
+  `;
+
+  if (studentAttemptDetailSubtitleEl) {
+    studentAttemptDetailSubtitleEl.textContent =
+      "Click a row in the Student Attempts table to see their answers and the correct answers.";
+  }
+}
+
+function renderStudentAttemptDetail(attempt) {
+  if (!studentAttemptDetailBody) return;
+
+  if (
+    !attempt ||
+    !Array.isArray(attempt.questions) ||
+    !attempt.questions.length
+  ) {
+    studentAttemptDetailBody.innerHTML = `
+      <p class="muted small">
+        This attempt does not have question-level data saved.
+      </p>
+    `;
+    if (studentAttemptDetailSubtitleEl) {
+      studentAttemptDetailSubtitleEl.textContent =
+        "No question-level data is available for this attempt.";
+    }
+    return;
+  }
+
+  // Update subtitle to show context
+  if (studentAttemptDetailSubtitleEl) {
+    const name = (attempt.studentName || "this student").trim();
+    const label =
+      attempt.assessmentName || attempt.sessionCode || "this practice set";
+    studentAttemptDetailSubtitleEl.textContent =
+      `${name}'s full attempt for ${label}.`;
+  }
+
+  studentAttemptDetailBody.innerHTML = "";
+
+  attempt.questions.forEach((q, index) => {
+    const card = document.createElement("article");
+    card.className = "attempt-question-card";
+
+    const isCorrect =
+      q.isCorrect === true ||
+      q.correct === true ||
+      q.result === "correct";
+
+    const isIncorrect =
+      q.isCorrect === false ||
+      q.correct === false ||
+      q.result === "incorrect";
+
+    if (isCorrect) {
+      card.classList.add("is-correct");
+    } else if (isIncorrect) {
+      card.classList.add("is-incorrect");
+    }
+
+    // Try a few common property names, fall back gracefully
+    const questionText =
+      q.questionText ||
+      q.prompt ||
+      q.stem ||
+      q.text ||
+      `Question ${index + 1}`;
+
+    const studentAnswerRaw =
+      q.studentAnswerText ||
+      q.studentAnswer ||
+      q.selectedAnswer ||
+      q.givenAnswer ||
+      (Array.isArray(q.studentAnswers)
+        ? q.studentAnswers.join(", ")
+        : "");
+
+    const correctAnswerRaw =
+      q.correctAnswerText ||
+      q.correctAnswer ||
+      q.answerKey ||
+      (Array.isArray(q.correctAnswers)
+        ? q.correctAnswers.join(", ")
+        : "");
+
+    const skillTag = q.skillTag || q.skill || q.skillCode || "";
+    const typeLabel = q.typeLabel || q.questionType || q.type || "";
+
+    const numberEl = document.createElement("div");
+    numberEl.className = "attempt-question-number small muted";
+    numberEl.textContent = `Question ${index + 1}`;
+
+    const textEl = document.createElement("div");
+    textEl.className = "attempt-question-text";
+    textEl.textContent = questionText;
+
+    const metaParts = [];
+    if (skillTag) metaParts.push(`Skill: ${skillTag}`);
+    if (typeLabel) metaParts.push(`Type: ${typeLabel}`);
+
+    if (metaParts.length) {
+      const metaEl = document.createElement("div");
+      metaEl.className = "attempt-question-meta small muted";
+      metaEl.textContent = metaParts.join(" · ");
+      card.appendChild(metaEl);
+    }
+
+    const answersWrapper = document.createElement("div");
+    answersWrapper.className = "attempt-question-answers";
+
+    const studentAnswerEl = document.createElement("p");
+    studentAnswerEl.className = "attempt-answer-line";
+    studentAnswerEl.innerHTML = `<strong>Student answer:</strong> ${
+      studentAnswerRaw || "<span class='muted'>No answer</span>"
+    }`;
+
+    const correctAnswerEl = document.createElement("p");
+    correctAnswerEl.className = "attempt-answer-line";
+    correctAnswerEl.innerHTML = `<strong>Correct answer:</strong> ${
+      correctAnswerRaw || "<span class='muted'>Not recorded</span>"
+    }`;
+
+    answersWrapper.appendChild(studentAnswerEl);
+    answersWrapper.appendChild(correctAnswerEl);
+
+    card.appendChild(numberEl);
+    card.appendChild(textEl);
+    card.appendChild(answersWrapper);
+
+    studentAttemptDetailBody.appendChild(card);
+  });
+}
+
+async function fetchStudentAttemptDetail(attemptId) {
+  if (!attemptId || !studentAttemptDetailBody) return;
+
+  // Show loading message
+  studentAttemptDetailBody.innerHTML = `
+    <p class="muted small">Loading full attempt details…</p>
+  `;
+
+  try {
+    const params = new URLSearchParams();
+    params.set("attemptId", attemptId);
+
+    // Match the same scoping rules as loadAttempts()
+    const ownerEmail = OWNER_EMAIL_FOR_VIEW || "";
+    const isCoTeacherView =
+      ownerEmail && (!teacherUser || teacherUser.email !== ownerEmail);
+
+    if (isCoTeacherView && ownerEmail) {
+      params.set("ownerEmail", ownerEmail);
+    } else if (teacherUser && teacherUser.email) {
+      params.set("viewerEmail", teacherUser.email);
+    } else if (ownerEmail) {
+      params.set("ownerEmail", ownerEmail);
+    }
+
+    const res = await fetch(
+      `/.netlify/functions/getReadingAttemptDetail?${params.toString()}`,
+      {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      }
+    );
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      console.warn("[Dashboard] getReadingAttemptDetail error:", res.status, text);
+      studentAttemptDetailBody.innerHTML = `
+        <p class="muted small">
+          Sorry, we couldn't load that attempt's details (error ${res.status}).
+        </p>
+      `;
+      return;
+    }
+
+    const payload = await res.json().catch(() => ({}));
+
+    if (!payload.success || !payload.attempt) {
+      studentAttemptDetailBody.innerHTML = `
+        <p class="muted small">
+          Sorry, we couldn't find details for that attempt.
+        </p>
+      `;
+      return;
+    }
+
+    renderStudentAttemptDetail(payload.attempt);
+  } catch (err) {
+    console.error("[Dashboard] Failed to fetch attempt detail:", err);
+    studentAttemptDetailBody.innerHTML = `
+      <p class="muted small">
+        Sorry, something went wrong loading that attempt.
+      </p>
+    `;
+  }
+}
+
 function renderSkillHeatmap(attempts) {
   if (!heatmapHeadEl || !heatmapBodyEl) return;
 
@@ -1797,6 +2019,10 @@ function renderDashboard(attempts) {
             : 0);
 
     tr.innerHTML = `
+        // Attach attemptId for detail lookups (if present)
+    if (a.attemptId) {
+      tr.dataset.attemptId = a.attemptId;
+    }
       <td>${studentName || "—"}</td>
       <td>${a.classCode || "—"}</td>
       <td>${a.sessionCode || "—"}</td>
@@ -1810,7 +2036,7 @@ function renderDashboard(attempts) {
       <td>${formatDate(a.finishedAt)}</td>
     `;
 
-    // Make row clickable to toggle student overlay
+    // Make row clickable to toggle student overlay AND load full attempt detail
     if (studentName && studentName !== "—") {
       tr.dataset.studentName = studentName;
 
@@ -1819,14 +2045,25 @@ function renderDashboard(attempts) {
       }
 
       tr.addEventListener("click", () => {
+        // 1) Toggle which student is overlaid on the charts + drawer
         if (CURRENT_STUDENT_FOR_CHARTS === studentName) {
           CURRENT_STUDENT_FOR_CHARTS = null;
         } else {
           CURRENT_STUDENT_FOR_CHARTS = studentName;
         }
         renderDashboard(attempts);
+
+        // 2) Load question-by-question details for THIS specific attempt
+        const attemptId = tr.dataset.attemptId || a.attemptId;
+        if (attemptId) {
+          fetchStudentAttemptDetail(attemptId);
+        } else {
+          // If we somehow don’t have an ID, just clear the detail panel
+          clearStudentAttemptDetail();
+        }
       });
     }
+
 
     attemptsTableBody.appendChild(tr);
   });
@@ -2748,6 +2985,14 @@ if (studentDetailCloseBtn && studentDetailPanel) {
   });
 }
 
+// Clear full attempt detail panel
+if (clearStudentAttemptDetailBtn) {
+  clearStudentAttemptDetailBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    clearStudentAttemptDetail();
+  });
+}
+
 // Start Session button (requires sign-in)
 const startSessionBtn = document.getElementById("start-session-btn");
 if (startSessionBtn) {
@@ -2943,6 +3188,7 @@ initChartFullscreen();
 // Initial render: empty dashboard + any stored history
 renderDashboard([]);
 renderSessionHistory(loadHistoryFromStorage());
+clearStudentAttemptDetail();
 
 // Use URL ?sessionCode=&classCode=&owner= to pre-fill filters
 (function applyUrlFiltersOnLoad() {
