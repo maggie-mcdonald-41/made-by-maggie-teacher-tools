@@ -7,6 +7,11 @@
 let CURRENT_ATTEMPTS = [];
 // Which student's data is being overlaid on the charts (if any)
 let CURRENT_STUDENT_FOR_CHARTS = null;
+
+// All attempts (owned + shared) hydrated for this teacher across sessions.
+// Used so the Student Detail progress chart can show growth over time.
+let ALL_VIEWER_ATTEMPTS = [];
+
 // ---- Live Monitor shared state ----
 let currentSessionCode = "";   // e.g. "MONDAY EVENING"
 let currentClassFilter = "";   // e.g. "7TH", or "" for all
@@ -508,6 +513,8 @@ async function hydrateSessionHistoryFromServer(viewerEmail) {
 
     const payload = await res.json().catch(() => ({}));
     const attempts = Array.isArray(payload.attempts) ? payload.attempts : [];
+    // Cache all attempts for cross-session student progress graphs
+    ALL_VIEWER_ATTEMPTS = attempts;
 
     if (!attempts.length) {
       // nothing to hydrate, fall back to whatever is in localStorage
@@ -1249,13 +1256,17 @@ function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelec
       studentProgressChart = null;
     }
 
+    // clear caption too
+    const captionEl = document.getElementById("student-detail-progress-caption");
+    if (captionEl) captionEl.textContent = "";
+
     return;
   }
 
   studentDetailPanel.classList.add("is-open");
   studentDetailNameEl.textContent = studentName;
 
-  // ===== Overall stats across all attempts =====
+  // ===== Overall stats across all attempts (for THIS view/session) =====
   const totals = studentAttempts.reduce(
     (acc, a) => {
       // Prefer explicit counts from the backend
@@ -1304,7 +1315,37 @@ function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelec
   // ===== Progress-over-time chart =====
   const chartCanvas = document.getElementById("student-detail-progress-chart");
   if (chartCanvas && typeof Chart !== "undefined") {
-    const sortedAttempts = studentAttempts
+    // Prefer cross-session attempts for this student if we've hydrated them
+    let attemptsForChart = [];
+
+    if (Array.isArray(ALL_VIEWER_ATTEMPTS) && ALL_VIEWER_ATTEMPTS.length) {
+      const targetName = (studentName || "").trim().toLowerCase();
+      const baseAssessment = (studentAttempts[0] && studentAttempts[0].assessmentName)
+        ? String(studentAttempts[0].assessmentName).trim()
+        : null;
+
+      attemptsForChart = ALL_VIEWER_ATTEMPTS.filter((a) => {
+        const nameNorm = (a.studentName || "").trim().toLowerCase();
+        const assessmentNorm = (a.assessmentName || "").trim();
+        if (!targetName || nameNorm !== targetName) return false;
+
+        // If we know the assessmentName for this view, keep it consistent
+        if (baseAssessment) {
+          return assessmentNorm === baseAssessment;
+        }
+        return true;
+      });
+
+      // Fallback: if for some reason nothing matched, just use this view's attempts
+      if (!attemptsForChart.length) {
+        attemptsForChart = studentAttempts.slice();
+      }
+    } else {
+      // No global cache (e.g. offline / demo mode) → just use attempts for this view
+      attemptsForChart = studentAttempts.slice();
+    }
+
+    const sortedAttempts = attemptsForChart
       .slice()
       .sort((a, b) => {
         const aTime = (a.finishedAt || a.startedAt || "").toString();
@@ -1319,7 +1360,7 @@ function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelec
     });
 
     const overallData = sortedAttempts.map((a) => {
-      const total = a.totalQuestions || 0;
+      const total = a.totalQuestions || a.answeredCount || 0;
       const correct = a.numCorrect || 0;
       return total ? Math.round((correct / total) * 100) : 0;
     });
@@ -1332,8 +1373,8 @@ function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelec
         if (!aggregateBySkill[skill]) {
           aggregateBySkill[skill] = { correct: 0, total: 0 };
         }
-        aggregateBySkill[skill].correct += stats.correct || 0;
-        aggregateBySkill[skill].total += stats.total || 0;
+        aggregateBySkill[skill].correct += Number(stats.correct || 0);
+        aggregateBySkill[skill].total += Number(stats.total || 0);
       });
     });
 
@@ -1354,13 +1395,9 @@ function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelec
 
     topSkills.forEach((skillName) => {
       const series = sortedAttempts.map((a) => {
-        const s = (a.bySkill && a.bySkill[skillName]) || {
-          correct: 0,
-          total: 0
-        };
-        const total = s.total || 0;
-        const correct = s.correct || 0;
-        return total ? Math.round((correct / total) * 100) : 0;
+        const stats = (a.bySkill && a.bySkill[skillName]) || null;
+        if (!stats || !stats.total) return null;
+        return Math.round((stats.correct / stats.total) * 100);
       });
 
       datasets.push({
@@ -1407,6 +1444,18 @@ function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelec
         }
       });
     }
+
+    // ----- Update chart caption (runs on create + update) -----
+    const captionEl = document.getElementById("student-detail-progress-caption");
+    if (captionEl) {
+      const multiAttempt = sortedAttempts.length > studentAttempts.length;
+
+      if (multiAttempt) {
+        captionEl.textContent = "Showing progress across all attempts of this assessment.";
+      } else {
+        captionEl.textContent = "Showing attempts for this session.";
+      }
+    }
   }
 
   // ===== Per-skill & per-type lists (Needs Work / Strengths) =====
@@ -1425,18 +1474,18 @@ function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelec
   // ---- Question types: aggregate from this student's attempts ----
   const typeTotalsSelected = {};
   studentAttempts.forEach((a) => {
-    if (!a.byType) return;
-    Object.entries(a.byType).forEach(([typeKey, stats]) => {
+    const map = a.byType || {};
+    Object.entries(map).forEach(([typeKey, stats]) => {
       if (!typeTotalsSelected[typeKey]) {
         typeTotalsSelected[typeKey] = { correct: 0, total: 0 };
       }
-      typeTotalsSelected[typeKey].correct += stats.correct || 0;
-      typeTotalsSelected[typeKey].total += stats.total || 0;
+      typeTotalsSelected[typeKey].correct += Number(stats.correct || 0);
+      typeTotalsSelected[typeKey].total += Number(stats.total || 0);
     });
   });
 
   const friendlyTypeLabels = {
-    mcq: "MCQ",
+    mcq: "Multiple Choice",
     multi: "Select All",
     order: "Order",
     match: "Matching",
@@ -1447,8 +1496,7 @@ function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelec
     revise: "Sentence Revision"
   };
 
-  const typeEntries = Object.entries(typeTotalsSelected);
-  const typesWithPct = typeEntries
+  const typesWithPct = Object.entries(typeTotalsSelected)
     .filter(([, stats]) => stats.total && stats.total >= MIN_QUESTIONS)
     .map(([key, stats]) => ({
       key,
@@ -1532,8 +1580,6 @@ function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelec
   }
   studentDetailStrengthsEl.innerHTML = strengthsHtml;
 }
-
-
 
 function renderSkillHeatmap(attempts) {
   if (!heatmapHeadEl || !heatmapBodyEl) return;

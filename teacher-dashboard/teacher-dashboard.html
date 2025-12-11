@@ -1200,6 +1200,14 @@ body.dashboard-dark .tag-mid {
     font-size: 0.78rem;
   }
 
+.drawer-chart-caption {
+  font-size: 0.75rem;
+  color: var(--gray-mid);
+  margin-top: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+
   /* === Skill heat map === */
   .heatmap-table-wrapper {
     overflow-x: auto;
@@ -2316,6 +2324,7 @@ body.dashboard-dark .tag-mid {
             <div class="student-detail-chart">
     <h3 class="student-detail-column-title">Progress across attempts</h3>
     <canvas id="student-detail-progress-chart" height="140"></canvas>
+   <p id="student-detail-progress-caption" class="drawer-chart-caption"></p>
     <p class="muted small">
       Each point is an attempt for this session. Click legend items to show or hide lines.
     </p>
