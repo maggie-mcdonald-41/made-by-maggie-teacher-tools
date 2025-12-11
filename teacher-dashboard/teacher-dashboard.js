@@ -61,10 +61,6 @@ const studentDetailAttemptsEl = document.getElementById("student-detail-attempts
 const studentDetailNeedsWorkEl = document.getElementById("student-detail-needs-work");
 const studentDetailStrengthsEl = document.getElementById("student-detail-strengths");
 
-// full attempt detail panel
-const studentAttemptDetailSubtitle = document.getElementById("student-attempt-detail-subtitle");
-const studentAttemptDetailBody = document.getElementById("student-attempt-detail");
-const clearStudentAttemptDetailBtn = document.getElementById("clear-student-detail-btn");
 // Heat map
 const heatmapHeadEl = document.getElementById("skill-heatmap-head");
 const heatmapBodyEl = document.getElementById("skill-heatmap-body");
@@ -183,7 +179,6 @@ function formatDate(iso) {
 
 // ---------- ATTEMPT STATUS HELPERS ----------
 
-
 // Status label: Completed vs In Progress
 function formatAttemptStatus(attempt) {
   const total = Number(
@@ -275,195 +270,6 @@ function accuracyTagClass(pct) {
   if (pct < 40) return "tag tag-low";
   if (pct < 70) return "tag tag-mid";
   return "tag";
-}
-
-// ===== STUDENT DETAIL PANEL (per-student summary + growth chart) =====
-
-function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelected) {
-  if (!studentDetailPanel) return;
-
-  const hasData = studentName && Array.isArray(studentAttempts) && studentAttempts.length > 0;
-
-  if (!hasData) {
-    studentDetailPanel.classList.remove("is-open");
-    studentDetailNameEl.textContent = "No student selected. Click a row in the table.";
-    studentDetailOverallEl.textContent = "Overall accuracy for this session: —.";
-    studentDetailAttemptsEl.textContent = "Attempts counted: —.";
-    studentDetailNeedsWorkEl.innerHTML = '<li class="muted">Not enough data yet.</li>';
-    studentDetailStrengthsEl.innerHTML = '<li class="muted">Not enough data yet.</li>';
-
-    // Clear progress chart if it exists
-    if (studentProgressChart) {
-      studentProgressChart.destroy();
-      studentProgressChart = null;
-    }
-
-    return;
-  }
-
-  // Open panel + name
-  studentDetailPanel.classList.add("is-open");
-  studentDetailNameEl.textContent = studentName;
-
-  // ===== Overall stats across all attempts in THIS view =====
-  const totals = studentAttempts.reduce(
-    (acc, attempt) => {
-      acc.correct += attempt.numCorrect || 0;
-      acc.total += attempt.totalQuestions || 0;
-      return acc;
-    },
-    { correct: 0, total: 0 }
-  );
-
-  const overallPct =
-    totals.total > 0 ? Math.round((totals.correct / totals.total) * 100) : null;
-
-  studentDetailOverallEl.textContent =
-    overallPct === null
-      ? "Overall accuracy for this session: —."
-      : `Overall accuracy for this session: ${overallPct}%`;
-
-  studentDetailAttemptsEl.textContent = `Attempts counted: ${studentAttempts.length}.`;
-
-  // ===== Strengths & Needs Work (skills + question types) =====
-  const MIN_QUESTIONS_FOR_LABEL = 2;  // your "every 2 skills" rule
-
-  const needsWorkItems = [];
-  const strengthItems = [];
-
-  // Helper for pushing items without double-tagging the same thing as both
-  function bucketSkillOrType(label, pct, total) {
-    if (total < MIN_QUESTIONS_FOR_LABEL) return;
-
-    // Needs work: <= 59%
-    if (pct <= 59) {
-      needsWorkItems.push({ label, pct, total });
-      return;
-    }
-
-    // Strength: >= 80%
-    if (pct >= 80) {
-      strengthItems.push({ label, pct, total });
-      return;
-    }
-
-    // Middle zone: ignore (keeps it from being both)
-  }
-
-  if (skillTotalsSelected && skillTotalsSelected.bySkill) {
-    Object.entries(skillTotalsSelected.bySkill).forEach(([skillName, data]) => {
-      const correct = data.correct || 0;
-      const total = data.total || 0;
-      const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
-
-      bucketSkillOrType(skillName, pct, total);
-    });
-  }
-
-  if (skillTotalsSelected && skillTotalsSelected.byType) {
-    const friendlyTypeLabels = {
-      mcq: "Question type – Multiple choice",
-      multi: "Question type – Multi-select",
-      dropdown: "Question type – Dropdown",
-      order: "Question type – Drag & order",
-    };
-
-    Object.entries(skillTotalsSelected.byType).forEach(([rawType, data]) => {
-      const label = friendlyTypeLabels[rawType] || `Question type – ${rawType}`;
-      const correct = data.correct || 0;
-      const total = data.total || 0;
-      const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
-
-      bucketSkillOrType(label, pct, total);
-    });
-  }
-
-  // Render needs work list
-  if (needsWorkItems.length === 0) {
-    studentDetailNeedsWorkEl.innerHTML =
-      '<li class="muted">Not enough data yet.</li>';
-  } else {
-    studentDetailNeedsWorkEl.innerHTML = needsWorkItems
-      .map(
-        (item) =>
-          `<li><strong>${item.label}</strong> (${item.pct}% on ${item.total} questions)</li>`
-      )
-      .join("");
-  }
-
-  // Render strengths list
-  if (strengthItems.length === 0) {
-    studentDetailStrengthsEl.innerHTML =
-      '<li class="muted">Not enough data yet.</li>';
-  } else {
-    studentDetailStrengthsEl.innerHTML = strengthItems
-      .map(
-        (item) =>
-          `<li><strong>${item.label}</strong> (${item.pct}% on ${item.total} questions)</li>`
-      )
-      .join("");
-  }
-
-  // ===== Progress chart (multiple attempts over time) =====
-  
-  if (!studentProgressCanvas) return;
-
-  const labels = studentAttempts.map((attempt, idx) => {
-    // You might have attempt.timestamp; if not, just use "Attempt 1", etc.
-    if (attempt.timestamp) {
-      try {
-        const d = new Date(attempt.timestamp);
-        return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-      } catch {
-        return `Attempt ${idx + 1}`;
-      }
-    }
-    return `Attempt ${idx + 1}`;
-  });
-
-  const accuracyData = studentAttempts.map((attempt) => {
-    const correct = attempt.numCorrect || 0;
-    const total = attempt.totalQuestions || 0;
-    return total > 0 ? Math.round((correct / total) * 100) : 0;
-  });
-
-  if (studentProgressChart) {
-    studentProgressChart.destroy();
-  }
-
-  const ctx = studentProgressCanvas.getContext("2d");
-  studentProgressChart = new Chart(ctx, {
-    type: "line",
-    data: {
-      labels,
-      datasets: [
-        {
-          label: "Accuracy per attempt",
-          data: accuracyData,
-          tension: 0.3,
-          pointRadius: 3,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        y: {
-          min: 0,
-          max: 100,
-          ticks: {
-            callback: (value) => value + "%",
-          },
-        },
-      },
-      plugins: {
-        legend: {
-          display: false,
-        },
-      },
-    },
-  });
 }
 
 // ---------- DASHBOARD PREFERENCES ----------
@@ -1431,110 +1237,254 @@ function updateSessionTagsFromAttempts(attempts) {
   mostMissedTypeEl.textContent = pickMostMissed(typeTotals, friendlyTypes) || "—";
 }
 
-// ---------- FULL ATTEMPT DETAIL PANEL ----------
+function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelected) {
+  if (!studentDetailPanel) return;
 
-function resetStudentAttemptDetailPanel() {
-  if (studentAttemptDetailSubtitle) {
-    studentAttemptDetailSubtitle.textContent =
-      "Click a row in the Student Attempts table to see their answers and the correct answers.";
-  }
-  if (studentAttemptDetailBody) {
-    studentAttemptDetailBody.innerHTML = `
-      <p class="muted small">
-        No student selected yet. Click a row in the Student Attempts table
-        to view their full attempt.
-      </p>
-    `;
-  }
-}
+  const hasData = studentName && studentAttempts && studentAttempts.length > 0;
 
+  if (!hasData) {
+    studentDetailPanel.classList.remove("is-open");
+    studentDetailNameEl.textContent = "No student selected. Click a row in the table.";
+    studentDetailOverallEl.textContent = "Overall accuracy for this session: —.";
+    studentDetailAttemptsEl.textContent = "Attempts counted: —.";
+    studentDetailNeedsWorkEl.innerHTML = '<li class="muted">Not enough data yet.</li>';
+    studentDetailStrengthsEl.innerHTML = '<li class="muted">Not enough data yet.</li>';
 
-/**
- * Render the question-by-question view for a single attempt.
- * Expects a detail payload with `questions` but falls back to the base attempt
- * if needed.
- */
-/**
- * Render the question-by-question view for a single attempt
- * into the main dash panel:
- *
- *   #student-attempt-detail-subtitle
- *   #student-attempt-detail (scrollable body)
- *
- * This is separate from the Student Detail drawer.
- */
-function renderStudentAttemptDetail(baseAttempt, detail) {
-  if (!studentAttemptDetailBody) return;
+    // clear progress chart if it exists
+    if (studentProgressChart) {
+      studentProgressChart.destroy();
+      studentProgressChart = null;
+    }
 
-  const questions = Array.isArray(detail?.questions) ? detail.questions : [];
-  const studentName = (baseAttempt.studentName || detail?.studentName || "—").trim();
-  const sessionCode = (baseAttempt.sessionCode || detail?.sessionCode || "").trim();
-  const assessmentName = (baseAttempt.assessmentName || detail?.assessmentName || "").trim();
+    // clear caption too
+    const captionEl = document.getElementById("student-detail-progress-caption");
+    if (captionEl) captionEl.textContent = "";
 
-  const totalQuestions =
-    detail?.totalQuestions ??
-    baseAttempt.totalQuestions ??
-    questions.length;
-
-  let numCorrect =
-    detail?.numCorrect ??
-    baseAttempt.numCorrect ??
-    0;
-
-  // Fallback: derive correctness from questions if needed
-  if (!numCorrect && questions.length) {
-    numCorrect = questions.filter((q) => q.isCorrect === true).length;
-  }
-
-  const pct = totalQuestions
-    ? Math.round((numCorrect / totalQuestions) * 100)
-    : 0;
-
-  // ----- Subtitle (under the H2) -----
-  if (studentAttemptDetailSubtitle) {
-    const parts = [];
-    if (studentName) parts.push(studentName);
-    if (assessmentName) parts.push(assessmentName);
-    if (sessionCode) parts.push(`Session: ${sessionCode}`);
-
-    studentAttemptDetailSubtitle.textContent = parts.length
-      ? `Showing answers for ${parts.join(" · ")}`
-      : "Showing answers for selected attempt";
-  }
-
-  // If no questions yet, show friendly empty state
-  if (!questions.length) {
-    studentAttemptDetailBody.innerHTML = `
-      <p class="muted small">
-        This attempt doesn’t have question-by-question data yet.
-      </p>
-    `;
     return;
   }
 
-  // Build DOM using your "card" style
-  const frag = document.createDocumentFragment();
+  studentDetailPanel.classList.add("is-open");
+  studentDetailNameEl.textContent = studentName;
 
-  // Summary at the top of the panel
-  const summary = document.createElement("div");
-  summary.className = "student-attempt-summary";
+  // ===== Overall stats across all attempts (for THIS view/session) =====
+  const totals = studentAttempts.reduce(
+    (acc, a) => {
+      // Prefer explicit counts from the backend
+      let correct = typeof a.numCorrect === "number" ? a.numCorrect : 0;
 
-  const summaryHeading = document.createElement("h3");
-  summaryHeading.className = "student-attempt-summary-title";
-  summaryHeading.textContent = `Scored ${numCorrect} of ${totalQuestions} correct (${pct}%)`;
-  summary.appendChild(summaryHeading);
+      // Prefer totalQuestions, then answeredCount, then derive from bySkill
+      let total = 0;
 
-  const summaryMeta = document.createElement("p");
-  summaryMeta.className = "student-attempt-summary-meta small muted";
-  const finishedAt = detail?.finishedAt || baseAttempt.finishedAt || baseAttempt.startedAt;
-  const whenText = finishedAt ? formatDate(finishedAt) : "date not available";
-  summaryMeta.textContent = `Completed on ${whenText}`;
-  summary.appendChild(summaryMeta);
+      if (typeof a.totalQuestions === "number" && a.totalQuestions > 0) {
+        total = a.totalQuestions;
+      } else if (typeof a.answeredCount === "number" && a.answeredCount > 0) {
+        total = a.answeredCount;
+      }
 
-  frag.appendChild(summary);
+      // If we *still* don't have good totals, derive from bySkill if present
+      if ((!total || !correct) && a.bySkill && typeof a.bySkill === "object") {
+        let derivedCorrect = 0;
+        let derivedTotal = 0;
+        Object.values(a.bySkill).forEach((stats) => {
+          if (!stats) return;
+          derivedCorrect += Number(stats.correct || 0);
+          derivedTotal += Number(stats.total || 0);
+        });
 
-  // Friendly maps for question types
-  const friendlyTypes = {
+        if (!total && derivedTotal) total = derivedTotal;
+        if (!correct && derivedCorrect) correct = derivedCorrect;
+      }
+
+      acc.correct += correct;
+      acc.total += total;
+      return acc;
+    },
+    { correct: 0, total: 0 }
+  );
+
+  const overallPct = totals.total
+    ? Math.round((totals.correct / totals.total) * 100)
+    : 0;
+
+  studentDetailOverallEl.textContent =
+    `Overall accuracy for this session: ${overallPct}% (${totals.correct} of ${totals.total} correct).`;
+
+  studentDetailAttemptsEl.textContent =
+    `Attempts counted: ${studentAttempts.length}.`;
+
+  // ===== Progress-over-time chart =====
+  const chartCanvas = document.getElementById("student-detail-progress-chart");
+  if (chartCanvas && typeof Chart !== "undefined") {
+    // Prefer cross-session attempts for this student if we've hydrated them
+    let attemptsForChart = [];
+
+    if (Array.isArray(ALL_VIEWER_ATTEMPTS) && ALL_VIEWER_ATTEMPTS.length) {
+      const targetName = (studentName || "").trim().toLowerCase();
+      const baseAssessment = (studentAttempts[0] && studentAttempts[0].assessmentName)
+        ? String(studentAttempts[0].assessmentName).trim()
+        : null;
+
+      attemptsForChart = ALL_VIEWER_ATTEMPTS.filter((a) => {
+        const nameNorm = (a.studentName || "").trim().toLowerCase();
+        const assessmentNorm = (a.assessmentName || "").trim();
+        if (!targetName || nameNorm !== targetName) return false;
+
+        // If we know the assessmentName for this view, keep it consistent
+        if (baseAssessment) {
+          return assessmentNorm === baseAssessment;
+        }
+        return true;
+      });
+
+      // Fallback: if for some reason nothing matched, just use this view's attempts
+      if (!attemptsForChart.length) {
+        attemptsForChart = studentAttempts.slice();
+      }
+    } else {
+      // No global cache (e.g. offline / demo mode) → just use attempts for this view
+      attemptsForChart = studentAttempts.slice();
+    }
+
+    const sortedAttempts = attemptsForChart
+      .slice()
+      .sort((a, b) => {
+        const aTime = (a.finishedAt || a.startedAt || "").toString();
+        const bTime = (b.finishedAt || b.startedAt || "").toString();
+        return aTime.localeCompare(bTime);
+      });
+
+    const labels = sortedAttempts.map((a, idx) => {
+      const when = a.finishedAt || a.startedAt;
+      const labelDate = when ? formatDate(when) : `Attempt ${idx + 1}`;
+      return `${idx + 1}. ${labelDate}`;
+    });
+
+    const overallData = sortedAttempts.map((a) => {
+      const total = a.totalQuestions || a.answeredCount || 0;
+      const correct = a.numCorrect || 0;
+      return total ? Math.round((correct / total) * 100) : 0;
+    });
+
+    // Aggregate skills across attempts to pick top 2–3 lines
+    const aggregateBySkill = {};
+    sortedAttempts.forEach((a) => {
+      const map = a.bySkill || {};
+      Object.entries(map).forEach(([skill, stats]) => {
+        if (!aggregateBySkill[skill]) {
+          aggregateBySkill[skill] = { correct: 0, total: 0 };
+        }
+        aggregateBySkill[skill].correct += Number(stats.correct || 0);
+        aggregateBySkill[skill].total += Number(stats.total || 0);
+      });
+    });
+
+    const topSkills = Object.entries(aggregateBySkill)
+      .sort((a, b) => (b[1].total || 0) - (a[1].total || 0))
+      .slice(0, 3)
+      .map(([name]) => name);
+
+    const datasets = [
+      {
+        label: "Overall %",
+        data: overallData,
+        borderWidth: 2,
+        tension: 0.25,
+        pointRadius: 4
+      }
+    ];
+
+    topSkills.forEach((skillName) => {
+      const series = sortedAttempts.map((a) => {
+        const stats = (a.bySkill && a.bySkill[skillName]) || null;
+        if (!stats || !stats.total) return null;
+        return Math.round((stats.correct / stats.total) * 100);
+      });
+
+      datasets.push({
+        label: skillName,
+        data: series,
+        borderWidth: 1.5,
+        pointRadius: 3
+      });
+    });
+
+    if (studentProgressChart) {
+      studentProgressChart.data.labels = labels;
+      studentProgressChart.data.datasets = datasets;
+      studentProgressChart.update();
+    } else {
+      studentProgressChart = new Chart(chartCanvas, {
+        type: "line",
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100,
+              ticks: {
+                callback: (value) => `${value}%`
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              display: true,
+              onClick: (e, legendItem, legend) => {
+                const ci = legend.chart;
+                const index = legendItem.datasetIndex;
+                const meta = ci.getDatasetMeta(index);
+                meta.hidden = meta.hidden === null
+                  ? !ci.data.datasets[index].hidden
+                  : null;
+                ci.update();
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // ----- Update chart caption (runs on create + update) -----
+    const captionEl = document.getElementById("student-detail-progress-caption");
+    if (captionEl) {
+      const multiAttempt = sortedAttempts.length > studentAttempts.length;
+
+      if (multiAttempt) {
+        captionEl.textContent = "Showing progress across all attempts of this assessment.";
+      } else {
+        captionEl.textContent = "Showing attempts for this session.";
+      }
+    }
+  }
+
+  // ===== Per-skill & per-type lists (Needs Work / Strengths) =====
+  const MIN_QUESTIONS = 2;
+
+  // ---- Skills: using skillTotalsSelected (already per-student) ----
+  const skillEntries = Object.entries(skillTotalsSelected || {});
+  const skillsWithPct = skillEntries
+    .filter(([, stats]) => stats.total && stats.total >= MIN_QUESTIONS)
+    .map(([skill, stats]) => ({
+      skill,
+      pct: (stats.correct / stats.total) * 100,
+      total: stats.total
+    }));
+
+  // ---- Question types: aggregate from this student's attempts ----
+  const typeTotalsSelected = {};
+  studentAttempts.forEach((a) => {
+    const map = a.byType || {};
+    Object.entries(map).forEach(([typeKey, stats]) => {
+      if (!typeTotalsSelected[typeKey]) {
+        typeTotalsSelected[typeKey] = { correct: 0, total: 0 };
+      }
+      typeTotalsSelected[typeKey].correct += Number(stats.correct || 0);
+      typeTotalsSelected[typeKey].total += Number(stats.total || 0);
+    });
+  });
+
+  const friendlyTypeLabels = {
     mcq: "Multiple Choice",
     multi: "Select All",
     order: "Order",
@@ -1546,176 +1496,90 @@ function renderStudentAttemptDetail(baseAttempt, detail) {
     revise: "Sentence Revision"
   };
 
-  // One card per question
-  questions.forEach((q, index) => {
-    const card = document.createElement("article");
-    card.className = "attempt-question-card";
+  const typesWithPct = Object.entries(typeTotalsSelected)
+    .filter(([, stats]) => stats.total && stats.total >= MIN_QUESTIONS)
+    .map(([key, stats]) => ({
+      key,
+      label: friendlyTypeLabels[key] || key,
+      pct: (stats.correct / stats.total) * 100,
+      total: stats.total
+    }));
 
-    const isCorrect = q.isCorrect === true;
-    if (isCorrect) {
-      card.classList.add("is-correct");
-    } else if (q.isCorrect === false) {
-      card.classList.add("is-incorrect");
-    }
-
-    // --- Header row: Question X + tags + Correct/Incorrect pill ---
-    const header = document.createElement("header");
-    header.className = "attempt-question-header";
-
-    const title = document.createElement("h3");
-    title.className = "attempt-question-title";
-    const qNumber = q.questionNumber || q.index || index + 1;
-    title.textContent = `Question ${qNumber}`;
-    header.appendChild(title);
-
-    const meta = document.createElement("div");
-    meta.className = "attempt-question-meta";
-
-    const skill = q.skillTag || q.skill;
-    if (skill) {
-      const skillSpan = document.createElement("span");
-      skillSpan.className = "tag tag-skill";
-      skillSpan.textContent = skill;
-      meta.appendChild(skillSpan);
-    }
-
-    const typeKey = q.questionType || q.type;
-    if (typeKey) {
-      const typeSpan = document.createElement("span");
-      typeSpan.className = "tag tag-type";
-      typeSpan.textContent = friendlyTypes[typeKey] || String(typeKey);
-      meta.appendChild(typeSpan);
-    }
-
-    const correctSpan = document.createElement("span");
-    correctSpan.className = isCorrect ? "tag tag-correct" : "tag tag-low";
-    correctSpan.textContent = isCorrect ? "Correct" : "Incorrect";
-    meta.appendChild(correctSpan);
-
-    header.appendChild(meta);
-    card.appendChild(header);
-
-    // --- Prompt / stem ---
-    const prompt = document.createElement("p");
-    prompt.className = "attempt-question-prompt";
-
-    if (q.promptHtml) {
-      // assume server sanitizes this HTML
-      prompt.innerHTML = q.promptHtml;
-    } else {
-      prompt.textContent = q.promptText || q.prompt || "";
-    }
-    card.appendChild(prompt);
-
-    // --- Student vs correct answer ---
-    const answers = document.createElement("dl");
-    answers.className = "attempt-question-answers";
-
-    const dtStudent = document.createElement("dt");
-    dtStudent.textContent = "Student’s answer";
-    const ddStudent = document.createElement("dd");
-    ddStudent.textContent =
-      q.studentAnswerText || q.studentAnswer || "—";
-    answers.appendChild(dtStudent);
-    answers.appendChild(ddStudent);
-
-    const dtCorrect = document.createElement("dt");
-    dtCorrect.textContent = "Correct answer";
-    const ddCorrect = document.createElement("dd");
-    ddCorrect.textContent =
-      q.correctAnswerText || q.correctAnswer || "—";
-    answers.appendChild(dtCorrect);
-    answers.appendChild(ddCorrect);
-
-    card.appendChild(answers);
-
-    frag.appendChild(card);
-  });
-
-  // Swap into the panel
-  studentAttemptDetailBody.innerHTML = "";
-  studentAttemptDetailBody.appendChild(frag);
-}
-
-
-/**
- * Fetch question-by-question detail for an attempt and render it.
- * Expects a Netlify function at:
- *   /.netlify/functions/getReadingAttemptDetail?attemptId=...
- * Adjust the URL/params if your backend uses something different.
- */
-/**
- * Fetch question-by-question detail for an attempt and render it
- * into the main "Selected student's full attempt" panel.
- *
- * This is separate from the Student Detail drawer.
- */
-async function loadStudentAttemptDetail(baseAttempt) {
-  if (!studentAttemptDetailBody || !baseAttempt) return;
-
-  const attemptId = baseAttempt.attemptId || baseAttempt.id;
-  if (!attemptId) {
-    studentAttemptDetailBody.innerHTML = `
-      <p class="muted small">
-        This attempt does not have an attemptId, so detailed answers can’t be loaded.
-      </p>
-    `;
+  // If no usable skills or types, bail with "not enough data"
+  if (!skillsWithPct.length && !typesWithPct.length) {
+    studentDetailNeedsWorkEl.innerHTML = '<li class="muted">Not enough data yet.</li>';
+    studentDetailStrengthsEl.innerHTML = '<li class="muted">Not enough data yet.</li>';
     return;
   }
 
-  const studentName = (baseAttempt.studentName || "this student").trim() || "this student";
+  // ---- Sort + pick needs work & strengths for skills ----
+  const sortedSkillLow = [...skillsWithPct].sort((a, b) => a.pct - b.pct);
+  const sortedSkillHigh = [...skillsWithPct].sort((a, b) => b.pct - a.pct);
 
-  studentAttemptDetailBody.innerHTML = `
-    <p class="muted small">
-      Loading answer details for ${studentName}…
-    </p>
-  `;
+  const needsWorkSkills = sortedSkillLow.slice(0, 2);
+  const needsWorkSkillNames = new Set(needsWorkSkills.map((s) => s.skill));
 
-  try {
-    const params = new URLSearchParams();
-    params.set("attemptId", attemptId);
-
-    // Use the same scoping rules you use in loadAttempts()
-    const ownerEmail = OWNER_EMAIL_FOR_VIEW || "";
-    const isCoTeacherView =
-      ownerEmail && (!teacherUser || teacherUser.email !== ownerEmail);
-
-    if (isCoTeacherView && ownerEmail) {
-      params.set("ownerEmail", ownerEmail);
-    } else if (teacherUser && teacherUser.email) {
-      params.set("viewerEmail", teacherUser.email);
-    } else if (ownerEmail) {
-      params.set("ownerEmail", ownerEmail);
+  const strengthsSkills = [];
+  for (const s of sortedSkillHigh) {
+    if (!needsWorkSkillNames.has(s.skill)) {
+      strengthsSkills.push(s);
     }
-
-    const res = await fetch(
-      `/.netlify/functions/getReadingAttemptDetail?${params.toString()}`,
-      {
-        method: "GET",
-        headers: { Accept: "application/json" }
-      }
-    );
-
-    if (!res.ok) {
-      throw new Error(`Server error: ${res.status}`);
-    }
-
-    const data = await res.json();
-    const detail = data && (data.attempt || data.detail || data);
-
-    renderStudentAttemptDetail(baseAttempt, detail || {});
-  } catch (err) {
-    console.error("[Dashboard] Error loading attempt detail:", err);
-    studentAttemptDetailBody.innerHTML = `
-      <p class="muted small">
-        Sorry, something went wrong loading the question-by-question details.
-        Please try again.
-      </p>
-    `;
+    if (strengthsSkills.length >= 2) break;
   }
+
+  // ---- Sort + pick needs work & strengths for types ----
+  const sortedTypeLow = [...typesWithPct].sort((a, b) => a.pct - b.pct);
+  const sortedTypeHigh = [...typesWithPct].sort((a, b) => b.pct - a.pct);
+
+  const needsWorkTypes = sortedTypeLow.slice(0, 2);
+  const needsWorkTypeKeys = new Set(needsWorkTypes.map((t) => t.key));
+
+  const strengthsTypes = [];
+  for (const t of sortedTypeHigh) {
+    if (!needsWorkTypeKeys.has(t.key)) {
+      strengthsTypes.push(t);
+    }
+    if (strengthsTypes.length >= 2) break;
+  }
+
+  const makeSkillLi = ({ skill, pct, total }) =>
+    `<li>Skill – ${skill}: ${Math.round(pct)}% (${total} questions)</li>`;
+
+  const makeTypeLi = ({ label, pct, total }) =>
+    `<li>Type – ${label}: ${Math.round(pct)}% (${total} questions)</li>`;
+
+  // Build Needs Work list HTML
+  let needsWorkHtml = "";
+
+  if (needsWorkSkills.length) {
+    needsWorkHtml += '<li class="drawer-subheading">Skills</li>';
+    needsWorkHtml += needsWorkSkills.map(makeSkillLi).join("");
+  }
+  if (needsWorkTypes.length) {
+    needsWorkHtml += '<li class="drawer-subheading">Question Types</li>';
+    needsWorkHtml += needsWorkTypes.map(makeTypeLi).join("");
+  }
+  if (!needsWorkHtml) {
+    needsWorkHtml = '<li class="muted">No clear weaknesses yet.</li>';
+  }
+  studentDetailNeedsWorkEl.innerHTML = needsWorkHtml;
+
+  // Build Strengths list HTML
+  let strengthsHtml = "";
+
+  if (strengthsSkills.length) {
+    strengthsHtml += '<li class="drawer-subheading">Skills</li>';
+    strengthsHtml += strengthsSkills.map(makeSkillLi).join("");
+  }
+  if (strengthsTypes.length) {
+    strengthsHtml += '<li class="drawer-subheading">Question Types</li>';
+    strengthsHtml += strengthsTypes.map(makeTypeLi).join("");
+  }
+  if (!strengthsHtml) {
+    strengthsHtml = '<li class="muted">No clear strengths yet.</li>';
+  }
+  studentDetailStrengthsEl.innerHTML = strengthsHtml;
 }
-
-
 
 function renderSkillHeatmap(attempts) {
   if (!heatmapHeadEl || !heatmapBodyEl) return;
@@ -1801,7 +1665,6 @@ function renderSkillHeatmap(attempts) {
 
 // ---------- CORE DASHBOARD RENDERING ----------
 function renderDashboard(attempts) {
-  resetStudentAttemptDetailPanel();
   const assessmentLabelEl = document.getElementById("summary-assessment-name");
   if (assessmentLabelEl) {
     const first = attempts[0];
@@ -1947,7 +1810,7 @@ function renderDashboard(attempts) {
       <td>${formatDate(a.finishedAt)}</td>
     `;
 
-    // Make row clickable to toggle student overlay AND load full attempt detail
+    // Make row clickable to toggle student overlay
     if (studentName && studentName !== "—") {
       tr.dataset.studentName = studentName;
 
@@ -1956,21 +1819,14 @@ function renderDashboard(attempts) {
       }
 
       tr.addEventListener("click", () => {
-        // Toggle which student is overlaid on charts + drawer
         if (CURRENT_STUDENT_FOR_CHARTS === studentName) {
           CURRENT_STUDENT_FOR_CHARTS = null;
         } else {
           CURRENT_STUDENT_FOR_CHARTS = studentName;
         }
-
-        // Re-render stats, charts, and drawer for this selection
         renderDashboard(attempts);
-
-        // NEW: Load question-by-question detail for THIS attempt
-        loadStudentAttemptDetail(a);
       });
     }
-
 
     attemptsTableBody.appendChild(tr);
   });
@@ -2873,7 +2729,7 @@ if (clearFiltersBtn) {
 sessionInput.addEventListener("input", () => saveDashboardPrefs());
 classInput.addEventListener("input", () => saveDashboardPrefs());
 
-// Clear student overlay button (drawer + charts)
+// Clear student overlay button
 if (clearStudentOverlayBtn) {
   clearStudentOverlayBtn.addEventListener("click", (e) => {
     e.preventDefault();
@@ -2882,15 +2738,6 @@ if (clearStudentOverlayBtn) {
     renderDashboard(CURRENT_ATTEMPTS);
   });
 }
-
-// Clear full attempt detail panel (main dash card)
-if (clearStudentAttemptDetailBtn) {
-  clearStudentAttemptDetailBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    resetStudentAttemptDetailPanel();
-  });
-}
-
 
 // Student detail drawer close
 if (studentDetailCloseBtn && studentDetailPanel) {
