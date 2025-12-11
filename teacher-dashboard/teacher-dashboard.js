@@ -405,7 +405,7 @@ function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelec
   }
 
   // ===== Progress chart (multiple attempts over time) =====
-  const studentProgressCanvas = document.getElementById("chart-student-progress");
+  
   if (!studentProgressCanvas) return;
 
   const labels = studentAttempts.map((attempt, idx) => {
@@ -1441,16 +1441,27 @@ function resetStudentAttemptDetailPanel() {
   if (studentAttemptDetailBody) {
     studentAttemptDetailBody.innerHTML = `
       <p class="muted small">
-        No student selected yet. Click a row in the Student Attempts table to view their full attempt.
+        No student selected yet. Click a row in the Student Attempts table
+        to view their full attempt.
       </p>
     `;
   }
 }
 
+
 /**
  * Render the question-by-question view for a single attempt.
  * Expects a detail payload with `questions` but falls back to the base attempt
  * if needed.
+ */
+/**
+ * Render the question-by-question view for a single attempt
+ * into the main dash panel:
+ *
+ *   #student-attempt-detail-subtitle
+ *   #student-attempt-detail (scrollable body)
+ *
+ * This is separate from the Student Detail drawer.
  */
 function renderStudentAttemptDetail(baseAttempt, detail) {
   if (!studentAttemptDetailBody) return;
@@ -1479,6 +1490,7 @@ function renderStudentAttemptDetail(baseAttempt, detail) {
     ? Math.round((numCorrect / totalQuestions) * 100)
     : 0;
 
+  // ----- Subtitle (under the H2) -----
   if (studentAttemptDetailSubtitle) {
     const parts = [];
     if (studentName) parts.push(studentName);
@@ -1490,6 +1502,7 @@ function renderStudentAttemptDetail(baseAttempt, detail) {
       : "Showing answers for selected attempt";
   }
 
+  // If no questions yet, show friendly empty state
   if (!questions.length) {
     studentAttemptDetailBody.innerHTML = `
       <p class="muted small">
@@ -1499,11 +1512,10 @@ function renderStudentAttemptDetail(baseAttempt, detail) {
     return;
   }
 
-  // Build DOM instead of big innerHTML so text is safely escaped
-  const wrapper = document.createElement("div");
-  wrapper.className = "student-attempt-detail-wrapper";
+  // Build DOM using your "card" style
+  const frag = document.createDocumentFragment();
 
-  // Summary at the top
+  // Summary at the top of the panel
   const summary = document.createElement("div");
   summary.className = "student-attempt-summary";
 
@@ -1519,20 +1531,38 @@ function renderStudentAttemptDetail(baseAttempt, detail) {
   summaryMeta.textContent = `Completed on ${whenText}`;
   summary.appendChild(summaryMeta);
 
-  wrapper.appendChild(summary);
+  frag.appendChild(summary);
 
-  // Question list
-  const list = document.createElement("ol");
-  list.className = "student-attempt-question-list";
+  // Friendly maps for question types
+  const friendlyTypes = {
+    mcq: "Multiple Choice",
+    multi: "Select All",
+    order: "Order",
+    match: "Matching",
+    highlight: "Highlight Evidence",
+    dropdown: "Inline Choice",
+    classify: "Classification",
+    partAB: "Part A/B",
+    revise: "Sentence Revision"
+  };
 
+  // One card per question
   questions.forEach((q, index) => {
-    const li = document.createElement("li");
-    li.className = "student-attempt-question";
+    const card = document.createElement("article");
+    card.className = "attempt-question-card";
 
+    const isCorrect = q.isCorrect === true;
+    if (isCorrect) {
+      card.classList.add("is-correct");
+    } else if (q.isCorrect === false) {
+      card.classList.add("is-incorrect");
+    }
+
+    // --- Header row: Question X + tags + Correct/Incorrect pill ---
     const header = document.createElement("header");
     header.className = "attempt-question-header";
 
-    const title = document.createElement("h4");
+    const title = document.createElement("h3");
     title.className = "attempt-question-title";
     const qNumber = q.questionNumber || q.index || index + 1;
     title.textContent = `Question ${qNumber}`;
@@ -1551,17 +1581,6 @@ function renderStudentAttemptDetail(baseAttempt, detail) {
 
     const typeKey = q.questionType || q.type;
     if (typeKey) {
-      const friendlyTypes = {
-        mcq: "Multiple Choice",
-        multi: "Select All",
-        order: "Order",
-        match: "Matching",
-        highlight: "Highlight Evidence",
-        dropdown: "Inline Choice",
-        classify: "Classification",
-        partAB: "Part A/B",
-        revise: "Sentence Revision"
-      };
       const typeSpan = document.createElement("span");
       typeSpan.className = "tag tag-type";
       typeSpan.textContent = friendlyTypes[typeKey] || String(typeKey);
@@ -1569,28 +1588,26 @@ function renderStudentAttemptDetail(baseAttempt, detail) {
     }
 
     const correctSpan = document.createElement("span");
-    const isCorrect = q.isCorrect === true;
     correctSpan.className = isCorrect ? "tag tag-correct" : "tag tag-low";
     correctSpan.textContent = isCorrect ? "Correct" : "Incorrect";
     meta.appendChild(correctSpan);
 
     header.appendChild(meta);
-    li.appendChild(header);
+    card.appendChild(header);
 
-    // Prompt / stem
+    // --- Prompt / stem ---
     const prompt = document.createElement("p");
     prompt.className = "attempt-question-prompt";
 
-    // Support either plain text or a simple html field
     if (q.promptHtml) {
       // assume server sanitizes this HTML
       prompt.innerHTML = q.promptHtml;
     } else {
       prompt.textContent = q.promptText || q.prompt || "";
     }
-    li.appendChild(prompt);
+    card.appendChild(prompt);
 
-    // Student vs correct answer
+    // --- Student vs correct answer ---
     const answers = document.createElement("dl");
     answers.className = "attempt-question-answers";
 
@@ -1610,21 +1627,28 @@ function renderStudentAttemptDetail(baseAttempt, detail) {
     answers.appendChild(dtCorrect);
     answers.appendChild(ddCorrect);
 
-    li.appendChild(answers);
-    list.appendChild(li);
+    card.appendChild(answers);
+
+    frag.appendChild(card);
   });
 
-  wrapper.appendChild(list);
-
+  // Swap into the panel
   studentAttemptDetailBody.innerHTML = "";
-  studentAttemptDetailBody.appendChild(wrapper);
+  studentAttemptDetailBody.appendChild(frag);
 }
+
 
 /**
  * Fetch question-by-question detail for an attempt and render it.
  * Expects a Netlify function at:
  *   /.netlify/functions/getReadingAttemptDetail?attemptId=...
  * Adjust the URL/params if your backend uses something different.
+ */
+/**
+ * Fetch question-by-question detail for an attempt and render it
+ * into the main "Selected student's full attempt" panel.
+ *
+ * This is separate from the Student Detail drawer.
  */
 async function loadStudentAttemptDetail(baseAttempt) {
   if (!studentAttemptDetailBody || !baseAttempt) return;
@@ -1690,6 +1714,7 @@ async function loadStudentAttemptDetail(baseAttempt) {
     `;
   }
 }
+
 
 
 function renderSkillHeatmap(attempts) {
@@ -2848,7 +2873,7 @@ if (clearFiltersBtn) {
 sessionInput.addEventListener("input", () => saveDashboardPrefs());
 classInput.addEventListener("input", () => saveDashboardPrefs());
 
-// Clear student overlay button
+// Clear student overlay button (drawer + charts)
 if (clearStudentOverlayBtn) {
   clearStudentOverlayBtn.addEventListener("click", (e) => {
     e.preventDefault();
@@ -2856,14 +2881,16 @@ if (clearStudentOverlayBtn) {
     CURRENT_STUDENT_FOR_CHARTS = null;
     renderDashboard(CURRENT_ATTEMPTS);
   });
-  // Clear full attempt detail panel
+}
+
+// Clear full attempt detail panel (main dash card)
 if (clearStudentAttemptDetailBtn) {
   clearStudentAttemptDetailBtn.addEventListener("click", (e) => {
     e.preventDefault();
     resetStudentAttemptDetailPanel();
   });
 }
-}
+
 
 // Student detail drawer close
 if (studentDetailCloseBtn && studentDetailPanel) {
