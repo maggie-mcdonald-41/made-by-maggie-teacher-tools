@@ -62,27 +62,13 @@ const studentDetailNeedsWorkEl = document.getElementById("student-detail-needs-w
 const studentDetailStrengthsEl = document.getElementById("student-detail-strengths");
 
 // Selected student's full attempt (question-by-question) panel
-const studentAttemptDetailBody = document.getElementById("student-attempt-detail");
-const studentAttemptDetailSubtitleEl = document.getElementById("student-attempt-detail-subtitle");
-const clearStudentAttemptDetailBtn = document.getElementById("clear-student-detail-btn");
+const attemptQnPanel = document.querySelector(".student-attempt-detail-panel");
+const attemptQnSubtitleEl = document.getElementById("student-attempt-detail-subtitle");
+const attemptQnBodyEl = document.getElementById("student-attempt-detail");
 
 // Tracks the last loaded full attempt (future-friendly)
 let CURRENT_ATTEMPT_DETAIL = null;
 
-function clearStudentAttemptDetail() {
-  if (studentAttemptDetailBody) {
-    studentAttemptDetailBody.innerHTML = `
-      <p class="muted small">
-        Click a row in the Student Attempts table to see their answers and the correct answers.
-      </p>
-    `;
-  }
-  if (studentAttemptDetailSubtitleEl) {
-    studentAttemptDetailSubtitleEl.textContent =
-      "Click a row in the Student Attempts table to see their answers and the correct answers.";
-  }
-  CURRENT_ATTEMPT_DETAIL = null;
-}
 
 // Heat map
 const heatmapHeadEl = document.getElementById("skill-heatmap-head");
@@ -294,6 +280,199 @@ function accuracyTagClass(pct) {
   if (pct < 70) return "tag tag-mid";
   return "tag";
 }
+// ---------- attempt helpers (Q-by-Q panel on main dashboard) ----------
+function clearAttemptQnPanel() {
+  if (!attemptQnBodyEl || !attemptQnSubtitleEl) return;
+
+  attemptQnBodyEl.innerHTML = `
+    <p class="muted small">
+      Click a row in the Student Attempts table to see their answers
+      and the correct answers.
+    </p>
+  `;
+  attemptQnSubtitleEl.textContent =
+    "Click a row in the Student Attempts table to see their answers and the correct answers.";
+
+  CURRENT_ATTEMPT_DETAIL = null;
+}
+
+async function loadAttemptQnPanel(attemptSummary) {
+  if (!attemptQnBodyEl) return;
+
+  if (!attemptSummary || !attemptSummary.attemptId) {
+    clearAttemptQnPanel();
+    return;
+  }
+
+  // Temporary loading state
+  attemptQnBodyEl.innerHTML = `
+    <p class="muted small">Loading full attempt…</p>
+  `;
+
+  try {
+    const params = new URLSearchParams();
+    params.set("attemptId", attemptSummary.attemptId);
+
+    // Same scoping rules as loadAttempts() / loadStudentSearch
+    const ownerEmail = OWNER_EMAIL_FOR_VIEW || "";
+    const isCoTeacherView =
+      ownerEmail && (!teacherUser || teacherUser.email !== ownerEmail);
+
+    if (isCoTeacherView && ownerEmail) {
+      params.set("ownerEmail", ownerEmail);
+    } else if (teacherUser && teacherUser.email) {
+      params.set("viewerEmail", teacherUser.email);
+    } else if (ownerEmail) {
+      params.set("ownerEmail", ownerEmail);
+    }
+
+    const res = await fetch(
+      `/.netlify/functions/getReadingAttemptDetail?${params.toString()}`,
+      {
+        method: "GET",
+        headers: { Accept: "application/json" }
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error(`Server error: ${res.status}`);
+    }
+
+    const json = await res.json();
+    if (!json || !json.success || !json.attempt) {
+      throw new Error("No attempt detail returned from server");
+    }
+
+    CURRENT_ATTEMPT_DETAIL = json.attempt;
+    renderAttemptQnPanel(json.attempt);
+  } catch (err) {
+    console.error("[Dashboard] Error loading attempt detail:", err);
+    attemptQnBodyEl.innerHTML = `
+      <p class="muted small">
+        Sorry, we couldn’t load this attempt’s question-by-question view. Please try again.
+      </p>
+    `;
+  }
+}
+
+function renderAttemptQnPanel(attempt) {
+  if (!attemptQnBodyEl) return;
+
+  const questions = Array.isArray(attempt.questions) ? attempt.questions : [];
+
+  if (!questions.length) {
+    attemptQnBodyEl.innerHTML = `
+      <p class="muted small">
+        No question-level data was logged for this attempt yet.
+      </p>
+    `;
+    if (attemptQnSubtitleEl) {
+      attemptQnSubtitleEl.textContent =
+        "No question-level data was logged for this attempt yet.";
+    }
+    return;
+  }
+
+  const name = (attempt.studentName || "").trim() || "this student";
+  const totalQ = Number(
+    attempt.totalQuestions ||
+    attempt.answeredCount ||
+    questions.length
+  );
+  const numCorrect =
+    typeof attempt.numCorrect === "number"
+      ? attempt.numCorrect
+      : questions.filter((q) => q.isCorrect).length;
+  const pct = totalQ ? Math.round((numCorrect / totalQ) * 100) : null;
+
+  if (attemptQnSubtitleEl) {
+    attemptQnSubtitleEl.textContent =
+      pct != null
+        ? `${name} – ${numCorrect} of ${totalQ} correct (${pct}%).`
+        : `${name}'s answers for this attempt.`;
+  }
+
+  attemptQnBodyEl.innerHTML = "";
+
+  questions
+    .slice()
+    .sort((a, b) => {
+      const aNum = a.questionNumber ?? a.questionId ?? 0;
+      const bNum = b.questionNumber ?? b.questionId ?? 0;
+      return aNum - bNum;
+    })
+    .forEach((q) => {
+      const card = document.createElement("section");
+      card.className = "attempt-question-card";
+
+      if (q.isCorrect === true) {
+        card.classList.add("is-correct");
+      } else if (q.isCorrect === false) {
+        card.classList.add("is-incorrect");
+      }
+
+      // Header – Q#, type, primary skill, passage
+      const header = document.createElement("div");
+      header.className = "attempt-question-header";
+
+      const numSpan = document.createElement("span");
+      numSpan.className = "attempt-q-number";
+      const qNum = q.questionNumber || q.questionId;
+      numSpan.textContent = qNum ? `Q${qNum}` : "Question";
+
+      const metaSpan = document.createElement("span");
+      metaSpan.className = "attempt-q-meta";
+
+      const typeLabel = q.typeLabel || q.type || "";
+      const primarySkill =
+        q.skillTagPrimary ||
+        (Array.isArray(q.skills) && q.skills[0]) ||
+        "";
+      const metaParts = [];
+
+      if (typeLabel) metaParts.push(typeLabel);
+      if (primarySkill) metaParts.push(primarySkill);
+      if (q.linkedPassage) metaParts.push(`Passage ${q.linkedPassage}`);
+
+      metaSpan.textContent = metaParts.join(" · ");
+
+      header.appendChild(numSpan);
+      header.appendChild(metaSpan);
+
+      // Question text
+      const stemP = document.createElement("p");
+      stemP.className = "attempt-q-stem";
+      stemP.textContent =
+        q.questionText || "Question text not available for this attempt.";
+
+      // Student answer
+      const studentP = document.createElement("p");
+      studentP.className = "attempt-q-student-answer";
+      const studentLabel =
+        q.studentAnswerText || "No answer recorded for this question.";
+      studentP.innerHTML =
+        `<strong>Student answer:</strong> ${studentLabel}`;
+
+      // Correct answer
+      const correctP = document.createElement("p");
+      correctP.className = "attempt-q-correct-answer";
+      const correctLabel =
+        q.correctAnswerText ||
+        (q.isCorrect
+          ? "Student’s answer was correct."
+          : "Correct answer not recorded.");
+      correctP.innerHTML =
+        `<strong>Correct answer:</strong> ${correctLabel}`;
+
+      card.appendChild(header);
+      card.appendChild(stemP);
+      card.appendChild(studentP);
+      card.appendChild(correctP);
+
+      attemptQnBodyEl.appendChild(card);
+    });
+}
+
 
 // ---------- DASHBOARD PREFERENCES ----------
 const DASHBOARD_PREFS_KEY = "readingDashboardPrefs_v1";
@@ -1797,6 +1976,9 @@ function renderDashboard(attempts) {
       totalAttempts === 1 ? "" : "s"
     } loaded.`;
   }
+  if (!attempts.length && typeof clearAttemptQnPanel === "function") {
+    clearAttemptQnPanel();
+  }
 
   attempts.forEach(a => {
     const tr = document.createElement("tr");
@@ -1833,23 +2015,30 @@ function renderDashboard(attempts) {
       <td>${formatDate(a.startedAt)}</td>
       <td>${formatDate(a.finishedAt)}</td>
     `;
+
+    // Make row clickable to toggle student overlay AND load Q-by-Q panel
+    if (studentName && studentName !== "—") {
+      tr.dataset.studentName = studentName;
+
+      if (CURRENT_STUDENT_FOR_CHARTS === studentName) {
+        tr.classList.add("is-selected-student");
+      }
+
       tr.addEventListener("click", () => {
-        // existing behavior: toggle overlay + redraw charts + drawer
+        // Toggle which student's data overlays the charts + drawer
         if (CURRENT_STUDENT_FOR_CHARTS === studentName) {
           CURRENT_STUDENT_FOR_CHARTS = null;
         } else {
           CURRENT_STUDENT_FOR_CHARTS = studentName;
         }
+
+        // Re-render dashboard for charts + drawer
         renderDashboard(attempts);
 
-        // NEW: also load this attempt's question-by-question detail
-        if (a.attemptId) {
-          loadStudentAttemptDetail(a);
-        } else {
-          clearStudentAttemptDetail();
-        }
+        // Load THIS attempt into the full Q-by-Q panel
+        loadAttemptQnPanel(a);
       });
-
+    }
 
     attemptsTableBody.appendChild(tr);
   });
@@ -2300,118 +2489,8 @@ async function loadStudentAttemptDetail(attemptSummary) {
     `;
   }
 }
-function renderStudentAttemptDetail(attempt) {
-  if (!studentAttemptDetailBody) return;
 
-  const questions = Array.isArray(attempt.questions) ? attempt.questions : [];
 
-  if (!questions.length) {
-    studentAttemptDetailBody.innerHTML = `
-      <p class="muted small">
-        No question-level data was logged for this attempt yet.
-      </p>
-    `;
-    return;
-  }
-
-  // Subtitle: student + score
-  if (studentAttemptDetailSubtitleEl) {
-    const name = (attempt.studentName || "").trim() || "this student";
-    const totalQ =
-      Number(attempt.totalQuestions || attempt.answeredCount || questions.length);
-    const numCorrect =
-      typeof attempt.numCorrect === "number"
-        ? attempt.numCorrect
-        : questions.filter((q) => q.isCorrect).length;
-
-    const pct = totalQ ? Math.round((numCorrect / totalQ) * 100) : null;
-
-    studentAttemptDetailSubtitleEl.textContent =
-      pct != null
-        ? `${name}'s answers for this attempt – ${numCorrect} of ${totalQ} correct (${pct}%).`
-        : `${name}'s answers for this attempt.`;
-  }
-
-  studentAttemptDetailBody.innerHTML = "";
-
-  questions
-    .slice()
-    .sort((a, b) => {
-      const aNum = a.questionNumber ?? a.questionId ?? 0;
-      const bNum = b.questionNumber ?? b.questionId ?? 0;
-      return aNum - bNum;
-    })
-    .forEach((q) => {
-      const card = document.createElement("section");
-      card.className = "attempt-question-card";
-
-      if (q.isCorrect === true) {
-        card.classList.add("is-correct");
-      } else if (q.isCorrect === false) {
-        card.classList.add("is-incorrect");
-      }
-
-      // Header – Q#, type, primary skill, passage
-      const header = document.createElement("div");
-      header.className = "attempt-question-header";
-
-      const numSpan = document.createElement("span");
-      numSpan.className = "attempt-q-number";
-      const qNum = q.questionNumber || q.questionId;
-      numSpan.textContent = qNum ? `Q${qNum}` : "Question";
-
-      const metaSpan = document.createElement("span");
-      metaSpan.className = "attempt-q-meta";
-
-      const typeLabel = q.typeLabel || q.type || "";
-      const primarySkill =
-        q.skillTagPrimary ||
-        (Array.isArray(q.skills) && q.skills[0]) ||
-        "";
-      const metaParts = [];
-
-      if (typeLabel) metaParts.push(typeLabel);
-      if (primarySkill) metaParts.push(primarySkill);
-      if (q.linkedPassage) metaParts.push(`Passage ${q.linkedPassage}`);
-
-      metaSpan.textContent = metaParts.join(" · ");
-
-      header.appendChild(numSpan);
-      header.appendChild(metaSpan);
-
-      // Question text
-      const stemP = document.createElement("p");
-      stemP.className = "attempt-q-stem";
-      stemP.textContent =
-        q.questionText || "Question text not available for this attempt.";
-
-      // Student answer
-      const studentP = document.createElement("p");
-      studentP.className = "attempt-q-student-answer";
-      const studentLabel =
-        q.studentAnswerText || "No answer recorded for this question.";
-      studentP.innerHTML =
-        `<strong>Student answer:</strong> ${studentLabel}`;
-
-      // Correct answer
-      const correctP = document.createElement("p");
-      correctP.className = "attempt-q-correct-answer";
-      const correctLabel =
-        q.correctAnswerText ||
-        (q.isCorrect
-          ? "Student’s answer was correct."
-          : "Correct answer not recorded.");
-      correctP.innerHTML =
-        `<strong>Correct answer:</strong> ${correctLabel}`;
-
-      card.appendChild(header);
-      card.appendChild(stemP);
-      card.appendChild(studentP);
-      card.appendChild(correctP);
-
-      studentAttemptDetailBody.appendChild(card);
-    });
-}
 
 
 // ---------- DATA LOADING (real backend + demo fallback) ----------
@@ -3135,7 +3214,6 @@ initChartFullscreen();
 // Initial render: empty dashboard + any stored history
 renderDashboard([]);
 renderSessionHistory(loadHistoryFromStorage());
-clearStudentAttemptDetail();
 
 // Use URL ?sessionCode=&classCode=&owner= to pre-fill filters
 (function applyUrlFiltersOnLoad() {
@@ -3182,13 +3260,6 @@ clearStudentAttemptDetail();
   }
 })();
 
-// Clear "Selected student's full attempt" panel
-if (clearStudentAttemptDetailBtn) {
-  clearStudentAttemptDetailBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    clearStudentAttemptDetail();
-  });
-}
 
 // Optional: restore last session info into the UI on load
 (function restoreLastSession() {

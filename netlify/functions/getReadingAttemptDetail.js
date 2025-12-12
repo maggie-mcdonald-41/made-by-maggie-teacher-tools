@@ -50,14 +50,21 @@ exports.handler = async function (event, context) {
     // Helper: normalize one attempt the same way as getReadingAttempts,
     // but ALSO include questions in a dashboard-friendly shape.
     function normalizeAttemptFromBlob(key, data) {
+      const questionResultsArray = Array.isArray(data.questionResults)
+        ? data.questionResults
+        : [];
+
       const answeredCount = Number(
         data.answeredCount ??
-          data.totalQuestions ?? // legacy fallback
+          (questionResultsArray.length || 0) ??
+          data.totalQuestions ??
           data.numQuestions ??
           0
       );
 
-      let totalQuestions = Number(data.totalQuestions ?? data.numQuestions ?? 0);
+      let totalQuestions = Number(
+        data.totalQuestions ?? data.numQuestions ?? 0
+      );
       if (!totalQuestions && answeredCount) {
         totalQuestions = answeredCount;
       }
@@ -124,51 +131,453 @@ exports.handler = async function (event, context) {
         ? data.sessionInfo.sharedWithEmails
         : [];
 
-      // ----- Question-level normalization -----
-      const rawQuestions = Array.isArray(data.questions)
-        ? data.questions
-        : [];
+      // Small helper to pick the first non-null/undefined value
+      const coalesce = (...vals) => {
+        for (const v of vals) {
+          if (v !== undefined && v !== null) return v;
+        }
+        return null;
+      };
 
-      const questions = rawQuestions.map((q) => ({
-        questionId: q.questionId ?? q.id ?? q.question_id ?? null,
-        questionNumber:
-          q.questionNumber ?? q.number ?? q.qNumber ?? q.index ?? null,
-        questionText:
-          q.questionText ??
-          q.stem ??
-          q.prompt ??
-          "Question text not available for this attempt.",
-        studentAnswerText:
-          q.studentAnswerText ??
-          q.studentAnswer ??
-          q.response ??
-          q.selected ??
-          null,
-        correctAnswerText:
-          q.correctAnswerText ??
-          q.correctAnswer ??
-          q.correct ??
-          null,
-        isCorrect:
+      // ----- Question-level normalization -----
+      // Prefer a baked-in "questions" array if it exists;
+      // otherwise fall back to questionResults (which is how the trainer logs now).
+      const rawQuestions =
+        Array.isArray(data.questions) && data.questions.length
+          ? data.questions
+          : questionResultsArray;
+
+      const questions = rawQuestions.map((q, idx) => {
+        // Newer attempts: q.raw contains the payload we sent from logQuestionResult
+        // Older attempts: the data might be on q itself.
+        const raw = q.raw || q.rawPayload || q || {};
+
+        const questionId = coalesce(
+          q.questionId,
+          q.id,
+          q.question_id,
+          raw.questionId,
+          raw.id
+        );
+
+        const questionNumber = coalesce(
+          q.questionNumber,
+          q.number,
+          q.qNumber,
+          q.index,
+          raw.questionNumber,
+          raw.index,
+          idx + 1
+        );
+
+        const type = coalesce(
+          q.type,
+          raw.questionType,
+          raw.type
+        );
+
+        const typeLabel = coalesce(
+          q.typeLabel,
+          raw.typeLabel,
+          type
+        );
+
+        const skillsArray = Array.isArray(q.skills)
+          ? q.skills
+          : Array.isArray(raw.skills)
+          ? raw.skills
+          : q.skill
+          ? [q.skill]
+          : [];
+
+        const skillTagPrimary = coalesce(
+          q.skillTagPrimary,
+          q.skillPrimary,
+          raw.skillTagPrimary,
+          skillsArray.length ? skillsArray[0] : null
+        );
+
+        const linkedPassage = coalesce(
+          q.linkedPassage,
+          raw.linkedPassage,
+          q.passage,
+          raw.passage
+        );
+
+        const questionText =
+          coalesce(
+            q.questionText,
+            raw.questionText,
+            raw.questionStem,
+            raw.stem,
+            q.stem,
+            q.prompt
+          ) || "Question text not available for this attempt.";
+
+        // We'll fill these differently by type if possible
+        let studentAnswerText = coalesce(
+          q.studentAnswerText,
+          raw.studentAnswerText,
+          raw.responseText,
+          q.studentAnswer,
+          q.response,
+          q.selected
+        );
+
+        let correctAnswerText = coalesce(
+          q.correctAnswerText,
+          raw.correctAnswerText,
+          q.correctAnswer,
+          q.correct
+        );
+
+        const isCorrect =
           typeof q.isCorrect === "boolean"
             ? q.isCorrect
             : typeof q.correct === "boolean"
             ? q.correct
-            : null,
-        typeLabel: q.typeLabel ?? q.type ?? null,
-        type: q.type ?? null,
-        skillTagPrimary:
-          q.skillTagPrimary ??
-          q.skillPrimary ??
-          (Array.isArray(q.skills) ? q.skills[0] : q.skill) ??
-          null,
-        skills: Array.isArray(q.skills)
-          ? q.skills
-          : q.skill
-          ? [q.skill]
-          : [],
-        linkedPassage: q.linkedPassage ?? q.passage ?? null,
-      }));
+            : typeof raw.isCorrect === "boolean"
+            ? raw.isCorrect
+            : null;
+
+        // ---- Type-specific detail block ----
+        const detail = {};
+
+        // Safe option getter
+        const getOpt = (opts, idx) =>
+          Array.isArray(opts) &&
+          typeof idx === "number" &&
+          idx >= 0 &&
+          idx < opts.length
+            ? opts[idx]
+            : null;
+
+        switch (type) {
+          // ===== Single-choice style (MCQ, dropdown, revise) =====
+          case "mcq":
+          case "dropdown":
+          case "revise": {
+            const options =
+              raw.options ||
+              q.options ||
+              [];
+
+            const studentIdx = coalesce(
+              raw.studentChoiceIndex,
+              raw.selectedIndex,
+              q.selectedIndex
+            );
+
+            const correctIdx = coalesce(
+              raw.correctChoiceIndex,
+              raw.correctIndex,
+              q.correctIndex,
+              raw.correctIndex
+            );
+
+            detail.options = Array.isArray(options) ? options.slice() : [];
+            detail.studentChoiceIndex =
+              typeof studentIdx === "number" ? studentIdx : null;
+            detail.correctChoiceIndex =
+              typeof correctIdx === "number" ? correctIdx : null;
+
+            detail.studentChoiceText = getOpt(detail.options, detail.studentChoiceIndex);
+            detail.correctChoiceText = getOpt(detail.options, detail.correctChoiceIndex);
+
+            if (studentAnswerText == null) {
+              studentAnswerText = detail.studentChoiceText;
+            }
+            if (correctAnswerText == null) {
+              correctAnswerText = detail.correctChoiceText;
+            }
+            break;
+          }
+
+          // ===== Multi-select (Select all that apply) =====
+          case "multi": {
+            const options =
+              raw.options ||
+              q.options ||
+              [];
+
+            const selectedIndices = Array.isArray(raw.selectedIndices)
+              ? raw.selectedIndices
+              : Array.isArray(q.selectedIndices)
+              ? q.selectedIndices
+              : [];
+
+            const correctIndices = Array.isArray(raw.correctIndices)
+              ? raw.correctIndices
+              : Array.isArray(q.correctIndices)
+              ? q.correctIndices
+              : [];
+
+            detail.options = Array.isArray(options) ? options.slice() : [];
+            detail.selectedIndices = selectedIndices.slice();
+            detail.correctIndices = correctIndices.slice();
+
+            detail.selectedTexts = detail.selectedIndices.map((i) =>
+              getOpt(detail.options, i)
+            );
+            detail.correctTexts = detail.correctIndices.map((i) =>
+              getOpt(detail.options, i)
+            );
+
+            if (!studentAnswerText && detail.selectedTexts.length) {
+              studentAnswerText = detail.selectedTexts.join(" | ");
+            }
+            if (!correctAnswerText && detail.correctTexts.length) {
+              correctAnswerText = detail.correctTexts.join(" | ");
+            }
+            break;
+          }
+
+          // ===== Order / sequencing =====
+          case "order": {
+            const items = Array.isArray(raw.items)
+              ? raw.items
+              : Array.isArray(q.items)
+              ? q.items
+              : [];
+
+            const currentOrder = Array.isArray(raw.currentOrder)
+              ? raw.currentOrder
+              : Array.isArray(q.currentOrder)
+              ? q.currentOrder
+              : [];
+
+            const correctOrder = Array.isArray(raw.correctOrder)
+              ? raw.correctOrder
+              : Array.isArray(q.correctOrder)
+              ? q.correctOrder
+              : [];
+
+            detail.items = items.map((it) => ({
+              id: it.id,
+              text: it.text,
+            }));
+            detail.currentOrder = currentOrder.slice();
+            detail.correctOrder = correctOrder.slice();
+            break;
+          }
+
+          // ===== Matching =====
+          case "match": {
+            const left = Array.isArray(raw.left)
+              ? raw.left
+              : Array.isArray(q.left)
+              ? q.left
+              : [];
+
+            const right = Array.isArray(raw.right)
+              ? raw.right
+              : Array.isArray(q.right)
+              ? q.right
+              : [];
+
+            const pairs = raw.pairs || q.pairs || null;
+
+            detail.left = left.map((it) => ({
+              id: it.id,
+              text: it.text,
+            }));
+            detail.right = right.map((it) => ({
+              id: it.id,
+              text: it.text,
+            }));
+            detail.pairs = pairs;
+            break;
+          }
+
+          // ===== Classification (table sorting) =====
+          case "classify": {
+            const items = Array.isArray(raw.items)
+              ? raw.items
+              : Array.isArray(q.items)
+              ? q.items
+              : [];
+
+            const categories = Array.isArray(raw.categories)
+              ? raw.categories
+              : Array.isArray(q.categories)
+              ? q.categories
+              : [];
+
+            const placements = raw.placements || q.placements || null;
+            const correctMap = raw.correctMap || q.correctMap || null;
+
+            detail.items = items.map((it) => ({
+              id: it.id,
+              text: it.text,
+              correctCategoryId: it.categoryId,
+            }));
+
+            detail.categories = categories.map((cat) => ({
+              id: cat.id,
+              label: cat.label,
+            }));
+
+            detail.placements = placements;
+            detail.correctMap = correctMap;
+            break;
+          }
+
+          // ===== Highlight sentences =====
+          case "highlight": {
+            const sentences = Array.isArray(raw.sentences)
+              ? raw.sentences
+              : Array.isArray(q.sentences)
+              ? q.sentences
+              : [];
+
+            const selectedSentenceIds = Array.isArray(raw.selectedSentenceIds)
+              ? raw.selectedSentenceIds
+              : Array.isArray(q.selectedSentenceIds)
+              ? q.selectedSentenceIds
+              : [];
+
+            const normSentences = sentences.map((s) => ({
+              id: s.id,
+              text: s.text,
+              correct: !!s.correct,
+            }));
+            detail.sentences = normSentences;
+
+            detail.selectedSentenceIds = selectedSentenceIds.slice();
+            detail.selectedSentenceTexts = normSentences
+              .filter((s) => detail.selectedSentenceIds.includes(s.id))
+              .map((s) => s.text);
+
+            detail.correctSentenceIds = normSentences
+              .filter((s) => s.correct)
+              .map((s) => s.id);
+            detail.correctSentenceTexts = normSentences
+              .filter((s) => s.correct)
+              .map((s) => s.text);
+
+            if (!studentAnswerText && detail.selectedSentenceTexts.length) {
+              studentAnswerText = detail.selectedSentenceTexts.join(" ");
+            }
+            if (!correctAnswerText && detail.correctSentenceTexts.length) {
+              correctAnswerText = detail.correctSentenceTexts.join(" ");
+            }
+            break;
+          }
+
+          // ===== Part A / Part B =====
+          case "partAB": {
+            const partA = raw.partA || q.partA || null;
+            const partB = raw.partB || q.partB || null;
+
+            const partDetail = {};
+
+            if (partA) {
+              const optsA = Array.isArray(partA.options)
+                ? partA.options.slice()
+                : Array.isArray(q.partA && q.partA.options)
+                ? q.partA.options.slice()
+                : [];
+
+              const selA = coalesce(
+                partA.selectedIndex,
+                raw.selectedA,
+                q.selectedA
+              );
+              const corA = coalesce(
+                partA.correctIndex,
+                q.partA && q.partA.correctIndex
+              );
+
+              partDetail.partA = {
+                stem: partA.stem || (q.partA && q.partA.stem) || "",
+                options: optsA,
+                selectedIndex:
+                  typeof selA === "number" ? selA : null,
+                correctIndex:
+                  typeof corA === "number" ? corA : null,
+                selectedText: getOpt(optsA, selA),
+                correctText: getOpt(optsA, corA),
+              };
+            }
+
+            if (partB) {
+              const optsB = Array.isArray(partB.options)
+                ? partB.options.slice()
+                : Array.isArray(q.partB && q.partB.options)
+                ? q.partB.options.slice()
+                : [];
+
+              const selB = coalesce(
+                partB.selectedIndex,
+                raw.selectedB,
+                q.selectedB
+              );
+              const corB = coalesce(
+                partB.correctIndex,
+                q.partB && q.partB.correctIndex
+              );
+
+              partDetail.partB = {
+                stem: partB.stem || (q.partB && q.partB.stem) || "",
+                options: optsB,
+                selectedIndex:
+                  typeof selB === "number" ? selB : null,
+                correctIndex:
+                  typeof corB === "number" ? corB : null,
+                selectedText: getOpt(optsB, selB),
+                correctText: getOpt(optsB, corB),
+              };
+            }
+
+            partDetail.aCorrect = !!coalesce(
+              raw.aCorrect,
+              q.aCorrect
+            );
+            partDetail.bCorrect = !!coalesce(
+              raw.bCorrect,
+              q.bCorrect
+            );
+
+            detail.partAB = partDetail;
+
+            // Friendly summary string if we don't have one yet
+            if (!studentAnswerText && partDetail.partA && partDetail.partB) {
+              studentAnswerText = `A: ${partDetail.partA.selectedText || "—"} | B: ${
+                partDetail.partB.selectedText || "—"
+              }`;
+            }
+            if (!correctAnswerText && partDetail.partA && partDetail.partB) {
+              correctAnswerText = `A: ${partDetail.partA.correctText || "—"} | B: ${
+                partDetail.partB.correctText || "—"
+              }`;
+            }
+
+            break;
+          }
+
+          default:
+            // For unknown types just keep whatever we already have
+            break;
+        }
+
+        return {
+          questionId,
+          questionNumber,
+          questionText,
+          studentAnswerText,
+          correctAnswerText,
+          isCorrect,
+          typeLabel,
+          type,
+          skillTagPrimary,
+          skills: skillsArray,
+          linkedPassage,
+          detail,
+          // Expose raw payload so the dashboard can reconstruct
+          // any other per-type structures if needed.
+          rawPayload: raw,
+        };
+      });
 
       return {
         attemptId: data.attemptId || key,

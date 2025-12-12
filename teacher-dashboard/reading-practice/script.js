@@ -831,11 +831,212 @@ function logQuestionResult(q, extra = {}) {
   const rest = { ...extra };
   delete rest.isCorrect;
 
-  RP_REPORT.recordQuestionResult(questionObj, {
+  // ---- Base fields that are always useful in the dashboard ----
+  const base = {
     isCorrect,
-    ...rest
-  });
+    ...rest,
+    questionId: questionObj.id,
+    questionType: questionObj.type,
+    questionStem: questionObj.stem || "",
+    linkedPassage: questionObj.linkedPassage ?? null,
+    skills: Array.isArray(questionObj.skills) ? questionObj.skills.slice() : []
+  };
+
+  const type = questionObj.type;
+  const hasOptions = Array.isArray(questionObj.options);
+  const optionsCopy = hasOptions ? questionObj.options.slice() : null;
+
+  // Helper for safe option lookup
+  const getOpt = (opts, idx) =>
+    opts && typeof idx === "number" && idx >= 0 && idx < opts.length
+      ? opts[idx]
+      : null;
+
+  switch (type) {
+    // ---------- Single-choice types (options + correctIndex) ----------
+    case "mcq":
+    case "dropdown":
+    case "revise": {
+      if (optionsCopy) base.options = optionsCopy;
+
+      const studentIdx = typeof rest.selectedIndex === "number" ? rest.selectedIndex : null;
+      const correctIdx =
+        typeof questionObj.correctIndex === "number" ? questionObj.correctIndex : null;
+
+      base.studentChoiceIndex = studentIdx;
+      base.studentChoiceText = getOpt(optionsCopy, studentIdx);
+
+      base.correctChoiceIndex = correctIdx;
+      base.correctChoiceText = getOpt(optionsCopy, correctIdx);
+      break;
+    }
+
+    // ---------- Select all that apply ----------
+    case "multi": {
+      if (optionsCopy) base.options = optionsCopy;
+
+      const selectedIndices = Array.isArray(rest.selectedIndices)
+        ? rest.selectedIndices
+        : [];
+      const correctIndices = Array.isArray(rest.correctIndices)
+        ? rest.correctIndices
+        : Array.isArray(questionObj.correctIndices)
+          ? questionObj.correctIndices
+          : [];
+
+      base.selectedIndices = selectedIndices.slice();
+      base.selectedTexts = optionsCopy
+        ? selectedIndices.map((i) => getOpt(optionsCopy, i))
+        : [];
+
+      base.correctIndices = correctIndices.slice();
+      base.correctTexts = optionsCopy
+        ? correctIndices.map((i) => getOpt(optionsCopy, i))
+        : [];
+      break;
+    }
+
+    // ---------- Order / sequencing ----------
+    case "order": {
+      if (Array.isArray(questionObj.items)) {
+        base.items = questionObj.items.map((it) => ({
+          id: it.id,
+          text: it.text
+        }));
+      }
+      if (Array.isArray(rest.currentOrder)) {
+        base.currentOrder = rest.currentOrder.slice();
+      }
+      if (Array.isArray(questionObj.correctOrder)) {
+        base.correctOrder = questionObj.correctOrder.slice();
+      }
+      break;
+    }
+
+    // ---------- Matching ----------
+    case "match": {
+      if (Array.isArray(questionObj.left)) {
+        base.left = questionObj.left.map((it) => ({
+          id: it.id,
+          text: it.text
+        }));
+      }
+      if (Array.isArray(questionObj.right)) {
+        base.right = questionObj.right.map((it) => ({
+          id: it.id,
+          text: it.text
+        }));
+      }
+      base.pairs = rest.pairs || null;
+      break;
+    }
+
+    // ---------- Classification (table sorting) ----------
+    case "classify": {
+      if (Array.isArray(questionObj.items)) {
+        base.items = questionObj.items.map((it) => ({
+          id: it.id,
+          text: it.text,
+          correctCategoryId: it.categoryId
+        }));
+      }
+      if (Array.isArray(questionObj.categories)) {
+        base.categories = questionObj.categories.map((cat) => ({
+          id: cat.id,
+          label: cat.label
+        }));
+      }
+      base.placements = rest.placements || null;
+      base.correctMap = rest.correctMap || null;
+      break;
+    }
+
+    // ---------- Highlight sentences ----------
+    case "highlight": {
+      if (Array.isArray(questionObj.sentences)) {
+        const sentences = questionObj.sentences.map((s) => ({
+          id: s.id,
+          text: s.text,
+          correct: !!s.correct
+        }));
+        base.sentences = sentences;
+
+        const selectedIds = Array.isArray(rest.selectedSentenceIds)
+          ? rest.selectedSentenceIds
+          : [];
+        base.selectedSentenceIds = selectedIds.slice();
+        base.selectedSentenceTexts = sentences
+          .filter((s) => selectedIds.includes(s.id))
+          .map((s) => s.text);
+
+        const correctIds = sentences.filter((s) => s.correct).map((s) => s.id);
+        base.correctSentenceIds = correctIds;
+        base.correctSentenceTexts = sentences
+          .filter((s) => s.correct)
+          .map((s) => s.text);
+      }
+      break;
+    }
+
+    // ---------- Part A + Part B ----------
+    case "partAB": {
+      // Part A
+      if (questionObj.partA) {
+        const optsA = Array.isArray(questionObj.partA.options)
+          ? questionObj.partA.options.slice()
+          : [];
+        const selA =
+          typeof rest.selectedA === "number" ? rest.selectedA : null;
+        const corA =
+          typeof questionObj.partA.correctIndex === "number"
+            ? questionObj.partA.correctIndex
+            : null;
+
+        base.partA = {
+          stem: questionObj.partA.stem,
+          options: optsA,
+          correctIndex: corA,
+          selectedIndex: selA,
+          selectedText: getOpt(optsA, selA),
+          correctText: getOpt(optsA, corA)
+        };
+      }
+
+      // Part B
+      if (questionObj.partB) {
+        const optsB = Array.isArray(questionObj.partB.options)
+          ? questionObj.partB.options.slice()
+          : [];
+        const selB =
+          typeof rest.selectedB === "number" ? rest.selectedB : null;
+        const corB =
+          typeof questionObj.partB.correctIndex === "number"
+            ? questionObj.partB.correctIndex
+            : null;
+
+        base.partB = {
+          stem: questionObj.partB.stem,
+          options: optsB,
+          correctIndex: corB,
+          selectedIndex: selB,
+          selectedText: getOpt(optsB, selB),
+          correctText: getOpt(optsB, corB)
+        };
+      }
+
+      base.aCorrect = !!rest.aCorrect;
+      base.bCorrect = !!rest.bCorrect;
+      break;
+    }
+
+    default:
+      // For any future types, we just keep base as-is.
+      break;
+  }
+
+  RP_REPORT.recordQuestionResult(questionObj, base);
 }
+
 
 
 // ====== STATE ======
