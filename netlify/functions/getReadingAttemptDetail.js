@@ -54,20 +54,38 @@ exports.handler = async function (event, context) {
         ? data.questionResults
         : [];
 
-      const answeredCount = Number(
-        data.answeredCount ??
-          (questionResultsArray.length || 0) ??
-          data.totalQuestions ??
-          data.numQuestions ??
-          0
-      );
+// ✅ Strongest evidence of "how many they answered"
+const questionsArray = Array.isArray(data.questions) ? data.questions : [];
+const questionResultsLen = questionResultsArray.length;
+const questionsLen = questionsArray.length;
 
-      let totalQuestions = Number(
-        data.totalQuestions ?? data.numQuestions ?? 0
-      );
-      if (!totalQuestions && answeredCount) {
-        totalQuestions = answeredCount;
-      }
+// ✅ AnsweredCount = MAX of candidates (heals old bad stored values)
+const answeredCount = Number(
+  Math.max(
+    Number(data.answeredCount ?? 0),
+    questionResultsLen,
+    questionsLen,
+    Number(data.totalQuestions ?? 0),
+    Number(data.numQuestions ?? 0),
+    0
+  )
+);
+
+// ✅ TotalQuestions = prefer explicit total, but never below array length
+let totalQuestions = Number(
+  Math.max(
+    Number(data.totalQuestions ?? 0),
+    Number(data.numQuestions ?? 0),
+    questionResultsLen,
+    questionsLen,
+    0
+  )
+);
+
+if (!totalQuestions && answeredCount) {
+  totalQuestions = answeredCount;
+}
+
 
       const numCorrect = Number(data.numCorrect ?? 0);
       const numIncorrect = Math.max(0, answeredCount - numCorrect);

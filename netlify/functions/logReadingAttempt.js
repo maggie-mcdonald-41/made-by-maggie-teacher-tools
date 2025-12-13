@@ -13,7 +13,7 @@ exports.handler = async function (event, context) {
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
-      body: "Method Not Allowed"
+      body: "Method Not Allowed",
     };
   }
 
@@ -22,7 +22,7 @@ exports.handler = async function (event, context) {
 
     const sessionCode = (body.sessionCode || "").trim();
     const studentName = (body.studentName || "").trim();
-    const classCode   = (body.classCode || "").trim();
+    const classCode = (body.classCode || "").trim();
 
     // NEW: teacher ownership (more robust)
     const ownerEmail = (
@@ -49,8 +49,8 @@ exports.handler = async function (event, context) {
         statusCode: 400,
         body: JSON.stringify({
           success: false,
-          error: "sessionCode and studentName are required"
-        })
+          error: "sessionCode and studentName are required",
+        }),
       };
     }
 
@@ -65,24 +65,30 @@ exports.handler = async function (event, context) {
     connectLambda(event);
     const store = getStore("reading-attempts");
 
-    // ------------- NEW: normalize questionResults + answeredCount -------------
+    // ------------- Normalize questionResults + answeredCount -------------
     const questionResultsArray = Array.isArray(body.questionResults)
       ? body.questionResults
       : [];
 
-    const totalQuestions = Number(body.totalQuestions || 0);
+    const totalQuestionsFromBody = Number(body.totalQuestions || 0);
 
-    const answeredCount =
-      typeof body.answeredCount === "number"
-        ? body.answeredCount
-        : (questionResultsArray.length || totalQuestions || 0);
+    const answeredFromBody =
+      typeof body.answeredCount === "number" ? Number(body.answeredCount) : 0;
+
+    const answeredFromArray = questionResultsArray.length || 0;
+
+    // ✅ Always trust the strongest evidence we have
+    const answeredCount = Math.max(answeredFromBody, answeredFromArray, 0);
+
+    // ✅ If totalQuestions is missing (or zero), infer it from the array length
+    // (We do NOT override a valid totalQuestionsFromBody—only fill gaps.)
+    const totalQuestions =
+      totalQuestionsFromBody > 0 ? totalQuestionsFromBody : answeredFromArray;
 
     const numCorrect = Number(body.numCorrect || 0);
 
     const isComplete =
-      answeredCount > 0 &&
-      totalQuestions > 0 &&
-      answeredCount >= totalQuestions;
+      answeredCount > 0 && totalQuestions > 0 && answeredCount >= totalQuestions;
 
     // --------- BUILD ATTEMPT OBJECT (dashboard-ready) ----------
     const attempt = {
@@ -114,7 +120,7 @@ exports.handler = async function (event, context) {
       finishedAt: body.finishedAt || new Date().toISOString(),
 
       // Detailed item-level results
-      questionResults: questionResultsArray
+      questionResults: questionResultsArray,
     };
 
     // Store JSON
@@ -122,17 +128,16 @@ exports.handler = async function (event, context) {
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ success: true, attemptId })
+      body: JSON.stringify({ success: true, attemptId }),
     };
-
   } catch (err) {
     console.error("[logReadingAttempt] Error:", err);
     return {
       statusCode: 500,
       body: JSON.stringify({
         success: false,
-        error: "Failed to store attempt"
-      })
+        error: "Failed to store attempt",
+      }),
     };
   }
 };

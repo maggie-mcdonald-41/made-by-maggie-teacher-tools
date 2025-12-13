@@ -67,26 +67,42 @@ exports.handler = async function (event, context) {
 
     // ---------- Normalize for Teacher Dashboard ----------
     let attempts = attemptsRaw.map(({ key, data }) => {
-      // New: answeredCount = how many they actually attempted
+      // ✅ Pull array evidence if present (heals old “24 of 25” issues)
+      const questionResultsLen = Array.isArray(data.questionResults)
+        ? data.questionResults.length
+        : Array.isArray(data.questions)
+        ? data.questions.length
+        : 0;
+
+      // ✅ Answered = strongest evidence we have
       const answeredCount = Number(
-        data.answeredCount ??
-          data.totalQuestions ?? // legacy fallback
-          data.numQuestions ??
+        Math.max(
+          Number(data.answeredCount ?? 0),
+          questionResultsLen,
+          Number(data.totalQuestions ?? 0), // legacy fallback if older data stored only total
+          Number(data.numQuestions ?? 0),
           0
+        )
       );
 
-      // Total questions in the set (when known)
+      // ✅ Total questions = prefer explicit total, but never below array length
       let totalQuestions = Number(
-        data.totalQuestions ?? data.numQuestions ?? 0
+        Math.max(
+          Number(data.totalQuestions ?? 0),
+          Number(data.numQuestions ?? 0),
+          questionResultsLen,
+          0
+        )
       );
+
+      // If still missing, fall back so older data still looks sane
       if (!totalQuestions && answeredCount) {
-        // fallback so older data still looks sane
         totalQuestions = answeredCount;
       }
 
       const numCorrect = Number(data.numCorrect ?? 0);
 
-      // New: incorrect and accuracy are based on ANSWERED questions
+      // incorrect and accuracy are based on ANSWERED questions
       const numIncorrect = Math.max(0, answeredCount - numCorrect);
 
       const accuracy =
@@ -94,7 +110,7 @@ exports.handler = async function (event, context) {
           ? Math.round((numCorrect / answeredCount) * 100)
           : 0;
 
-      // Optional: mark complete vs partial
+      // mark complete vs partial
       const isComplete =
         totalQuestions > 0 && answeredCount >= totalQuestions;
 
@@ -148,9 +164,7 @@ exports.handler = async function (event, context) {
       // Normalize shared-with list (for co-teachers)
       const sharedWithEmails = Array.isArray(data.sharedWithEmails)
         ? data.sharedWithEmails
-        : Array.isArray(
-            data.sessionInfo && data.sessionInfo.sharedWithEmails
-          )
+        : Array.isArray(data.sessionInfo && data.sessionInfo.sharedWithEmails)
         ? data.sessionInfo.sharedWithEmails
         : [];
 
