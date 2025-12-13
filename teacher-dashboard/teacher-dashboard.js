@@ -1124,7 +1124,6 @@ function updateScoreBandsChart(allAttempts, studentAttempts = [], studentName = 
     datasets.push({ label: studentName, data: studentData });
   }
 
-  // If there is literally no data, destroy chart
   const totalAll = allData.reduce((s, n) => s + n, 0);
   if (!totalAll && !hasStudentData) {
     if (scoreBandsChart) {
@@ -1134,83 +1133,60 @@ function updateScoreBandsChart(allAttempts, studentAttempts = [], studentName = 
     return;
   }
 
+  const css = getComputedStyle(document.documentElement);
+  const tickColor = css.getPropertyValue("--text-muted").trim() || css.getPropertyValue("--text").trim() || "#cbd5e1";
+  const gridColor = css.getPropertyValue("--gray-light").trim() || "rgba(148,163,184,0.25)";
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
+
+    // less padding so the plot area doesn't shrink
+    layout: { padding: { top: 6, bottom: 6, left: 6, right: 10 } },
+
+    scales: {
+      x: {
+        ticks: {
+          autoSkip: true,
+          maxTicksLimit: 6,
+          maxRotation: 0,
+          minRotation: 0,
+          color: tickColor
+        },
+        grid: { color: gridColor }
+      },
+      y: {
+        beginAtZero: true,
+        ticks: { precision: 0, color: tickColor },
+        grid: { color: gridColor }
+      }
+    },
+
+    plugins: {
+      legend: {
+        display: true,
+        position: "top",
+        labels: { padding: 10, boxWidth: 18, boxHeight: 10, color: tickColor }
+      },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}`
+        }
+      }
+    }
+  };
+
   if (scoreBandsChart) {
     scoreBandsChart.data.labels = labels;
     scoreBandsChart.data.datasets = datasets;
-
-    // keep options consistent on updates too
-    scoreBandsChart.options = {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: "index", intersect: false },
-
-      // ✅ adds breathing room between legend and chart area
-      layout: {
-        padding: { bottom: 20 }
-      },
-
-      scales: {
-        x: {
-          ticks: { autoSkip: true, maxTicksLimit: 6, maxRotation: 0, minRotation: 0 }
-        },
-        y: {
-          beginAtZero: true,
-          ticks: { precision: 0 } // counts, not %
-        }
-      },
-      plugins: {
-        legend: {
-          display: true,
-          position: "bottom",
-          // ✅ increases spacing inside the legend itself
-          labels: { padding: 16 }
-        },
-        tooltip: {
-          callbacks: {
-            label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}`
-          }
-        }
-      }
-    };
-
+    scoreBandsChart.options = options;
     scoreBandsChart.update();
   } else {
     scoreBandsChart = new Chart(canvas, {
       type: "bar",
       data: { labels, datasets },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: "index", intersect: false },
-
-        // ✅ adds breathing room between legend and chart area
-        layout: {
-          padding: { bottom: 20 }
-        },
-
-        scales: {
-          x: {
-            ticks: { autoSkip: true, maxTicksLimit: 6, maxRotation: 0, minRotation: 0 }
-          },
-          y: {
-            beginAtZero: true,
-            ticks: { precision: 0 } // counts, not %
-          }
-        },
-        plugins: {
-          legend: {
-            display: true,
-            position: "bottom",
-            // ✅ increases spacing inside the legend itself
-            labels: { padding: 16 }
-          },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}`
-            }
-          }
-        }
-      }
+      options
     });
   }
 }
@@ -1280,64 +1256,53 @@ function updateTypeAccuracyChart(allAttempts, studentAttempts = [], studentName 
   }
 
   const datasets = [{ label: "All students in view", data: classData }];
-
   const hasStudentBars = studentName && studentData.some((v) => v > 0);
-  if (hasStudentBars) {
-    datasets.push({ label: studentName, data: studentData });
-  }
+  if (hasStudentBars) datasets.push({ label: studentName, data: studentData });
+
+  const css = getComputedStyle(document.documentElement);
+  const tickColor = css.getPropertyValue("--text-muted").trim() || css.getPropertyValue("--text").trim() || "#cbd5e1";
+  const gridColor = css.getPropertyValue("--gray-light").trim() || "rgba(148,163,184,0.25)";
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    layout: { padding: { top: 6, bottom: 6, left: 6, right: 10 } },
+    plugins: {
+      legend: {
+        display: true,
+        position: "top",
+        labels: { padding: 10, boxWidth: 18, boxHeight: 10, color: tickColor }
+      },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}%`
+        }
+      }
+    },
+    scales: {
+      x: {
+        ticks: { autoSkip: true, maxTicksLimit: 8, maxRotation: 0, minRotation: 0, color: tickColor },
+        grid: { color: gridColor }
+      },
+      y: {
+        min: 0,
+        max: 100,
+        ticks: { stepSize: 20, callback: (v) => `${v}%`, color: tickColor },
+        grid: { color: gridColor }
+      }
+    }
+  };
 
   if (typeAccuracyChart) {
     typeAccuracyChart.data.labels = labels;
     typeAccuracyChart.data.datasets = datasets;
-    typeAccuracyChart.options = {
-      responsive: true,
-      maintainAspectRatio: false,
-
-      // ✅ adds breathing room between legend and chart area
-      layout: {
-        padding: { bottom: 20 }
-      },
-
-      plugins: {
-        legend: {
-          display: true,
-          position: "bottom",
-          // ✅ increases spacing inside the legend itself
-          labels: { padding: 16 }
-        }
-      },
-      scales: {
-        x: { ticks: { autoSkip: true, maxTicksLimit: 8, maxRotation: 0, minRotation: 0 } },
-        y: { beginAtZero: true, max: 100, ticks: { callback: (v) => `${v}%` } }
-      }
-    };
+    typeAccuracyChart.options = options;
     typeAccuracyChart.update();
   } else {
     typeAccuracyChart = new Chart(canvas, {
       type: "bar",
       data: { labels, datasets },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-
-        // ✅ adds breathing room between legend and chart area
-        layout: {
-          padding: { bottom: 20 }
-        },
-
-        plugins: {
-          legend: {
-            display: true,
-            position: "bottom",
-            // ✅ increases spacing inside the legend itself
-            labels: { padding: 16 }
-          }
-        },
-        scales: {
-          x: { ticks: { autoSkip: true, maxTicksLimit: 8, maxRotation: 0, minRotation: 0 } },
-          y: { beginAtZero: true, max: 100, ticks: { callback: (v) => `${v}%` } }
-        }
-      }
+      options
     });
   }
 }
@@ -1376,64 +1341,53 @@ function updateSkillAccuracyChart(skillTotalsAll, skillTotalsStudent = {}, stude
   }
 
   const datasets = [{ label: "All students in view", data: classData }];
-
   const hasStudentBars = studentName && studentData.some((v) => v > 0);
-  if (hasStudentBars) {
-    datasets.push({ label: studentName, data: studentData });
-  }
+  if (hasStudentBars) datasets.push({ label: studentName, data: studentData });
+
+  const css = getComputedStyle(document.documentElement);
+  const tickColor = css.getPropertyValue("--text-muted").trim() || css.getPropertyValue("--text").trim() || "#cbd5e1";
+  const gridColor = css.getPropertyValue("--gray-light").trim() || "rgba(148,163,184,0.25)";
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    layout: { padding: { top: 6, bottom: 6, left: 6, right: 10 } },
+    plugins: {
+      legend: {
+        display: true,
+        position: "top",
+        labels: { padding: 10, boxWidth: 18, boxHeight: 10, color: tickColor }
+      },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}%`
+        }
+      }
+    },
+    scales: {
+      x: {
+        ticks: { autoSkip: true, maxTicksLimit: 8, maxRotation: 0, minRotation: 0, color: tickColor },
+        grid: { color: gridColor }
+      },
+      y: {
+        min: 0,
+        max: 100,
+        ticks: { stepSize: 20, callback: (v) => `${v}%`, color: tickColor },
+        grid: { color: gridColor }
+      }
+    }
+  };
 
   if (skillAccuracyChart) {
     skillAccuracyChart.data.labels = labels;
     skillAccuracyChart.data.datasets = datasets;
-    skillAccuracyChart.options = {
-      responsive: true,
-      maintainAspectRatio: false,
-
-      // ✅ adds breathing room between legend and chart area
-      layout: {
-        padding: { bottom: 20 }
-      },
-
-      plugins: {
-        legend: {
-          display: true,
-          position: "bottom",
-          // ✅ increases spacing inside the legend itself
-          labels: { padding: 16 }
-        }
-      },
-      scales: {
-        x: { ticks: { autoSkip: true, maxTicksLimit: 8, maxRotation: 0, minRotation: 0 } },
-        y: { beginAtZero: true, max: 100, ticks: { callback: (v) => `${v}%` } }
-      }
-    };
+    skillAccuracyChart.options = options;
     skillAccuracyChart.update();
   } else {
     skillAccuracyChart = new Chart(canvas, {
       type: "bar",
       data: { labels, datasets },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-
-        // ✅ adds breathing room between legend and chart area
-        layout: {
-          padding: { bottom: 20 }
-        },
-
-        plugins: {
-          legend: {
-            display: true,
-            position: "bottom",
-            // ✅ increases spacing inside the legend itself
-            labels: { padding: 16 }
-          }
-        },
-        scales: {
-          x: { ticks: { autoSkip: true, maxTicksLimit: 8, maxRotation: 0, minRotation: 0 } },
-          y: { beginAtZero: true, max: 100, ticks: { callback: (v) => `${v}%` } }
-        }
-      }
+      options
     });
   }
 }
