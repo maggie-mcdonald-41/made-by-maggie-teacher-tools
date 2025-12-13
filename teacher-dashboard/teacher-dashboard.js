@@ -1088,46 +1088,42 @@ function updateScoreBandsChart(allAttempts, studentAttempts = [], studentName = 
   const bandsSelected = makeBandTemplate();
 
   const bumpBand = (bands, pct) => {
-    const band = bands.find(b => pct >= b.min && pct <= b.max);
+    const band = bands.find((b) => pct >= b.min && pct <= b.max);
     if (band) band.count++;
   };
 
-  allAttempts.forEach(a => {
-    if (!a.totalQuestions) return;
-    const pct = Math.round(((a.numCorrect || 0) / a.totalQuestions) * 100);
+  allAttempts.forEach((a) => {
+    const total = Number(a.totalQuestions ?? a.answeredCount ?? 0);
+    if (!total) return;
+    const correct = Number(a.numCorrect ?? 0);
+    const pct = Math.round((correct / total) * 100);
     bumpBand(bandsAll, pct);
   });
 
-  studentAttempts.forEach(a => {
-    if (!a.totalQuestions) return;
-    const pct = Math.round(((a.numCorrect || 0) / a.totalQuestions) * 100);
+  studentAttempts.forEach((a) => {
+    const total = Number(a.totalQuestions ?? a.answeredCount ?? 0);
+    if (!total) return;
+    const correct = Number(a.numCorrect ?? 0);
+    const pct = Math.round((correct / total) * 100);
     bumpBand(bandsSelected, pct);
   });
 
-  const labels = bandsAll.map(b => b.label);
-  const allData = bandsAll.map(b => b.count);
-  const studentData = bandsSelected.map(b => b.count);
+  const labels = bandsAll.map((b) => b.label);
+  const allData = bandsAll.map((b) => b.count);
+  const studentData = bandsSelected.map((b) => b.count);
 
-  const datasets = [
-    {
-      label: "All students in view",
-      data: allData
-    }
-  ];
+  const datasets = [{ label: "All students in view", data: allData }];
 
   const hasStudentData =
-    studentAttempts &&
+    studentName &&
+    Array.isArray(studentAttempts) &&
     studentAttempts.length > 0 &&
-    studentData.some(v => v > 0);
+    studentData.some((v) => v > 0);
 
-  if (studentName && hasStudentData) {
-    datasets.push({
-      label: studentName,
-      data: studentData
-    });
+  if (hasStudentData) {
+    datasets.push({ label: studentName, data: studentData });
   }
 
-  // If there is literally no data (no attempts at all), destroy chart
   const totalAll = allData.reduce((s, n) => s + n, 0);
   if (!totalAll && !hasStudentData) {
     if (scoreBandsChart) {
@@ -1137,32 +1133,47 @@ function updateScoreBandsChart(allAttempts, studentAttempts = [], studentName = 
     return;
   }
 
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
+
+    // ✅ prevents axis labels from clipping
+    layout: { padding: { left: 12, right: 10, top: 8, bottom: 22 } },
+
+    scales: {
+      x: {
+        ticks: { autoSkip: false, maxRotation: 0, minRotation: 0 }
+      },
+      y: {
+        beginAtZero: true,
+        ticks: { precision: 0 }
+      }
+    },
+    plugins: {
+      legend: {
+        display: true,
+        position: "bottom",
+        labels: { padding: 14 }
+      },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}`
+        }
+      }
+    }
+  };
+
   if (scoreBandsChart) {
     scoreBandsChart.data.labels = labels;
     scoreBandsChart.data.datasets = datasets;
+    scoreBandsChart.options = options; // ✅ IMPORTANT (apply on updates)
     scoreBandsChart.update();
   } else {
     scoreBandsChart = new Chart(canvas, {
       type: "bar",
-      data: {
-        labels,
-        datasets
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: true
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: { precision: 0 }
-          }
-        }
-      }
+      data: { labels, datasets },
+      options
     });
   }
 }
@@ -1174,25 +1185,21 @@ function updateTypeAccuracyChart(allAttempts, studentAttempts = [], studentName 
   const typeTotalsAll = {};
   const typeTotalsStudent = {};
 
-  allAttempts.forEach(a => {
+  allAttempts.forEach((a) => {
     if (!a.byType) return;
     Object.entries(a.byType).forEach(([type, stats]) => {
-      if (!typeTotalsAll[type]) {
-        typeTotalsAll[type] = { correct: 0, total: 0 };
-      }
-      typeTotalsAll[type].correct += stats.correct || 0;
-      typeTotalsAll[type].total += stats.total || 0;
+      if (!typeTotalsAll[type]) typeTotalsAll[type] = { correct: 0, total: 0 };
+      typeTotalsAll[type].correct += Number(stats.correct || 0);
+      typeTotalsAll[type].total += Number(stats.total || 0);
     });
   });
 
-  studentAttempts.forEach(a => {
+  studentAttempts.forEach((a) => {
     if (!a.byType) return;
     Object.entries(a.byType).forEach(([type, stats]) => {
-      if (!typeTotalsStudent[type]) {
-        typeTotalsStudent[type] = { correct: 0, total: 0 };
-      }
-      typeTotalsStudent[type].correct += stats.correct || 0;
-      typeTotalsStudent[type].total += stats.total || 0;
+      if (!typeTotalsStudent[type]) typeTotalsStudent[type] = { correct: 0, total: 0 };
+      typeTotalsStudent[type].correct += Number(stats.correct || 0);
+      typeTotalsStudent[type].total += Number(stats.total || 0);
     });
   });
 
@@ -1208,28 +1215,25 @@ function updateTypeAccuracyChart(allAttempts, studentAttempts = [], studentName 
     revise: "Sentence Revision"
   };
 
-  const allKeys = new Set([
-    ...Object.keys(typeTotalsAll),
-    ...Object.keys(typeTotalsStudent)
-  ]);
+  const allKeys = Array.from(
+    new Set([...Object.keys(typeTotalsAll), ...Object.keys(typeTotalsStudent)])
+  );
+
+  // ✅ stable ordering so the chart doesn’t “jump” on re-renders
+  allKeys.sort((a, b) => (friendlyLabels[a] || a).localeCompare(friendlyLabels[b] || b));
 
   const labels = [];
   const classData = [];
   const studentData = [];
 
-  allKeys.forEach(type => {
-    const friendly = friendlyLabels[type] || type;
-    labels.push(friendly);
+  allKeys.forEach((type) => {
+    labels.push(friendlyLabels[type] || type);
 
     const allStats = typeTotalsAll[type] || { correct: 0, total: 0 };
     const stuStats = typeTotalsStudent[type] || { correct: 0, total: 0 };
 
-    const allPct = allStats.total
-      ? Math.round((allStats.correct / allStats.total) * 100)
-      : 0;
-    const stuPct = stuStats.total
-      ? Math.round((stuStats.correct / stuStats.total) * 100)
-      : 0;
+    const allPct = allStats.total ? Math.round((allStats.correct / allStats.total) * 100) : 0;
+    const stuPct = stuStats.total ? Math.round((stuStats.correct / stuStats.total) * 100) : 0;
 
     classData.push(allPct);
     studentData.push(stuPct);
@@ -1243,47 +1247,49 @@ function updateTypeAccuracyChart(allAttempts, studentAttempts = [], studentName 
     return;
   }
 
-  const datasets = [
-    {
-      label: "All students in view",
-      data: classData
-    }
-  ];
+  const datasets = [{ label: "All students in view", data: classData }];
 
-  const hasStudentBars = studentData.some(v => v > 0);
-  if (studentName && hasStudentBars) {
-    datasets.push({
-      label: studentName,
-      data: studentData
-    });
+  const hasStudentBars = studentName && studentData.some((v) => v > 0);
+  if (hasStudentBars) {
+    datasets.push({ label: studentName, data: studentData });
   }
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+
+    // ✅ prevents y-axis labels (0–100%) from clipping
+    layout: { padding: { left: 14, right: 10, top: 8, bottom: 22 } },
+
+    plugins: {
+      legend: {
+        display: true,
+        position: "bottom",
+        labels: { padding: 14 }
+      }
+    },
+    scales: {
+      x: {
+        ticks: { autoSkip: true, maxTicksLimit: 8, maxRotation: 0, minRotation: 0 }
+      },
+      y: {
+        min: 0,
+        max: 100,
+        ticks: { stepSize: 20, callback: (v) => `${v}%` }
+      }
+    }
+  };
 
   if (typeAccuracyChart) {
     typeAccuracyChart.data.labels = labels;
     typeAccuracyChart.data.datasets = datasets;
+    typeAccuracyChart.options = options; // ✅ IMPORTANT
     typeAccuracyChart.update();
   } else {
     typeAccuracyChart = new Chart(canvas, {
       type: "bar",
-      data: {
-        labels,
-        datasets
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: true
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            max: 100
-          }
-        }
-      }
+      data: { labels, datasets },
+      options
     });
   }
 }
@@ -1292,31 +1298,26 @@ function updateSkillAccuracyChart(skillTotalsAll, skillTotalsStudent = {}, stude
   const canvas = document.getElementById("chart-skill-accuracy");
   if (!canvas || typeof Chart === "undefined") return;
 
-  const allKeys = new Set([
-    ...Object.keys(skillTotalsAll || {}),
-    ...Object.keys(skillTotalsStudent || {})
-  ]);
+  const allKeys = Array.from(
+    new Set([
+      ...Object.keys(skillTotalsAll || {}),
+      ...Object.keys(skillTotalsStudent || {})
+    ])
+  );
+
+  // ✅ stable ordering
+  allKeys.sort((a, b) => a.localeCompare(b));
 
   const labels = [];
   const classData = [];
   const studentData = [];
 
-  allKeys.forEach(skill => {
-    const allStats = (skillTotalsAll && skillTotalsAll[skill]) || {
-      correct: 0,
-      total: 0
-    };
-    const stuStats = (skillTotalsStudent && skillTotalsStudent[skill]) || {
-      correct: 0,
-      total: 0
-    };
+  allKeys.forEach((skill) => {
+    const allStats = (skillTotalsAll && skillTotalsAll[skill]) || { correct: 0, total: 0 };
+    const stuStats = (skillTotalsStudent && skillTotalsStudent[skill]) || { correct: 0, total: 0 };
 
-    const allPct = allStats.total
-      ? Math.round((allStats.correct / allStats.total) * 100)
-      : 0;
-    const stuPct = stuStats.total
-      ? Math.round((stuStats.correct / stuStats.total) * 100)
-      : 0;
+    const allPct = allStats.total ? Math.round((allStats.correct / allStats.total) * 100) : 0;
+    const stuPct = stuStats.total ? Math.round((stuStats.correct / stuStats.total) * 100) : 0;
 
     labels.push(skill);
     classData.push(allPct);
@@ -1331,52 +1332,52 @@ function updateSkillAccuracyChart(skillTotalsAll, skillTotalsStudent = {}, stude
     return;
   }
 
-  const datasets = [
-    {
-      label: "All students in view",
-      data: classData
-    }
-  ];
+  const datasets = [{ label: "All students in view", data: classData }];
 
-  const hasStudentBars = studentData.some(v => v > 0);
-  if (studentName && hasStudentBars) {
-    datasets.push({
-      label: studentName,
-      data: studentData
-    });
+  const hasStudentBars = studentName && studentData.some((v) => v > 0);
+  if (hasStudentBars) {
+    datasets.push({ label: studentName, data: studentData });
   }
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+
+    // ✅ prevents y-axis labels (0–100%) from clipping
+    layout: { padding: { left: 14, right: 10, top: 8, bottom: 22 } },
+
+    plugins: {
+      legend: {
+        display: true,
+        position: "bottom",
+        labels: { padding: 14 }
+      }
+    },
+    scales: {
+      x: {
+        ticks: { autoSkip: true, maxTicksLimit: 8, maxRotation: 0, minRotation: 0 }
+      },
+      y: {
+        min: 0,
+        max: 100,
+        ticks: { stepSize: 20, callback: (v) => `${v}%` }
+      }
+    }
+  };
 
   if (skillAccuracyChart) {
     skillAccuracyChart.data.labels = labels;
     skillAccuracyChart.data.datasets = datasets;
+    skillAccuracyChart.options = options; // ✅ IMPORTANT
     skillAccuracyChart.update();
   } else {
     skillAccuracyChart = new Chart(canvas, {
       type: "bar",
-      data: {
-        labels,
-        datasets
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: true
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            max: 100
-          }
-        }
-      }
+      data: { labels, datasets },
+      options
     });
   }
 }
-
-
 
 // ---------- SESSION TAGS + STUDENT DETAIL + HEAT MAP ----------
 function updateSessionTagsFromAttempts(attempts) {
