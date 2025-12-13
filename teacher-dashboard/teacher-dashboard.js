@@ -1143,6 +1143,12 @@ function updateScoreBandsChart(allAttempts, studentAttempts = [], studentName = 
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: "index", intersect: false },
+
+      // ✅ adds breathing room between legend and chart area
+      layout: {
+        padding: { bottom: 20 }
+      },
+
       scales: {
         x: {
           ticks: { autoSkip: true, maxTicksLimit: 6, maxRotation: 0, minRotation: 0 }
@@ -1153,7 +1159,12 @@ function updateScoreBandsChart(allAttempts, studentAttempts = [], studentName = 
         }
       },
       plugins: {
-        legend: { display: true, position: "bottom" },
+        legend: {
+          display: true,
+          position: "bottom",
+          // ✅ increases spacing inside the legend itself
+          labels: { padding: 16 }
+        },
         tooltip: {
           callbacks: {
             label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}`
@@ -1171,6 +1182,12 @@ function updateScoreBandsChart(allAttempts, studentAttempts = [], studentName = 
         responsive: true,
         maintainAspectRatio: false,
         interaction: { mode: "index", intersect: false },
+
+        // ✅ adds breathing room between legend and chart area
+        layout: {
+          padding: { bottom: 20 }
+        },
+
         scales: {
           x: {
             ticks: { autoSkip: true, maxTicksLimit: 6, maxRotation: 0, minRotation: 0 }
@@ -1181,7 +1198,12 @@ function updateScoreBandsChart(allAttempts, studentAttempts = [], studentName = 
           }
         },
         plugins: {
-          legend: { display: true, position: "bottom" },
+          legend: {
+            display: true,
+            position: "bottom",
+            // ✅ increases spacing inside the legend itself
+            labels: { padding: 16 }
+          },
           tooltip: {
             callbacks: {
               label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}`
@@ -1270,7 +1292,20 @@ function updateTypeAccuracyChart(allAttempts, studentAttempts = [], studentName 
     typeAccuracyChart.options = {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: true, position: "bottom" } },
+
+      // ✅ adds breathing room between legend and chart area
+      layout: {
+        padding: { bottom: 20 }
+      },
+
+      plugins: {
+        legend: {
+          display: true,
+          position: "bottom",
+          // ✅ increases spacing inside the legend itself
+          labels: { padding: 16 }
+        }
+      },
       scales: {
         x: { ticks: { autoSkip: true, maxTicksLimit: 8, maxRotation: 0, minRotation: 0 } },
         y: { beginAtZero: true, max: 100, ticks: { callback: (v) => `${v}%` } }
@@ -1284,7 +1319,20 @@ function updateTypeAccuracyChart(allAttempts, studentAttempts = [], studentName 
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: true, position: "bottom" } },
+
+        // ✅ adds breathing room between legend and chart area
+        layout: {
+          padding: { bottom: 20 }
+        },
+
+        plugins: {
+          legend: {
+            display: true,
+            position: "bottom",
+            // ✅ increases spacing inside the legend itself
+            labels: { padding: 16 }
+          }
+        },
         scales: {
           x: { ticks: { autoSkip: true, maxTicksLimit: 8, maxRotation: 0, minRotation: 0 } },
           y: { beginAtZero: true, max: 100, ticks: { callback: (v) => `${v}%` } }
@@ -1340,7 +1388,20 @@ function updateSkillAccuracyChart(skillTotalsAll, skillTotalsStudent = {}, stude
     skillAccuracyChart.options = {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: true, position: "bottom" } },
+
+      // ✅ adds breathing room between legend and chart area
+      layout: {
+        padding: { bottom: 20 }
+      },
+
+      plugins: {
+        legend: {
+          display: true,
+          position: "bottom",
+          // ✅ increases spacing inside the legend itself
+          labels: { padding: 16 }
+        }
+      },
       scales: {
         x: { ticks: { autoSkip: true, maxTicksLimit: 8, maxRotation: 0, minRotation: 0 } },
         y: { beginAtZero: true, max: 100, ticks: { callback: (v) => `${v}%` } }
@@ -1354,7 +1415,20 @@ function updateSkillAccuracyChart(skillTotalsAll, skillTotalsStudent = {}, stude
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: true, position: "bottom" } },
+
+        // ✅ adds breathing room between legend and chart area
+        layout: {
+          padding: { bottom: 20 }
+        },
+
+        plugins: {
+          legend: {
+            display: true,
+            position: "bottom",
+            // ✅ increases spacing inside the legend itself
+            labels: { padding: 16 }
+          }
+        },
         scales: {
           x: { ticks: { autoSkip: true, maxTicksLimit: 8, maxRotation: 0, minRotation: 0 } },
           y: { beginAtZero: true, max: 100, ticks: { callback: (v) => `${v}%` } }
@@ -1363,6 +1437,7 @@ function updateSkillAccuracyChart(skillTotalsAll, skillTotalsStudent = {}, stude
     });
   }
 }
+
 
 // ---------- SESSION TAGS + STUDENT DETAIL + HEAT MAP ----------
 function updateSessionTagsFromAttempts(attempts) {
@@ -1736,10 +1811,10 @@ legend: {
   }
 
   const makeSkillLi = ({ skill, pct, total }) =>
-    `<li>Skill – ${skill}: ${Math.round(pct)}% (${total} questions)</li>`;
+    `<li>${skill}: ${Math.round(pct)}% (${total} questions)</li>`;
 
   const makeTypeLi = ({ label, pct, total }) =>
-    `<li>Type – ${label}: ${Math.round(pct)}% (${total} questions)</li>`;
+    `<li>${label}: ${Math.round(pct)}% (${total} questions)</li>`;
 
   // Build Needs Work list HTML
   let needsWorkHtml = "";
