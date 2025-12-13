@@ -1500,6 +1500,20 @@ body.dashboard-dark .attempt-question-type {
     font-size: 0.78rem;
   }
 
+  /* Drawer subheadings inserted as <li> should NOT render as bulleted items */
+.student-detail-list .drawer-subheading {
+  list-style: none;
+  padding-left: 0;
+  margin: 0.35rem 0 0.15rem;
+  font-weight: 800;
+  color: var(--navy);
+}
+
+/* Dark mode for that subheading */
+body.dashboard-dark .student-detail-list .drawer-subheading {
+  color: #e5e7eb;
+}
+
 .drawer-chart-caption {
   font-size: 0.75rem;
   color: var(--gray-mid);
@@ -1507,6 +1521,15 @@ body.dashboard-dark .attempt-question-type {
   margin-bottom: 0.75rem;
 }
 
+.filter-help {
+  margin: 0.25rem 0 0;
+  font-size: 0.78rem;
+  color: var(--gray-mid);
+}
+
+body.dashboard-dark .filter-help {
+  color: #9ca3af;
+}
 
   /* === Skill heat map === */
   .heatmap-table-wrapper {
