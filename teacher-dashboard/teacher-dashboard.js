@@ -2423,64 +2423,6 @@ async function runStudentSearch() {
   }
 }
 
-//--------old comment out?----//
-//async function loadStudentAttemptDetail(attemptSummary) {
-  //if (!studentAttemptDetailBody || !attemptSummary || !attemptSummary.attemptId) {
-  //  clearStudentAttemptDetail();
-  //  return;
-  //}
-
-  // Temporary loading state
-  studentAttemptDetailBody.innerHTML = `
-    <p class="muted small">Loading full attempt…</p>
-  `;
-
-  try {
-    const params = new URLSearchParams();
-    params.set("attemptId", attemptSummary.attemptId);
-
-    const ownerEmail = OWNER_EMAIL_FOR_VIEW || "";
-    const isCoTeacherView =
-      ownerEmail && (!teacherUser || teacherUser.email !== ownerEmail);
-
-    // Mirror loadAttempts scoping
-    if (isCoTeacherView && ownerEmail) {
-      params.set("ownerEmail", ownerEmail);
-    } else if (teacherUser && teacherUser.email) {
-      params.set("viewerEmail", teacherUser.email);
-    } else if (ownerEmail) {
-      params.set("ownerEmail", ownerEmail);
-    }
-
-    const res = await fetch(
-      `/.netlify/functions/getReadingAttemptDetail?${params.toString()}`,
-      {
-        method: "GET",
-        headers: { Accept: "application/json" }
-      }
-    );
-
-    if (!res.ok) {
-      throw new Error(`Server error: ${res.status}`);
-    }
-
-    const json = await res.json();
-    if (!json || !json.success || !json.attempt) {
-      throw new Error("No attempt detail returned from server");
-    }
-
-    CURRENT_ATTEMPT_DETAIL = json.attempt;
-    renderStudentAttemptDetail(json.attempt);
-  } catch (err) {
-    console.error("[Dashboard] Error loading attempt detail:", err);
-    studentAttemptDetailBody.innerHTML = `
-      <p class="muted small">
-        Sorry, we couldn’t load this student’s question-by-question view. Please try again.
-      </p>
-    `;
-  }
-//}
-
 // ---------- DATA LOADING (real backend + demo fallback) ----------
 async function loadAttempts() {
   const sessionCodeRaw = sessionInput.value.trim();
