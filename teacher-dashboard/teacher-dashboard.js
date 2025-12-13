@@ -1088,42 +1088,46 @@ function updateScoreBandsChart(allAttempts, studentAttempts = [], studentName = 
   const bandsSelected = makeBandTemplate();
 
   const bumpBand = (bands, pct) => {
-    const band = bands.find((b) => pct >= b.min && pct <= b.max);
+    const band = bands.find(b => pct >= b.min && pct <= b.max);
     if (band) band.count++;
   };
 
-  allAttempts.forEach((a) => {
-    const total = Number(a.totalQuestions ?? a.answeredCount ?? 0);
-    if (!total) return;
-    const correct = Number(a.numCorrect ?? 0);
-    const pct = Math.round((correct / total) * 100);
+  allAttempts.forEach(a => {
+    if (!a.totalQuestions) return;
+    const pct = Math.round(((a.numCorrect || 0) / a.totalQuestions) * 100);
     bumpBand(bandsAll, pct);
   });
 
-  studentAttempts.forEach((a) => {
-    const total = Number(a.totalQuestions ?? a.answeredCount ?? 0);
-    if (!total) return;
-    const correct = Number(a.numCorrect ?? 0);
-    const pct = Math.round((correct / total) * 100);
+  studentAttempts.forEach(a => {
+    if (!a.totalQuestions) return;
+    const pct = Math.round(((a.numCorrect || 0) / a.totalQuestions) * 100);
     bumpBand(bandsSelected, pct);
   });
 
-  const labels = bandsAll.map((b) => b.label);
-  const allData = bandsAll.map((b) => b.count);
-  const studentData = bandsSelected.map((b) => b.count);
+  const labels = bandsAll.map(b => b.label);
+  const allData = bandsAll.map(b => b.count);
+  const studentData = bandsSelected.map(b => b.count);
 
-  const datasets = [{ label: "All students in view", data: allData }];
+  const datasets = [
+    {
+      label: "All students in view",
+      data: allData
+    }
+  ];
 
   const hasStudentData =
-    studentName &&
     studentAttempts &&
     studentAttempts.length > 0 &&
-    studentData.some((v) => v > 0);
+    studentData.some(v => v > 0);
 
-  if (hasStudentData) {
-    datasets.push({ label: studentName, data: studentData });
+  if (studentName && hasStudentData) {
+    datasets.push({
+      label: studentName,
+      data: studentData
+    });
   }
 
+  // If there is literally no data (no attempts at all), destroy chart
   const totalAll = allData.reduce((s, n) => s + n, 0);
   if (!totalAll && !hasStudentData) {
     if (scoreBandsChart) {
@@ -1133,60 +1137,32 @@ function updateScoreBandsChart(allAttempts, studentAttempts = [], studentName = 
     return;
   }
 
-  const css = getComputedStyle(document.documentElement);
-  const tickColor = css.getPropertyValue("--text-muted").trim() || css.getPropertyValue("--text").trim() || "#cbd5e1";
-  const gridColor = css.getPropertyValue("--gray-light").trim() || "rgba(148,163,184,0.25)";
-
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: { mode: "index", intersect: false },
-
-    // less padding so the plot area doesn't shrink
-    layout: { padding: { top: 6, bottom: 6, left: 6, right: 10 } },
-
-    scales: {
-      x: {
-        ticks: {
-          autoSkip: true,
-          maxTicksLimit: 6,
-          maxRotation: 0,
-          minRotation: 0,
-          color: tickColor
-        },
-        grid: { color: gridColor }
-      },
-      y: {
-        beginAtZero: true,
-        ticks: { precision: 0, color: tickColor },
-        grid: { color: gridColor }
-      }
-    },
-
-    plugins: {
-      legend: {
-        display: true,
-        position: "top",
-        labels: { padding: 10, boxWidth: 18, boxHeight: 10, color: tickColor }
-      },
-      tooltip: {
-        callbacks: {
-          label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}`
-        }
-      }
-    }
-  };
-
   if (scoreBandsChart) {
     scoreBandsChart.data.labels = labels;
     scoreBandsChart.data.datasets = datasets;
-    scoreBandsChart.options = options;
     scoreBandsChart.update();
   } else {
     scoreBandsChart = new Chart(canvas, {
       type: "bar",
-      data: { labels, datasets },
-      options
+      data: {
+        labels,
+        datasets
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { precision: 0 }
+          }
+        }
+      }
     });
   }
 }
@@ -1198,19 +1174,23 @@ function updateTypeAccuracyChart(allAttempts, studentAttempts = [], studentName 
   const typeTotalsAll = {};
   const typeTotalsStudent = {};
 
-  allAttempts.forEach((a) => {
+  allAttempts.forEach(a => {
     if (!a.byType) return;
     Object.entries(a.byType).forEach(([type, stats]) => {
-      if (!typeTotalsAll[type]) typeTotalsAll[type] = { correct: 0, total: 0 };
+      if (!typeTotalsAll[type]) {
+        typeTotalsAll[type] = { correct: 0, total: 0 };
+      }
       typeTotalsAll[type].correct += stats.correct || 0;
       typeTotalsAll[type].total += stats.total || 0;
     });
   });
 
-  studentAttempts.forEach((a) => {
+  studentAttempts.forEach(a => {
     if (!a.byType) return;
     Object.entries(a.byType).forEach(([type, stats]) => {
-      if (!typeTotalsStudent[type]) typeTotalsStudent[type] = { correct: 0, total: 0 };
+      if (!typeTotalsStudent[type]) {
+        typeTotalsStudent[type] = { correct: 0, total: 0 };
+      }
       typeTotalsStudent[type].correct += stats.correct || 0;
       typeTotalsStudent[type].total += stats.total || 0;
     });
@@ -1228,20 +1208,28 @@ function updateTypeAccuracyChart(allAttempts, studentAttempts = [], studentName 
     revise: "Sentence Revision"
   };
 
-  const allKeys = new Set([...Object.keys(typeTotalsAll), ...Object.keys(typeTotalsStudent)]);
+  const allKeys = new Set([
+    ...Object.keys(typeTotalsAll),
+    ...Object.keys(typeTotalsStudent)
+  ]);
 
   const labels = [];
   const classData = [];
   const studentData = [];
 
-  allKeys.forEach((type) => {
-    labels.push(friendlyLabels[type] || type);
+  allKeys.forEach(type => {
+    const friendly = friendlyLabels[type] || type;
+    labels.push(friendly);
 
     const allStats = typeTotalsAll[type] || { correct: 0, total: 0 };
     const stuStats = typeTotalsStudent[type] || { correct: 0, total: 0 };
 
-    const allPct = allStats.total ? Math.round((allStats.correct / allStats.total) * 100) : 0;
-    const stuPct = stuStats.total ? Math.round((stuStats.correct / stuStats.total) * 100) : 0;
+    const allPct = allStats.total
+      ? Math.round((allStats.correct / allStats.total) * 100)
+      : 0;
+    const stuPct = stuStats.total
+      ? Math.round((stuStats.correct / stuStats.total) * 100)
+      : 0;
 
     classData.push(allPct);
     studentData.push(stuPct);
@@ -1255,54 +1243,47 @@ function updateTypeAccuracyChart(allAttempts, studentAttempts = [], studentName 
     return;
   }
 
-  const datasets = [{ label: "All students in view", data: classData }];
-  const hasStudentBars = studentName && studentData.some((v) => v > 0);
-  if (hasStudentBars) datasets.push({ label: studentName, data: studentData });
-
-  const css = getComputedStyle(document.documentElement);
-  const tickColor = css.getPropertyValue("--text-muted").trim() || css.getPropertyValue("--text").trim() || "#cbd5e1";
-  const gridColor = css.getPropertyValue("--gray-light").trim() || "rgba(148,163,184,0.25)";
-
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    layout: { padding: { top: 6, bottom: 6, left: 6, right: 10 } },
-    plugins: {
-      legend: {
-        display: true,
-        position: "top",
-        labels: { padding: 10, boxWidth: 18, boxHeight: 10, color: tickColor }
-      },
-      tooltip: {
-        callbacks: {
-          label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}%`
-        }
-      }
-    },
-    scales: {
-      x: {
-        ticks: { autoSkip: true, maxTicksLimit: 8, maxRotation: 0, minRotation: 0, color: tickColor },
-        grid: { color: gridColor }
-      },
-      y: {
-        min: 0,
-        max: 100,
-        ticks: { stepSize: 20, callback: (v) => `${v}%`, color: tickColor },
-        grid: { color: gridColor }
-      }
+  const datasets = [
+    {
+      label: "All students in view",
+      data: classData
     }
-  };
+  ];
+
+  const hasStudentBars = studentData.some(v => v > 0);
+  if (studentName && hasStudentBars) {
+    datasets.push({
+      label: studentName,
+      data: studentData
+    });
+  }
 
   if (typeAccuracyChart) {
     typeAccuracyChart.data.labels = labels;
     typeAccuracyChart.data.datasets = datasets;
-    typeAccuracyChart.options = options;
     typeAccuracyChart.update();
   } else {
     typeAccuracyChart = new Chart(canvas, {
       type: "bar",
-      data: { labels, datasets },
-      options
+      data: {
+        labels,
+        datasets
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100
+          }
+        }
+      }
     });
   }
 }
@@ -1320,12 +1301,22 @@ function updateSkillAccuracyChart(skillTotalsAll, skillTotalsStudent = {}, stude
   const classData = [];
   const studentData = [];
 
-  allKeys.forEach((skill) => {
-    const allStats = (skillTotalsAll && skillTotalsAll[skill]) || { correct: 0, total: 0 };
-    const stuStats = (skillTotalsStudent && skillTotalsStudent[skill]) || { correct: 0, total: 0 };
+  allKeys.forEach(skill => {
+    const allStats = (skillTotalsAll && skillTotalsAll[skill]) || {
+      correct: 0,
+      total: 0
+    };
+    const stuStats = (skillTotalsStudent && skillTotalsStudent[skill]) || {
+      correct: 0,
+      total: 0
+    };
 
-    const allPct = allStats.total ? Math.round((allStats.correct / allStats.total) * 100) : 0;
-    const stuPct = stuStats.total ? Math.round((stuStats.correct / stuStats.total) * 100) : 0;
+    const allPct = allStats.total
+      ? Math.round((allStats.correct / allStats.total) * 100)
+      : 0;
+    const stuPct = stuStats.total
+      ? Math.round((stuStats.correct / stuStats.total) * 100)
+      : 0;
 
     labels.push(skill);
     classData.push(allPct);
@@ -1340,57 +1331,51 @@ function updateSkillAccuracyChart(skillTotalsAll, skillTotalsStudent = {}, stude
     return;
   }
 
-  const datasets = [{ label: "All students in view", data: classData }];
-  const hasStudentBars = studentName && studentData.some((v) => v > 0);
-  if (hasStudentBars) datasets.push({ label: studentName, data: studentData });
-
-  const css = getComputedStyle(document.documentElement);
-  const tickColor = css.getPropertyValue("--text-muted").trim() || css.getPropertyValue("--text").trim() || "#cbd5e1";
-  const gridColor = css.getPropertyValue("--gray-light").trim() || "rgba(148,163,184,0.25)";
-
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    layout: { padding: { top: 6, bottom: 6, left: 6, right: 10 } },
-    plugins: {
-      legend: {
-        display: true,
-        position: "top",
-        labels: { padding: 10, boxWidth: 18, boxHeight: 10, color: tickColor }
-      },
-      tooltip: {
-        callbacks: {
-          label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}%`
-        }
-      }
-    },
-    scales: {
-      x: {
-        ticks: { autoSkip: true, maxTicksLimit: 8, maxRotation: 0, minRotation: 0, color: tickColor },
-        grid: { color: gridColor }
-      },
-      y: {
-        min: 0,
-        max: 100,
-        ticks: { stepSize: 20, callback: (v) => `${v}%`, color: tickColor },
-        grid: { color: gridColor }
-      }
+  const datasets = [
+    {
+      label: "All students in view",
+      data: classData
     }
-  };
+  ];
+
+  const hasStudentBars = studentData.some(v => v > 0);
+  if (studentName && hasStudentBars) {
+    datasets.push({
+      label: studentName,
+      data: studentData
+    });
+  }
 
   if (skillAccuracyChart) {
     skillAccuracyChart.data.labels = labels;
     skillAccuracyChart.data.datasets = datasets;
-    skillAccuracyChart.options = options;
     skillAccuracyChart.update();
   } else {
     skillAccuracyChart = new Chart(canvas, {
       type: "bar",
-      data: { labels, datasets },
-      options
+      data: {
+        labels,
+        datasets
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100
+          }
+        }
+      }
     });
   }
 }
+
 
 
 // ---------- SESSION TAGS + STUDENT DETAIL + HEAT MAP ----------
@@ -1574,6 +1559,12 @@ function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelec
       });
 
 const labels = sortedAttempts.map((_, idx) => `Attempt ${idx + 1}`);
+// --- Make the chart wider when there are lots of attempts (enables horizontal scroll) ---
+const n = labels.length;
+const pxPerPoint = 48;     // increase (55–65) for more spacing
+const minWidth = 520;      // minimum readable width
+chartCanvas.style.width = `${Math.max(minWidth, n * pxPerPoint)}px`;
+
 const labelDates = sortedAttempts.map((a, idx) => {
   const when = a.finishedAt || a.startedAt;
   return when ? formatDate(when) : `Attempt ${idx + 1}`;
