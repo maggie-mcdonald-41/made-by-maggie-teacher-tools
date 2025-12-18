@@ -1559,99 +1559,18 @@ function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelec
         return aTime.localeCompare(bTime);
       });
 
-const labels = sortedAttempts.map((_, idx) => `Attempt ${idx + 1}`);
-// --- Make the chart wider when there are lots of attempts (enables horizontal scroll) ---
-const n = labels.length;
-const pxPerPoint = 48;     // increase (55–65) for more spacing
-const minWidth = 520;      // minimum readable width
-// Ensure the canvas is controlled by its container, not by inline sizing
-chartCanvas.style.width = "";
-chartCanvas.style.height = "";
+    // ===== Progress-over-time chart =====
+    const labels = sortedAttempts.map((_, idx) => `Attempt ${idx + 1}`);
 
-// (Optional but recommended) Make the chart taller so the y-axis has room
-// If you already set height in HTML/CSS, you can remove this line.
-chartCanvas.height = 220;
+    const labelDates = sortedAttempts.map((a, idx) => {
+      const when = a.finishedAt || a.startedAt;
+      return when ? formatDate(when) : `Attempt ${idx + 1}`;
+    });
 
-const options = {
-  responsive: true,
-  maintainAspectRatio: false,
-  devicePixelRatio: window.devicePixelRatio || 1,
-
-  // Give the y-axis room so it doesn't get clipped
-  layout: { padding: { left: 22, right: 10, top: 8, bottom: 8 } },
-
-  interaction: { mode: "index", intersect: false },
-
-  scales: {
-    y: {
-      min: 0,
-      max: 100,
-      beginAtZero: true,
-      ticks: {
-        stepSize: 20,
-        callback: (v) => `${v}%`,
-        padding: 6
-      },
-      grid: { drawBorder: true },
-      border: { display: true }
-    },
-    x: {
-      ticks: {
-        autoSkip: true,
-        maxTicksLimit: 10,
-        maxRotation: 55,
-        minRotation: 55,
-        padding: 6
-      },
-      grid: { drawBorder: true },
-      border: { display: true }
-    }
-  },
-
-  plugins: {
-    legend: {
-      display: true,
-      position: "top",
-      labels: { padding: 14, boxWidth: 14 },
-
-      // ✅ Restore Chart.js default toggling behavior (fixes “mcq/details won’t toggle”)
-      onClick: (e, legendItem, legend) => {
-        const ci = legend.chart;
-        const index = legendItem.datasetIndex;
-        ci.toggleDataVisibility(index);
-        ci.update();
-      }
-    },
-    tooltip: {
-      callbacks: {
-        title: (items) => {
-          const i = items?.[0]?.dataIndex ?? 0;
-          return labelDates?.[i] || `Attempt ${i + 1}`;
-        },
-        label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}%`
-      }
-    }
-  }
-};
-
-if (studentProgressChart) {
-  studentProgressChart.data.labels = labels;
-  studentProgressChart.data.datasets = datasets;
-  studentProgressChart.options = options; // ✅ apply options on update too
-  studentProgressChart.update();
-} else {
-  studentProgressChart = new Chart(chartCanvas, {
-    type: "line",
-    data: { labels, datasets },
-    options
-  });
-}
-
-const labelDates = sortedAttempts.map((a, idx) => {
-  const when = a.finishedAt || a.startedAt;
-  return when ? formatDate(when) : `Attempt ${idx + 1}`;
-});
-
+    // Ensure the canvas is controlled by its container, not by inline sizing
+    chartCanvas.style.width = "";
+    chartCanvas.style.height = "";
+    chartCanvas.height = 220;
 
     const overallData = sortedAttempts.map((a) => {
       const total = a.totalQuestions || a.answeredCount || 0;
@@ -1664,9 +1583,7 @@ const labelDates = sortedAttempts.map((a, idx) => {
     sortedAttempts.forEach((a) => {
       const map = a.bySkill || {};
       Object.entries(map).forEach(([skill, stats]) => {
-        if (!aggregateBySkill[skill]) {
-          aggregateBySkill[skill] = { correct: 0, total: 0 };
-        }
+        if (!aggregateBySkill[skill]) aggregateBySkill[skill] = { correct: 0, total: 0 };
         aggregateBySkill[skill].correct += Number(stats.correct || 0);
         aggregateBySkill[skill].total += Number(stats.total || 0);
       });
@@ -1686,59 +1603,91 @@ const labelDates = sortedAttempts.map((a, idx) => {
         pointRadius: 4
       }
     ];
-topSkills.forEach((skillName) => {
-  const series = sortedAttempts.map((a) => {
-    const stats = (a.bySkill && a.bySkill[skillName]) || null;
-    if (!stats || !stats.total) return null;
-    return Math.round((stats.correct / stats.total) * 100);
-  });
 
-  datasets.push({
-    label: skillName,
-    data: series,
-    borderWidth: 1.5,
-    pointRadius: 3,
-    hidden: true
-  });
-});
+    topSkills.forEach((skillName) => {
+      const series = sortedAttempts.map((a) => {
+        const stats = (a.bySkill && a.bySkill[skillName]) || null;
+        if (!stats || !stats.total) return null;
+        return Math.round((stats.correct / stats.total) * 100);
+      });
 
+      datasets.push({
+        label: skillName,
+        data: series,
+        borderWidth: 1.5,
+        pointRadius: 3,
+        hidden: true
+      });
+    });
+
+    const options = {
+      responsive: true,
+      maintainAspectRatio: false,
+      devicePixelRatio: window.devicePixelRatio || 1,
+      layout: { padding: { left: 22, right: 10, top: 8, bottom: 8 } },
+      interaction: { mode: "index", intersect: false },
+      scales: {
+        y: {
+          min: 0,
+          max: 100,
+          beginAtZero: true,
+          ticks: {
+            stepSize: 20,
+            callback: (v) => `${v}%`,
+            padding: 6
+          },
+          grid: { drawBorder: true },
+          border: { display: true }
+        },
+        x: {
+          ticks: {
+            autoSkip: true,
+            maxTicksLimit: 10,
+            maxRotation: 55,
+            minRotation: 55,
+            padding: 6
+          },
+          grid: { drawBorder: true },
+          border: { display: true }
+        }
+      },
+      plugins: {
+        legend: {
+          display: true,
+          position: "top",
+          labels: { padding: 14, boxWidth: 14 },
+          onClick: (e, legendItem, legend) => {
+            const ci = legend.chart;
+            const index = legendItem.datasetIndex;
+            ci.toggleDataVisibility(index);
+            ci.update();
+          }
+        },
+        tooltip: {
+          callbacks: {
+            title: (items) => {
+              const i = items?.[0]?.dataIndex ?? 0;
+              return labelDates?.[i] || `Attempt ${i + 1}`;
+            },
+            label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}%`
+          }
+        }
+      }
+    };
 
     if (studentProgressChart) {
       studentProgressChart.data.labels = labels;
       studentProgressChart.data.datasets = datasets;
+      studentProgressChart.options = options;
       studentProgressChart.update();
     } else {
       studentProgressChart = new Chart(chartCanvas, {
         type: "line",
         data: { labels, datasets },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              beginAtZero: true,
-              max: 100,
-              ticks: {
-                callback: (value) => `${value}%`
-              }
-            }
-          },
-          plugins: {
-legend: {
-  display: true,
-  onClick: (e, legendItem, legend) => {
-    const ci = legend.chart;
-    const index = legendItem.datasetIndex;
-
-    // toggle visibility cleanly
-    ci.setDatasetVisibility(index, !ci.isDatasetVisible(index));
-    ci.update();
-  }
-}
-
-          }
-        }
+        options
       });
     }
+
 
     // ----- Update chart caption (runs on create + update) -----
     const captionEl = document.getElementById("student-detail-progress-caption");
@@ -1875,7 +1824,7 @@ legend: {
   }
   studentDetailStrengthsEl.innerHTML = strengthsHtml;
 }
-
+//end renderstudentdetailpanel
 function renderSkillHeatmap(attempts) {
   if (!heatmapHeadEl || !heatmapBodyEl) return;
 
