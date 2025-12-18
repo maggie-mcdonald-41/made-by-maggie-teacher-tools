@@ -1570,7 +1570,7 @@ function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelec
     // Ensure the canvas is controlled by its container, not by inline sizing
     chartCanvas.style.width = "";
     chartCanvas.style.height = "";
-    chartCanvas.height = 220;
+    chartCanvas.height = 200;
 
     const overallData = sortedAttempts.map((a) => {
       const total = a.totalQuestions || a.answeredCount || 0;
@@ -1656,12 +1656,17 @@ function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelec
           display: true,
           position: "top",
           labels: { padding: 14, boxWidth: 14 },
-          onClick: (e, legendItem, legend) => {
-            const ci = legend.chart;
-            const index = legendItem.datasetIndex;
-            ci.toggleDataVisibility(index);
-            ci.update();
-          }
+onClick: (e, legendItem, legend) => {
+  const chart = legend.chart;
+  const datasetIndex = legendItem.datasetIndex;
+  const meta = chart.getDatasetMeta(datasetIndex);
+
+  // toggle the whole dataset (line) on/off
+  meta.hidden = meta.hidden === null ? !chart.data.datasets[datasetIndex].hidden : null;
+
+  chart.update();
+}
+
         },
         tooltip: {
           callbacks: {
