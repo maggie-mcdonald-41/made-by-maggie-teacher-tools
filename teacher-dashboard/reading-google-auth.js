@@ -1,15 +1,20 @@
 // reading-google-auth.js
 // Shared Google Identity wrapper for reading practice + teacher dashboard
+// ✅ Button-based GIS flow (no One Tap prompt), resilient + single-init.
 
 (function () {
   const AUTH_STORAGE_KEY = "rp_last_google_user";
 
   let currentUser = null;
   const listeners = [];
-  let googleAuthInitialized = false;
 
-  // To avoid spamming alerts if FedCM keeps failing
-  let hasShownFedCmHelp = false;
+  let googleAuthInitialized = false;
+  let initInProgress = false;
+
+
+// Visible container where we render the official GIS button.
+// You should have <div id="rp-gsi-button-container"></div> in your modal.
+const INTERNAL_BTN_CONTAINER_ID = "rp-gsi-button-container";
 
   function notifyListeners() {
     listeners.forEach((fn) => {
@@ -72,9 +77,7 @@
     }
 
     const decoded = decodeJwtResponse(response.credential);
-    if (!decoded) {
-      return;
-    }
+    if (!decoded) return;
 
     const user = {
       email: decoded.email || "",
@@ -87,159 +90,112 @@
     persistUser(user);
   }
 
+function ensureButtonContainer() {
+  let el = document.getElementById(INTERNAL_BTN_CONTAINER_ID);
+  if (el) return el;
+
+  // Create it if missing (fallback), but ideally this exists in your modal HTML.
+  el = document.createElement("div");
+  el.id = INTERNAL_BTN_CONTAINER_ID;
+  document.body.appendChild(el);
+  return el;
+}
+
+
+  function renderOfficialGoogleButton() {
+    // Render the official button into the hidden container so we can “click” it
+    const container = ensureButtonContainer();
+
+    // Clear previous render if any (prevents duplicates)
+    container.innerHTML = "";
+
+    google.accounts.id.renderButton(container, {
+      theme: "outline",
+      size: "large",
+      text: "signin_with",
+      shape: "pill"
+    });
+  }
+
+  // --- Public: init ---
   function initGoogleAuth() {
-    // Wait for Google Identity script to be ready
-    if (!window.google || !google.accounts || !google.accounts.id) {
-      console.warn(
-        "[RP_AUTH] Google Identity script not loaded yet. Retrying in 200ms..."
-      );
-      setTimeout(initGoogleAuth, 200);
-      return;
-    }
+    // Hard guard: init only once
+    if (googleAuthInitialized || initInProgress) return;
 
-    if (!window.GOOGLE_CLIENT_ID) {
-      console.error(
-        "[RP_AUTH] Missing global window.GOOGLE_CLIENT_ID; cannot initialize Google Auth."
-      );
-      return;
-    }
+    initInProgress = true;
 
-    console.log(
-      "[RP_AUTH] Initializing Google Auth with client:",
-      window.GOOGLE_CLIENT_ID
-    );
-
-    google.accounts.id.initialize({
-      client_id: window.GOOGLE_CLIENT_ID,
-      callback: handleCredentialResponse,
-      auto_select: false,
-      cancel_on_tap_outside: true
-      // itp_support: true, // optional
-    });
-
-    googleAuthInitialized = true;
-    console.log("[RP_AUTH] Google Auth initialized.");
-  }
-
-  function explainFedCmNotification(notification) {
-    if (!notification || typeof notification !== "object") return;
-
-    const momentType =
-      typeof notification.getMomentType === "function"
-        ? notification.getMomentType()
-        : undefined;
-    const notDisplayedReason =
-      typeof notification.getNotDisplayedReason === "function"
-        ? notification.getNotDisplayedReason()
-        : undefined;
-    const skippedReason =
-      typeof notification.getSkippedReason === "function"
-        ? notification.getSkippedReason()
-        : undefined;
-
-    console.warn("[RP_AUTH] FedCM / One Tap status:", {
-      momentType,
-      notDisplayedReason,
-      skippedReason
-    });
-
-    if (hasShownFedCmHelp) return;
-    hasShownFedCmHelp = true;
-
-    // Only bother the user if nothing was displayed or it was skipped.
-    if (
-      notDisplayedReason ||
-      skippedReason ||
-      momentType === "skipped" ||
-      momentType === "dismissed"
-    ) {
-      alert(
-        "We couldn’t show the Google sign-in prompt.\n\n" +
-          "Please make sure:\n" +
-          "• You’re signed into your Google account in this browser\n" +
-          "• Pop-ups and third-party cookies aren’t blocked for this site\n" +
-          "Then try again."
-      );
-    }
-  }
-
-  function doPromptInternal() {
-    if (!googleAuthInitialized) {
-      console.warn(
-        "[RP_AUTH] google.accounts.id.prompt() called before init; aborting."
-      );
-      return;
-    }
-
-    try {
-      // Attach a moment listener so we can see what FedCM is doing
-      google.accounts.id.prompt((notification) => {
-        explainFedCmNotification(notification);
-      });
-    } catch (e) {
-      console.error("[RP_AUTH] Error calling google.accounts.id.prompt():", e);
-      if (!hasShownFedCmHelp) {
-        hasShownFedCmHelp = true;
-        alert(
-          "We ran into a problem opening the Google sign-in window.\n\n" +
-            "Try closing this tab, reopening the link from your teacher, " +
-            "and making sure you’re signed into your Google account in Chrome."
-        );
+    const attemptInit = () => {
+      // Wait for Google Identity script to be ready
+      if (!window.google || !google.accounts || !google.accounts.id) {
+        console.warn("[RP_AUTH] Google Identity script not loaded yet. Retrying in 200ms...");
+        setTimeout(attemptInit, 200);
+        return;
       }
-    }
-  }
 
-  function promptSignIn() {
-    // If not initialized yet, try to init and then retry the prompt shortly
-    if (!googleAuthInitialized) {
-      console.warn(
-        "[RP_AUTH] Google Auth not initialized yet; attempting init before prompt..."
-      );
-      initGoogleAuth();
+      if (!window.GOOGLE_CLIENT_ID) {
+        console.error("[RP_AUTH] Missing global window.GOOGLE_CLIENT_ID; cannot initialize Google Auth.");
+        initInProgress = false;
+        return;
+      }
 
-      setTimeout(() => {
-        if (!googleAuthInitialized) {
-          console.warn(
-            "[RP_AUTH] Still no Google Auth after retry; aborting prompt."
-          );
-          if (!hasShownFedCmHelp) {
-            hasShownFedCmHelp = true;
-            alert(
-              "Google sign-in is not ready yet. " +
-                "Please wait a few seconds and try again, or refresh the page."
-            );
-          }
-          return;
-        }
-        doPromptInternal();
-      }, 300);
+      console.log("[RP_AUTH] Initializing Google Auth with client:", window.GOOGLE_CLIENT_ID);
 
-      return;
-    }
+      try {
+        google.accounts.id.initialize({
+          client_id: window.GOOGLE_CLIENT_ID,
+          callback: handleCredentialResponse
 
-    // Normal case: already initialized
-    doPromptInternal();
-  }
+          // NOTE: We are intentionally NOT calling google.accounts.id.prompt()
+          // This keeps us out of One Tap/FedCM prompt mode and uses button flow.
+        });
 
-  function signOut() {
-    // Best-effort revoke; if google isn't ready, just clear locally
-    const email = currentUser?.email || "";
-    const doClear = () => {
-      console.log("[RP_AUTH] Signing out user:", email || "(no email)");
-      persistUser(null);
+        renderOfficialGoogleButton();
+
+        googleAuthInitialized = true;
+        initInProgress = false;
+        console.log("[RP_AUTH] Google Auth initialized (button flow).");
+      } catch (e) {
+        initInProgress = false;
+        console.error("[RP_AUTH] Failed to initialize Google Auth:", e);
+      }
     };
 
-    if (window.google && google.accounts && google.accounts.id && email) {
-      google.accounts.id.revoke(email, doClear);
-    } else {
-      doClear();
-    }
+    attemptInit();
   }
+
+  // --- Public: "Sign in" ---
+  // Keeps your existing RP_AUTH.promptSignIn() API, but now triggers the button flow.
+function promptSignIn() {
+  // In button-flow mode, we DO NOT auto-click anything.
+  // We simply ensure the official button is rendered and visible for the user to click.
+  if (!googleAuthInitialized) {
+    console.warn("[RP_AUTH] Google Auth not initialized yet; initializing...");
+    initGoogleAuth();
+    return;
+  }
+
+  // Re-render in case the modal was reopened and container got cleared.
+  try {
+    renderOfficialGoogleButton();
+  } catch (e) {
+    console.error("[RP_AUTH] Could not render Google button:", e);
+    alert("Google sign-in isn't ready yet. Please refresh the page and try again.");
+  }
+}
+
+
+function signOut() {
+  console.log("[RP_AUTH] Signing out (local clear only).");
+  try {
+    window.localStorage.removeItem(AUTH_STORAGE_KEY);
+  } catch (e) {}
+  persistUser(null);
+}
+
 
   function onAuthChange(listener) {
     if (typeof listener === "function") {
       listeners.push(listener);
-      // Fire immediately with current state if available
       listener(currentUser);
     }
   }
@@ -260,22 +216,30 @@
     }
   });
 
-  // Try to restore a user immediately on load (in case they signed
-  // in from another page already in this domain)
-  try {
+// Restore a user immediately on load if present
+// Restore a user immediately on load if present (teacher/dashboard only; disable in student mode)
+try {
+  if (window.RP_AUTH_DISABLE_RESTORE) {
+    console.log("[RP_AUTH] Restore disabled (student mode).");
+  } else {
     const raw = window.localStorage.getItem(AUTH_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && parsed.email) {
-        currentUser = parsed;
-        console.log(
-          "[RP_AUTH] Restored previous user from localStorage:",
-          parsed.email
-        );
-        notifyListeners();
+        console.log("[RP_AUTH] Restoring cached user:", parsed.email);
+
+        // ✅ Restore for UX + scoping (matches your old behavior)
+        persistUser(parsed);
+
+        // Optional: attempt to initialize auth so a real credential can refresh later
+        // (does NOT show One Tap prompt)
+        initGoogleAuth();
       }
     }
-  } catch (e) {
-    console.warn("[RP_AUTH] Could not restore user on load:", e);
   }
+} catch (e) {
+  console.warn("[RP_AUTH] Could not read cached user:", e);
+}
+
+
 })();

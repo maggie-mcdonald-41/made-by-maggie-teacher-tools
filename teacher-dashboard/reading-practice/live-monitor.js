@@ -1,13 +1,24 @@
 // live-monitor.js
-
 (function () {
   const params = new URLSearchParams(window.location.search);
   const SESSION_CODE = params.get("session") || "";
   const CLASS_FILTER = params.get("class") || "";
-  const SET_PARAM = (params.get("set") || "full").toLowerCase();
-  const SET_LABEL = SET_PARAM === "mini" ? "Mini set" : "Full set";
-  // 🔑 NEW: the teacher who owns this data
+
+  const RAW_SET = (params.get("set") || "full").toLowerCase();
+  const SET_PARAM =
+    RAW_SET === "mini" ? "mini1" : // legacy support
+    ["full", "mini1", "mini2"].includes(RAW_SET) ? RAW_SET : "full";
+
+  const SET_LABEL =
+    SET_PARAM === "mini1"
+      ? "Mini-Quick Check"
+      : SET_PARAM === "mini2"
+      ? "Mini-Extra Practice"
+      : "Full Practice";
+
+  // 🔑 the teacher who owns this data
   const OWNER_EMAIL = params.get("owner") || "";
+
   const gridEl = document.getElementById("monitor-grid");
   const metaEl = document.getElementById("monitor-meta");
   const refreshBtn = document.getElementById("monitor-refresh");
@@ -20,22 +31,23 @@
     return;
   }
 
-// Which questions belong to the mini set
-// (must match the IDs used in reading-practice/script.js → QUESTION_SETS.mini)
-const MINI_IDS = [3, 6, 7, 10, 11, 16, 17, 20, 22, 24];
+  // Mini-Quick Check (Mini Set 1)
+  const MINI1_IDS = [3, 6, 7, 10, 11, 16, 17, 20, 22, 24];
 
+  // Mini-Extra Practice (Mini Set 2)
+  const MINI2_IDS = [4, 8, 9, 12, 14, 18, 19, 21, 23, 25];
 
   // Question types in order for your reading trainer (questions 1–25)
   // Index 0 = Q1, index 1 = Q2, etc.
   const QUESTION_TYPES_FULL = [
-    "mcq",     // 1
-    "mcq",     // 2
-    "multi",   // 3
-    "multi",   // 4
-    "order",   // 5
-    "order",   // 6
-    "match",   // 7
-    "match",   // 8
+    "mcq",       // 1
+    "mcq",       // 2
+    "multi",     // 3
+    "multi",     // 4
+    "order",     // 5
+    "order",     // 6
+    "match",     // 7
+    "match",     // 8
     "highlight", // 9
     "highlight", // 10
     "dropdown",  // 11
@@ -56,10 +68,11 @@ const MINI_IDS = [3, 6, 7, 10, 11, 16, 17, 20, 22, 24];
   ];
 
   // For a full set: [1, 2, 3, ..., 25]
-  // For a mini set: [3, 5, 7, 9, 11, 15, 17, 19, 22, 24]
   const QUESTION_ID_SEQUENCE =
-    SET_PARAM === "mini"
-      ? MINI_IDS
+    SET_PARAM === "mini1"
+      ? MINI1_IDS
+      : SET_PARAM === "mini2"
+      ? MINI2_IDS
       : QUESTION_TYPES_FULL.map((_, idx) => idx + 1);
 
   const MAX_QUESTIONS = QUESTION_ID_SEQUENCE.length;
@@ -81,85 +94,78 @@ const MINI_IDS = [3, 6, 7, 10, 11, 16, 17, 20, 22, 24];
     }
   }
 
+  // ✅ NEW: normalize questionId whether it comes as number or string ("3")
+  function normalizeQuestionId(qid) {
+    if (typeof qid === "number" && Number.isFinite(qid)) return qid;
+    if (typeof qid === "string" && qid.trim() !== "") {
+      const n = Number(qid);
+      if (Number.isFinite(n)) return n;
+    }
+    return null;
+  }
+
   async function fetchProgress() {
     const url = new URL(
       "/.netlify/functions/getReadingProgress",
       window.location.origin
     );
     url.searchParams.set("sessionCode", SESSION_CODE);
-    if (CLASS_FILTER) {
-      url.searchParams.set("classCode", CLASS_FILTER);
-    }
+    if (CLASS_FILTER) url.searchParams.set("classCode", CLASS_FILTER);
 
-    // 🔑 NEW: scope progress to the correct teacher
+    // 🔑 scope progress to the correct teacher (if function expects it)
     if (OWNER_EMAIL) {
-      // depending on how the function is written, it may check ownerEmail or viewerEmail;
-      // we send both to be safe.
       url.searchParams.set("ownerEmail", OWNER_EMAIL);
       url.searchParams.set("viewerEmail", OWNER_EMAIL);
     }
 
     const res = await fetch(url.toString());
-    if (!res.ok) {
-      throw new Error("Failed to load progress");
-    }
+    if (!res.ok) throw new Error("Failed to load progress");
+
     const data = await res.json();
-    // Our function returns { success, progress: [...] }
     return Array.isArray(data.progress) ? data.progress : data;
   }
-
 
   // Convert questionResults → array of { status } for each question in the active set
   function buildSlots(questionResults) {
     const slots = [];
     const byId = new Map();
 
-    // questionResults entries look like:
-    // { questionId, type, isCorrect, raw: {...} }
     (questionResults || []).forEach((qr) => {
-      if (typeof qr.questionId === "number") {
-        byId.set(qr.questionId, qr);
-      }
+      const qid = normalizeQuestionId(qr?.questionId);
+      if (qid != null) byId.set(qid, qr);
     });
 
-    // Only consider the IDs in QUESTION_ID_SEQUENCE (full or mini)
     QUESTION_ID_SEQUENCE.forEach((qId) => {
       const qr = byId.get(qId);
 
       if (!qr) {
-        // no entry logged yet → not answered
         slots.push({ status: "empty" });
         return;
       }
 
-      // If you later add partial credit (e.g. qr.raw.score between 0 and 1),
-      // you can check that here and use "partial".
       const isCorrect = !!qr.isCorrect;
-      if (isCorrect) {
-        slots.push({ status: "correct" });
-      } else {
-        slots.push({ status: "incorrect" });
-      }
+      slots.push({ status: isCorrect ? "correct" : "incorrect" });
     });
 
     return slots;
   }
 
-  // Percent correct based on questionResults shape from reporting.js
+  // ✅ FIXED: Percent correct based ONLY on the active set (mini/full)
   function computePercent(questionResults) {
     if (!Array.isArray(questionResults) || !questionResults.length) return 0;
 
     const byId = new Map();
     questionResults.forEach((qr) => {
-      if (typeof qr.questionId === "number") {
-        byId.set(qr.questionId, qr);
-      }
+      const qid = normalizeQuestionId(qr?.questionId);
+      if (qid != null) byId.set(qid, qr);
     });
 
     let answered = 0;
     let correct = 0;
 
-    byId.forEach((qr) => {
+    QUESTION_ID_SEQUENCE.forEach((qId) => {
+      const qr = byId.get(qId);
+      if (!qr) return;
       answered++;
       if (qr.isCorrect) correct++;
     });
@@ -169,24 +175,21 @@ const MINI_IDS = [3, 6, 7, 10, 11, 16, 17, 20, 22, 24];
   }
 
   async function render() {
-    if (gridEl) {
-      gridEl.innerHTML = "<p style='padding:1rem;'>Loading live data…</p>";
-    }
+    if (gridEl) gridEl.innerHTML = "<p style='padding:1rem;'>Loading live data…</p>";
 
     try {
       const progressDocs = await fetchProgress();
 
-    if (!progressDocs || !progressDocs.length) {
-    if (gridEl) {
-        gridEl.innerHTML =
-        "<p style='padding:1rem;'>No responses yet — students may still be reading or reviewing the passage. Student names will appear here after they submit their first answer.</p>";
-    }
-    if (metaEl) {
-        metaEl.textContent = `Session: ${SESSION_CODE} • ${SET_LABEL} • 0 students responding yet`;
-    }
-    return;
-    }
-
+      if (!progressDocs || !progressDocs.length) {
+        if (gridEl) {
+          gridEl.innerHTML =
+            "<p style='padding:1rem;'>No responses yet — students may still be reading or reviewing the passage. Student names will appear here after they submit their first answer.</p>";
+        }
+        if (metaEl) {
+          metaEl.textContent = `Session: ${SESSION_CODE} • ${SET_LABEL} • 0 students responding yet`;
+        }
+        return;
+      }
 
       const rows = progressDocs
         .filter((doc) => (!CLASS_FILTER || doc.classCode === CLASS_FILTER))
@@ -218,7 +221,6 @@ const MINI_IDS = [3, 6, 7, 10, 11, 16, 17, 20, 22, 24];
       let html = "<table class='monitor-table'><thead><tr>";
       html += "<th>Student</th><th>% Correct</th>";
 
-      // One column per question in the active set
       for (let i = 0; i < MAX_QUESTIONS; i++) {
         const qId = QUESTION_ID_SEQUENCE[i];
         const typeKey = QUESTION_TYPES_FULL[qId - 1] || "";
@@ -234,7 +236,6 @@ const MINI_IDS = [3, 6, 7, 10, 11, 16, 17, 20, 22, 24];
         }</td>`;
         html += `<td>${row.percent}%</td>`;
         row.slots.forEach((slot, idx) => {
-          // Show contiguous 1..N for the active set
           html += `<td><div class="slot ${slot.status}">${idx + 1}</div></td>`;
         });
         html += "</tr>";
@@ -242,9 +243,7 @@ const MINI_IDS = [3, 6, 7, 10, 11, 16, 17, 20, 22, 24];
 
       html += "</tbody></table>";
 
-      if (gridEl) {
-        gridEl.innerHTML = html;
-      }
+      if (gridEl) gridEl.innerHTML = html;
       if (metaEl) {
         metaEl.textContent = `Session: ${SESSION_CODE} • ${SET_LABEL} • Students: ${rows.length}`;
       }
@@ -257,9 +256,7 @@ const MINI_IDS = [3, 6, 7, 10, 11, 16, 17, 20, 22, 24];
     }
   }
 
-  if (refreshBtn) {
-    refreshBtn.addEventListener("click", render);
-  }
+  if (refreshBtn) refreshBtn.addEventListener("click", render);
 
   // Initial render + auto-refresh every 10s
   render();
@@ -269,17 +266,13 @@ const MINI_IDS = [3, 6, 7, 10, 11, 16, 17, 20, 22, 24];
   const STORAGE_KEY = "mbm-theme";
   const toggle = document.getElementById("theme-toggle");
 
-  if (!toggle) return; // if somehow no toggle, just stop here
+  if (!toggle) return;
 
   function applyTheme(theme) {
-    if (theme === "dark") {
-      document.body.classList.add("dark-mode");
-    } else {
-      document.body.classList.remove("dark-mode");
-    }
+    if (theme === "dark") document.body.classList.add("dark-mode");
+    else document.body.classList.remove("dark-mode");
   }
 
-  // Initialize
   const saved = localStorage.getItem(STORAGE_KEY) || "light";
   applyTheme(saved);
   toggle.checked = saved === "dark";

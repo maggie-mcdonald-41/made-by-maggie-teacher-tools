@@ -9,6 +9,14 @@ function sanitizeFragment(value) {
     .slice(0, 64);
 }
 
+function normalizeSetParam(raw) {
+  const v = String(raw || "").toLowerCase().trim();
+  if (v === "mini") return "mini1"; // legacy support
+  if (v === "full" || v === "mini1" || v === "mini2") return v;
+  return "full";
+}
+
+
 exports.handler = async function (event, context) {
   if (event.httpMethod !== "POST") {
     return {
@@ -104,6 +112,10 @@ exports.handler = async function (event, context) {
       // === Assessment Metadata ===
       assessmentName,
       assessmentType,
+
+            // === Practice metadata ===
+      practiceSet: normalizeSetParam(body.practiceSet || body.set || "full"),
+      practiceLevel: String(body.practiceLevel || body.level || "on").toLowerCase(),
 
       // Main stats
       numCorrect,

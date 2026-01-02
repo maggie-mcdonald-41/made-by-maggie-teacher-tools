@@ -15,7 +15,8 @@ let ALL_VIEWER_ATTEMPTS = [];
 // ---- Live Monitor shared state ----
 let currentSessionCode = "";   // e.g. "MONDAY EVENING"
 let currentClassFilter = "";   // e.g. "7TH", or "" for all
-let currentSetParam = "full";  // "full" or "mini"
+let currentSetParam = "full";  // "full" or "mini1" or "mini2"
+let currentLevelParam = "on"; // "on" | "below" | "above"
 
 
 // ---------- HISTORY STORAGE KEY ----------
@@ -126,6 +127,19 @@ let teacherUser = null;
 let OWNER_EMAIL_FOR_VIEW = null;
 
 // ---------- UTILITIES ----------
+function normalizeSetParam(raw) {
+  const v = String(raw || "").toLowerCase().trim();
+  if (v === "mini") return "mini1"; // legacy support
+  if (v === "full" || v === "mini1" || v === "mini2") return v;
+  return "full";
+}
+
+function getSelectedPracticeSet() {
+  const sel = document.getElementById("practice-set");
+  if (sel && sel.value) return normalizeSetParam(sel.value);
+  return normalizeSetParam(currentSetParam || "full");
+}
+
 // ---------- ATTEMPT DEDUPE HELPER (FIRST ATTEMPT PER STUDENT) ----------
 function getFirstAttemptsPerStudent(attempts) {
   if (!Array.isArray(attempts) || !attempts.length) return [];
@@ -295,6 +309,18 @@ function clearAttemptQnPanel() {
 
   CURRENT_ATTEMPT_DETAIL = null;
 }
+
+// Clear the Q-by-Q attempt panel (button in the "Selected student’s full attempt" panel)
+(function wireAttemptDetailClear() {
+  const btn = document.getElementById("clear-student-detail-btn");
+  if (!btn) return;
+
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    clearAttemptQnPanel();
+  });
+})();
+
 
 async function loadAttemptQnPanel(attemptSummary) {
   if (!attemptQnBodyEl) return;
@@ -504,6 +530,85 @@ function loadDashboardPrefs() {
     console.warn("[Dashboard] Could not load prefs:", e);
   }
 }
+(function wirePracticeLevelSelector() {
+  const levelSelect = document.getElementById("practice-level");
+  if (!levelSelect) return;
+
+  // restore last choice
+  try {
+    const last = window.localStorage.getItem("rp_lastLevel");
+    if (last && ["on", "below", "above"].includes(last)) {
+      levelSelect.value = last;
+      currentLevelParam = last;
+    }
+  } catch (e) {}
+
+  const refreshOutputs = () => {
+    const session = (sessionInput?.value || "").trim();
+    const cls = (classInput?.value || "").trim();
+    if (!session) return;
+
+    if (sessionLinkInput) sessionLinkInput.value = buildStudentLink(session, cls);
+    if (coTeacherLinkInput) coTeacherLinkInput.value = buildCoTeacherLink(session, cls);
+
+enableMonitorButton(session, cls);
+if (typeof updateCurrentViewSummary === "function") updateCurrentViewSummary();
+
+  };
+
+  levelSelect.addEventListener("change", () => {
+    currentLevelParam = levelSelect.value || "on";
+    try {
+      window.localStorage.setItem("rp_lastLevel", currentLevelParam);
+    } catch (e) {}
+    refreshOutputs();
+  });
+})();
+
+// --- Practice set selector should update links + monitor immediately ---
+(function wirePracticeSetSelector() {
+  const setSelect = document.getElementById("practice-set");
+  if (!setSelect) return;
+
+  const persist = () => {
+    try {
+      // store stable values: full | mini1 | mini2
+      window.localStorage.setItem("rp_lastSet", normalizeSetParam(setSelect.value));
+    } catch (e) {}
+  };
+
+  const refreshOutputs = () => {
+    const session = (sessionInput?.value || "").trim();
+    const cls = (classInput?.value || "").trim();
+
+    if (session) {
+      const studentLink = buildStudentLink(session, cls);
+      if (sessionLinkInput) sessionLinkInput.value = studentLink;
+
+      const coLink = buildCoTeacherLink(session, cls);
+      if (coTeacherLinkInput) coTeacherLinkInput.value = coLink;
+    }
+
+    enableMonitorButton(session, cls);
+    if (typeof updateCurrentViewSummary === "function") updateCurrentViewSummary();
+  };
+
+  setSelect.addEventListener("change", () => {
+    // keep shared state consistent (if you use it elsewhere)
+    currentSetParam = normalizeSetParam(setSelect.value);
+
+    persist();
+    refreshOutputs();
+  });
+
+  // restore on load (if present) — supports legacy "mini" too
+  try {
+    const last = normalizeSetParam(window.localStorage.getItem("rp_lastSet"));
+    setSelect.value = last;
+    currentSetParam = last;
+  } catch (e) {}
+})();
+
 
 // CSV helpers
 function csvEscape(value) {
@@ -877,7 +982,6 @@ renderSessionHistory(filteredMerged);
     renderSessionHistory(existing);
   }
 }
-
 
 // ---------- HISTORY RENDERING ----------
 function renderSessionHistory(history) {
@@ -2497,6 +2601,11 @@ async function loadAttempts() {
     if (sessionCodeRaw) params.set("sessionCode", sessionCodeRaw);
     if (classCodeRaw) params.set("classCode", classCodeRaw);
 
+    // ✅ NEW: leveled practice filters (full|mini1|mini2) + (below|on|above)
+    // Defaults preserve current behavior.
+    params.set("set", getSelectedPracticeSet());
+    params.set("level", currentLevelParam || "on");
+
     // Determine if we're in a co-teacher view:
     // - There is an OWNER_EMAIL_FOR_VIEW from the URL
     // - And it's different from the currently signed-in teacher (if any)
@@ -2566,7 +2675,6 @@ async function loadAttempts() {
   }
 }
 
-
 function enableMonitorButton(sessionCodeRaw, classCodeRaw) {
   if (!monitorSessionBtn) return;
 
@@ -2587,36 +2695,37 @@ function enableMonitorButton(sessionCodeRaw, classCodeRaw) {
 
     // Live monitor expects `session`, `class`, `set`
     params.set("session", session.toUpperCase());
-    if (classCode) {
-      params.set("class", classCode);
-    }
+    if (classCode) params.set("class", classCode);
 
-    // Match the mini/full set choice for live monitor as well
-    const miniCheckbox = document.getElementById("use-mini-set");
-    if (miniCheckbox && miniCheckbox.checked) {
-      params.set("set", "mini");
-    } else {
-      params.set("set", "full");
-    }
+    // ✅ NEW: practice set selector (full | mini1 | mini2)
+    const setParam = getSelectedPracticeSet();
+    params.set("set", setParam);
 
-    // 🔑 NEW: tie the live monitor to the same owner as the student link
+    // OPTIONAL: include level if you are using it
+    const levelSelect = document.getElementById("practice-level");
+    const level = (levelSelect?.value || currentLevelParam || "").trim();
+    if (level) params.set("level", level);
+
+    // 🔑 Tie the live monitor to the same owner as the student link
     let ownerEmail = null;
     if (teacherUser && teacherUser.email) {
       ownerEmail = teacherUser.email;
     } else if (OWNER_EMAIL_FOR_VIEW) {
-      // co-teacher viewing another teacher’s data
       ownerEmail = OWNER_EMAIL_FOR_VIEW;
     }
+    if (ownerEmail) params.set("owner", ownerEmail);
 
-    if (ownerEmail) {
-      params.set("owner", ownerEmail);
-    }
+    // Remember set/level for refresh behavior (non-fatal)
+    try {
+      window.localStorage.setItem("rp_lastSet", setParam);
+      if (level) window.localStorage.setItem("rp_lastLevel", level);
+      if (ownerEmail) window.localStorage.setItem("rp_lastOwnerEmail", ownerEmail);
+    } catch (e) {}
 
     const url = `${window.location.origin}/teacher-dashboard/reading-practice/live-monitor.html?${params.toString()}`;
     window.open(url, "_blank");
   });
 }
-
 
 async function exportDashboardPDF() {
   try {
@@ -2641,131 +2750,110 @@ async function exportDashboardPDF() {
   }
 }
 
-// ---------- NEW: BUILD & COPY STUDENT LINK ----------
+// ---------- BUILD & COPY STUDENT LINK ----------
 function buildStudentLink(sessionCode, classCode) {
-  const cleanSession = sessionCode.trim().toUpperCase();
+  const cleanSession = (sessionCode || "").trim().toUpperCase();
   const cleanClass = (classCode || "").trim();
 
   // Keep the normalized value in the inputs so the teacher sees it
-  sessionInput.value = cleanSession;
-  if (cleanClass) {
-    classInput.value = cleanClass;
-  }
+  if (sessionInput) sessionInput.value = cleanSession;
+  if (classInput && cleanClass) classInput.value = cleanClass;
+
+  if (!cleanSession) return "";
 
   const baseUrl = `${window.location.origin}/teacher-dashboard/reading-practice/index.html`;
   const params = new URLSearchParams();
   params.set("session", cleanSession);
-  if (cleanClass) {
-    params.set("class", cleanClass);
-  }
 
-  // set = mini | full
-  const miniCheckbox = document.getElementById("use-mini-set");
-  if (miniCheckbox && miniCheckbox.checked) {
-    params.set("set", "mini");
-  } else {
-    params.set("set", "full");
-  }
+  if (cleanClass) params.set("class", cleanClass);
+
+  // NEW: set = full | mini1 | mini2 (from selector)
+  const setParam = getSelectedPracticeSet();
+  params.set("set", setParam);
+
+  // OPTIONAL: level (only if you’re using it)
+  const levelSelect = document.getElementById("practice-level");
+  const level = (levelSelect?.value || currentLevelParam || "").trim();
+  if (level) params.set("level", level);
 
   // tie this student link to the signed-in teacher (owner of attempts)
   let ownerEmail = null;
   if (teacherUser && teacherUser.email) {
     ownerEmail = teacherUser.email;
   } else if (OWNER_EMAIL_FOR_VIEW) {
-    // Fallback for co-teacher viewing another teacher’s sessions
     ownerEmail = OWNER_EMAIL_FOR_VIEW;
   }
-
-  if (ownerEmail) {
-    params.set("owner", ownerEmail);
-  }
+  if (ownerEmail) params.set("owner", ownerEmail);
 
   const link = `${baseUrl}?${params.toString()}`;
 
   try {
     window.localStorage.setItem("rp_lastSessionCode", cleanSession);
-    if (cleanClass) {
-      window.localStorage.setItem("rp_lastSessionClass", cleanClass);
-    }
-    if (ownerEmail) {
-      window.localStorage.setItem("rp_lastOwnerEmail", ownerEmail);
-    }
+    if (cleanClass) window.localStorage.setItem("rp_lastSessionClass", cleanClass);
+    window.localStorage.setItem("rp_lastSet", setParam);
+    if (level) window.localStorage.setItem("rp_lastLevel", level);
+    if (ownerEmail) window.localStorage.setItem("rp_lastOwnerEmail", ownerEmail);
   } catch (e) {
     // non-fatal
   }
 
   return link;
 }
-
 function buildCoTeacherLink(sessionCode, classCode) {
-  const cleanSession = sessionCode.trim().toUpperCase();
+  const cleanSession = (sessionCode || "").trim().toUpperCase();
   const cleanClass = (classCode || "").trim();
 
   if (!cleanSession) {
-    if (coTeacherLinkInput) {
-      coTeacherLinkInput.value = "";
-    }
+    if (coTeacherLinkInput) coTeacherLinkInput.value = "";
     return "";
   }
 
   const baseUrl = `${window.location.origin}/teacher-dashboard/teacher-dashboard.html`;
-
   const params = new URLSearchParams();
   params.set("sessionCode", cleanSession);
-  if (cleanClass) {
-    params.set("classCode", cleanClass);
-  }
 
-  // 🔹 NEW: include mini/full choice in the co-teacher link
-  const miniCheckbox = document.getElementById("use-mini-set");
-  if (miniCheckbox && miniCheckbox.checked) {
-    params.set("set", "mini");
-  } else {
-    params.set("set", "full");
-  }
-  // the teacher who actually OWNS this data (for co-teacher access)
+  if (cleanClass) params.set("classCode", cleanClass);
+
+  // NEW: include selected practice set (full | mini1 | mini2)
+  const setParam = getSelectedPracticeSet();
+  params.set("set", setParam);
+
+  // OPTIONAL: level (only if you’re using it)
+  const levelSelect = document.getElementById("practice-level");
+  const level = (levelSelect?.value || currentLevelParam || "").trim();
+  if (level) params.set("level", level);
+
+  // the teacher who OWNS this data (for co-teacher access)
   let ownerEmail = null;
 
-  // Prefer the currently signed-in teacher
   if (teacherUser && teacherUser.email) {
     ownerEmail = teacherUser.email;
   } else if (OWNER_EMAIL_FOR_VIEW) {
-    // Fallback: e.g. if coming from a URL before sign-in
     ownerEmail = OWNER_EMAIL_FOR_VIEW;
   } else {
-    // Last-resort fallback from localStorage, if available
     try {
       const lastOwner = window.localStorage.getItem("rp_lastOwnerEmail");
       if (lastOwner) ownerEmail = lastOwner;
-    } catch (e) {
-      // ignore
-    }
+    } catch (e) {}
   }
 
-  if (ownerEmail) {
-    params.set("owner", ownerEmail);
-  }
+  if (ownerEmail) params.set("owner", ownerEmail);
 
   const link = `${baseUrl}?${params.toString()}`;
 
-  if (coTeacherLinkInput) {
-    coTeacherLinkInput.value = link;
-  }
+  if (coTeacherLinkInput) coTeacherLinkInput.value = link;
 
-  // remember it for restore-on-refresh
   try {
     window.localStorage.setItem("rp_lastCoTeacherLink", link);
-    if (ownerEmail) {
-      window.localStorage.setItem("rp_lastOwnerEmail", ownerEmail);
-    }
+    window.localStorage.setItem("rp_lastSet", setParam);
+    if (level) window.localStorage.setItem("rp_lastLevel", level);
+    if (ownerEmail) window.localStorage.setItem("rp_lastOwnerEmail", ownerEmail);
   } catch (e) {
     // non-fatal
   }
 
   return link;
 }
-
-
 
 function startNewSession() {
   const rawSession = sessionInput.value.trim();
@@ -2824,6 +2912,38 @@ function startNewSession() {
 
   enableMonitorButton(rawSession, rawClass);
 }
+(function wireLinkPreviewAutofill() {
+  const setSelect = document.getElementById("practice-set");
+  const levelSelect = document.getElementById("practice-level"); // only if you’re using level
+
+  const refresh = () => {
+    const session = (sessionInput?.value || "").trim();
+    const cls = (classInput?.value || "").trim();
+    if (!session) return;
+
+    // only update the boxes if they already have something
+    // (prevents overwriting if you later allow custom links)
+    if (sessionLinkInput && sessionLinkInput.value) {
+      sessionLinkInput.value = buildStudentLink(session, cls);
+    }
+    if (coTeacherLinkInput && coTeacherLinkInput.value) {
+      coTeacherLinkInput.value = buildCoTeacherLink(session, cls);
+    }
+
+    enableMonitorButton(session, cls);
+    if (typeof updateCurrentViewSummary === "function") updateCurrentViewSummary();
+  };
+
+  if (sessionInput) sessionInput.addEventListener("input", refresh);
+  if (classInput) classInput.addEventListener("input", refresh);
+
+  // NEW: selector change instead of checkbox
+  if (setSelect) setSelect.addEventListener("change", refresh);
+
+  // OPTIONAL: only if you keep the practice-level selector
+  if (levelSelect) levelSelect.addEventListener("change", refresh);
+})();
+
 
 function copySessionLink() {
   if (!sessionLinkInput || !sessionLinkInput.value) {
@@ -3065,7 +3185,6 @@ if (window.RP_AUTH) {
     }
   });
 
-  RP_AUTH.initGoogleAuth();
 }
 
 
@@ -3136,7 +3255,7 @@ function initChartFullscreen() {
   });
 }
 
-// Try to restore last Google user so buttons work after refresh
+// Try to restore last Google user for *display only* (NOT authenticated)
 (function restoreTeacherFromLocalStorage() {
   try {
     const raw = window.localStorage.getItem("rp_last_google_user");
@@ -3145,30 +3264,22 @@ function initChartFullscreen() {
     const parsed = JSON.parse(raw);
     if (!parsed || !parsed.email) return;
 
-    teacherUser = parsed;
+    const restoredEmail = String(parsed.email);
 
-    // Mirror the same UI changes as in onAuthChange
-    teacherSignInBtn.style.display = "none";
-    teacherSignOutBtn.style.display = "inline-flex";
-    teacherSignOutBtn.textContent = `Sign out (${teacherUser.email})`;
+    // ✅ UI hint only: keep Sign In visible because this is NOT real auth
+    // (Avoids the dashboard pretending the teacher is authenticated.)
+    if (teacherSignInBtn) teacherSignInBtn.style.display = "inline-flex";
+    if (teacherSignOutBtn) teacherSignOutBtn.style.display = "none";
+    if (teacherSignOutBtn) teacherSignOutBtn.textContent = "Sign out";
 
-    if (!OWNER_EMAIL_FOR_VIEW) {
-      OWNER_EMAIL_FOR_VIEW = teacherUser.email;
-    }
+    // ✅ You MAY set owner for link-building convenience
+    if (!OWNER_EMAIL_FOR_VIEW) OWNER_EMAIL_FOR_VIEW = restoredEmail;
 
-    // NEW: hydrate history for the main teacher view
-    const isCoTeacherView =
-      OWNER_EMAIL_FOR_VIEW && OWNER_EMAIL_FOR_VIEW !== teacherUser.email;
-
-    if (!isCoTeacherView &&
-        typeof hydrateSessionHistoryFromServer === "function") {
-      hydrateSessionHistoryFromServer(teacherUser.email);
-    }
+    // ❌ Do NOT hydrate from server here (requires real auth)
   } catch (e) {
     console.warn("[Dashboard] Could not restore teacher from localStorage:", e);
   }
 })();
-
 
 // Sidebar collapse / expand
 historyToggleBtn.addEventListener("click", () => {
@@ -3205,20 +3316,40 @@ renderSessionHistory(loadHistoryFromStorage());
 (function applyUrlFiltersOnLoad() {
   try {
     const params = new URLSearchParams(window.location.search);
+
     const urlSession = params.get("sessionCode") || params.get("session");
     const urlClass = params.get("classCode") || params.get("class");
     const urlOwner = params.get("owner") || params.get("ownerEmail");
-    const urlSet = (params.get("set") || "").toLowerCase(); // "mini" | "full" | ""
+
+    // NEW: set can be full | mini1 | mini2 (and legacy "mini")
+    const rawSet = (params.get("set") || "").toLowerCase();
+    const urlSet = normalizeSetParam(rawSet); // full | mini1 | mini2
+
+    // OPTIONAL: level (if you keep this feature)
+    const urlLevelRaw = (params.get("level") || "on").toLowerCase();
+    currentLevelParam = ["on", "below", "above"].includes(urlLevelRaw)
+      ? urlLevelRaw
+      : "on";
+
+    // Sync level selector (if present)
+    const levelSelect = document.getElementById("practice-level");
+    if (levelSelect) levelSelect.value = currentLevelParam;
+    try {
+      localStorage.setItem("rp_lastLevel", currentLevelParam);
+    } catch (e) {}
 
     // Owner email for co-teacher / shared view
     if (urlOwner) {
       OWNER_EMAIL_FOR_VIEW = urlOwner;
+      try {
+        localStorage.setItem("rp_lastOwnerEmail", urlOwner);
+      } catch (e) {}
     }
 
     // Prefill session + pill
     if (urlSession && sessionInput) {
       sessionInput.value = urlSession;
-      sessionPill.textContent = `Session: ${urlSession}`;
+      if (sessionPill) sessionPill.textContent = `Session: ${urlSession}`;
     }
 
     // Prefill class
@@ -3226,25 +3357,32 @@ renderSessionHistory(loadHistoryFromStorage());
       classInput.value = urlClass;
     }
 
-    // 🔹 Sync mini/full set with the checkbox
-    const miniCheckbox = document.getElementById("use-mini-set");
-    if (miniCheckbox) {
-      if (urlSet === "mini") {
-        miniCheckbox.checked = true;
-      } else if (urlSet === "full") {
-        miniCheckbox.checked = false;
-      }
-      // if urlSet is empty, leave whatever default state you have
+    // ✅ Sync practice set from URL into selector
+    const setSelect = document.getElementById("practice-set");
+    if (setSelect) {
+      setSelect.value = urlSet;
     }
+    currentSetParam = urlSet;
+
+    try {
+      localStorage.setItem("rp_lastSet", urlSet);
+    } catch (e) {}
 
     // Auto-load if a session or class was provided
     if ((urlSession || urlClass) && typeof loadAttempts === "function") {
       loadAttempts();
     }
+
+    // Keep monitor button & view summary aligned after URL-prefill
+    const session = (sessionInput?.value || "").trim();
+    const cls = (classInput?.value || "").trim();
+    enableMonitorButton(session, cls);
+    if (typeof updateCurrentViewSummary === "function") updateCurrentViewSummary();
   } catch (e) {
     console.warn("[Dashboard] Could not parse URL filters:", e);
   }
 })();
+
 
 
 // Optional: restore last session info into the UI on load
@@ -3286,3 +3424,32 @@ renderSessionHistory(loadHistoryFromStorage());
     // ignore
   }
 })();
+// ---------- GOOGLE AUTH INIT (RUN ONCE, AFTER DOM READY) ----------
+document.addEventListener("DOMContentLoaded", () => {
+  if (window.RP_AUTH && typeof window.RP_AUTH.initGoogleAuth === "function") {
+    window.RP_AUTH.initGoogleAuth();
+  }
+
+  // Render the official GIS button into your styled container
+  const target = document.getElementById("teacher-signin-btn");
+
+  // Wait until GIS is ready, then render
+  const tryRender = () => {
+    if (!target) return;
+    if (!window.google?.accounts?.id) {
+      setTimeout(tryRender, 200);
+      return;
+    }
+
+    target.innerHTML = "";
+    google.accounts.id.renderButton(target, {
+      theme: "outline",
+      size: "large",
+      text: "signin_with",
+      shape: "pill"
+    });
+  };
+
+  tryRender();
+});
+

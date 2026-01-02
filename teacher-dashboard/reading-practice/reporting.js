@@ -9,7 +9,12 @@
       classCode: "",
       sessionCode: "",
       assessmentName: "",
-      ownerEmail: ""
+      ownerEmail: "",
+      practiceLevel: "", // "below" | "on" | "above"
+      practiceSet: "",   // "full" | "mini1" | "mini2"
+      levelBand: "",   // legacy
+      setType: "",     // legacy
+      setId: ""        // legacy/stable key (optional)
     },
     startedAt: null,
     // Each entry: { questionId, type, linkedPassage, skills[], isCorrect, raw }
@@ -23,7 +28,22 @@
     return typeof value === "string" ? value.trim() : "";
   }
 
-  function findResultIndex(questionId) {
+  
+  function normalizeSetParam(raw) {
+    const v = cleanString(raw).toLowerCase();
+    if (!v) return "full";
+    if (v === "mini") return "mini1";
+    if (["full", "mini1", "mini2"].includes(v)) return v;
+    return "full";
+  }
+
+  function normalizeLevelParam(raw) {
+    const v = cleanString(raw).toLowerCase();
+    if (["below", "on", "above"].includes(v)) return v;
+    return "on";
+  }
+
+function findResultIndex(questionId) {
     return state.questionResults.findIndex((r) => r.questionId === questionId);
   }
 
@@ -123,7 +143,20 @@ function buildSummary() {
       classCode: cleanString(info.classCode),
       sessionCode: cleanString(info.sessionCode),
       assessmentName: cleanString(info.assessmentName),
-      ownerEmail
+      ownerEmail,
+
+      // ✅ NEW: backend-supported fields
+      practiceLevel: normalizeLevelParam(info.practiceLevel || info.level || info.levelBand),
+      practiceSet: normalizeSetParam(info.practiceSet || info.set || info.setType || info.practiceType),
+
+      // ✅ Also include the exact keys the Netlify function reads (either form is accepted)
+      level: normalizeLevelParam(info.practiceLevel || info.level || info.levelBand),
+      set: normalizeSetParam(info.practiceSet || info.set || info.setType || info.practiceType),
+
+      // Legacy fields (safe to keep for any UI/debug tooling)
+      levelBand: cleanString(info.levelBand || info.level || ""),
+      setType: cleanString(info.setType || info.practiceType || ""),
+      setId: cleanString(info.setId || info.practiceSetKey || "")
     };
 
     if (!state.startedAt) {
@@ -244,6 +277,8 @@ async function sendFinalReport() {
     setSessionInfo,
     recordQuestionResult,
     sendFinalReport,
+      //  Back-compat alias (script.js may still call this)
+    finalizeAndSend: sendFinalReport,
     _debugGetState
   };
 })();

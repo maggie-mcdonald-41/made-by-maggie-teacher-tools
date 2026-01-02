@@ -23,14 +23,21 @@
       Tell the trainer who you are so your teacher can see your progress.
     </p>
 
-    <div class="rp-modal-section">
-      <button id="rp-id-google" class="rp-modal-google-btn">
-        <span>🔑 Sign in with Google (recommended)</span>
-      </button>
-      <p class="rp-modal-helper">
-        This helps save your work across devices and keeps your name the same every time.
-      </p>
-    </div>
+<div class="rp-modal-section">
+
+
+  <!-- Official Google Sign-In button renders here (no auto-click) -->
+  <div
+    id="rp-gsi-button-container"
+    class="rp-gsi-button-container"
+    style="margin-top: 12px;"
+  ></div>
+
+  <p class="rp-modal-helper">
+    This helps save your work across devices and keeps your name the same every time.
+  </p>
+</div>
+
 
     <div class="rp-modal-divider">
       <span>or</span>
@@ -57,7 +64,7 @@
     <header class="app-header">
       <!-- Left Side: Logo + Title -->
       <div class="app-title-group with-logo">
-        <img src="../images/your-logo.png" alt="Made by Maggie Logo" class="app-logo">
+        <img src="../media/your-logo.png" alt="Made by Maggie Logo" class="app-logo">
 
         <div class="title-text">
           <h1 class="main-title">Reading Test-Style Question Trainer</h1>
@@ -156,85 +163,14 @@
     <button id="clear-passage-highlights" class="btn subtle">
       Clear Passage Highlights
     </button>
-        <div class="passage-scroll">
-          <!-- Passage 1 -->
-          <article id="passage-1" class="passage active" data-passage="1">
-            <h2 class="passage-title">Later Start Times Improve Student Health</h2>
+    <div class="passage-scroll">
+      <!-- Passage 1 (content injected by JS) -->
+      <article id="passage-1" class="passage active" data-passage="1"></article>
 
-            <p> <span class="para-num">1</span>
-              Should our school do more to help students stay healthy and focused? I believe the best solution is to start school later in the morning. Research shows that students who get more sleep perform better in class, feel happier, and make healthier choices throughout the day. A later start time would benefit everyone.
-            </p>
-
-            <p> <span class="para-num">2</span>
-              First of all, students need more sleep than they are currently getting. According to the American Academy of Pediatrics, middle-school students need between 9 and 12 hours of sleep per night, but most get far less. When school starts at 7:30 a.m., many students wake up between 5:30 and 6:00 a.m. This early schedule makes it almost impossible to get enough rest. Schools that pushed their start time to 8:30 a.m. reported an increase in average student sleep by nearly one hour.
-            </p>
-
-            <p> <span class="para-num">3</span>
-              In addition, students who sleep more are healthier. The National Sleep Foundation conducted a study in 2019 comparing schools with 7:30 a.m. start times to schools with 8:30 a.m. start times. The study found that students at later-start schools had fewer headaches, fewer nurse visits, and reported higher energy levels. The percentage of students who reported feeling “very tired” during the school day dropped from 56% to 31%.
-            </p>
-
-            <!-- Graph placeholder for Passage 1 -->
-            <figure class="graph-placeholder">
-              <img src="../images/placeholder-start-time-graph.png"
-                   alt="Bar graph comparing percentage of students reporting daytime tiredness: 56% at 7:30 a.m. start, 31% at 8:30 a.m. start.">
-              <figcaption>
-                Bar graph comparing the percentage of students who report feeling very tired at different school start times.
-              </figcaption>
-            </figure>
-
-            <p> <span class="para-num">4</span>
-              Another benefit of starting school later is improved attendance. When students are extremely tired, they are more likely to oversleep or miss school altogether. One district in Colorado saw chronic absenteeism drop by 12% after pushing back its start time. Better attendance means better learning, stronger grades, and more classroom participation.
-            </p>
-
-            <p> <span class="para-num">5</span>
-              Furthermore, later start times lead to safer travel in the mornings. Students who bike or walk to school in the dark are more at risk for accidents. When school begins later, it’s brighter outside and visibility improves. Researchers at the University of Minnesota found that communities with later school start times saw a 16% decrease in morning car accidents involving teen drivers.
-            </p>
-
-            <p> <span class="para-num">6</span>
-              For all these reasons, I support shifting our school start time to 8:30 a.m. Students who get enough sleep will learn more, feel healthier, and stay safer. A later start time is a simple change that would make a big difference.
-            </p>
-          </article>
-
-        <!-- Passage 2 -->
-        <article id="passage-2" class="passage" data-passage="2">
-        <h2 class="passage-title">Earlier Start Times Support Family and Community Needs</h2>
-
-        <p> <span class="para-num">1</span>
-            Should our school consider keeping its current start time? I believe starting school earlier in the morning is better for families, teachers, and the community. While some people argue for pushing the start time later, earlier start times offer important benefits that help students stay organized, manage responsibilities, and stay connected to their families’ schedules.
-        </p>
-
-        <p> <span class="para-num">2</span>
-            To begin with, an earlier start time helps families plan their mornings. Many parents begin work between 7:00 and 8:00 a.m., so dropping off children earlier allows families to stay on the same routine. When school start times shift to 8:30 a.m., parents often struggle to find extra childcare or rearrange their jobs. A 2022 survey from the National Family Planning Council reported that <strong>48% of parents said a later school start would make their work schedule “significantly harder to manage,”</strong> while only <strong>23% said it would help</strong>.
-        </p>
-
-        <p> <span class="para-num">3</span>
-            Earlier start times also support important after-school activities. Students who participate in sports, band, robotics, or tutoring need enough time in the afternoon to finish practices and still complete homework. In districts that moved the start time to 8:30 a.m., practices often ran later into the evening, leaving students with less free time and later bedtimes. Many students reported feeling more rushed after school instead of less.
-        </p>
-
-        <!-- Graph/table placeholder for Passage 2 -->
-        <figure class="graph-placeholder">
-            <img src="../images/placeholder-activity-bargraph.png"
-                alt="Bar graph comparing after-school activity participation before and after later start times: 71% participation at 7:30 a.m. start vs. 54% at 8:30 a.m. start.">
-            <figcaption>
-            Bar graph comparing after-school activity participation:
-            <strong>71% participation</strong> at a 7:30 a.m. start vs. <strong>54% participation</strong> at an 8:30 a.m. start.
-            </figcaption>
-        </figure>
-
-        <p> <span class="para-num">4</span>
-            In addition, earlier start times give students more exposure to real-world routines. Most adult jobs begin in the early morning. Learning to wake up, prepare, and arrive on time helps students build responsibility and strong time-management skills. One high school in Ohio found that when they experimented with a later start, tardiness actually increased by 18% because students felt they had “more time” and used it poorly.
-        </p>
-
-        <p> <span class="para-num">5</span>
-            Another concern with later start times is transportation. Bus routes often serve multiple schools, so shifting one start time affects all others. Districts that changed to a later start reported longer bus rides, heavier traffic, and higher transportation costs. In some cases, younger elementary students were forced to begin even earlier to make the schedule work.
-        </p>
-
-        <p> <span class="para-num">6</span>
-            For all these reasons, I believe our school should keep its earlier start time. It supports working families, protects after-school activities, and helps students build lifelong habits. While sleep is important, earlier start times offer a balanced routine that works well for the entire community.
-        </p>
-        </article>
-        </div>
-      </section>
+      <!-- Passage 2 (content injected by JS) -->
+      <article id="passage-2" class="passage" data-passage="2"></article>
+    </div>
+    </section>
 
       <!-- RIGHT: QUESTION PANEL -->
       <section class="question-panel" aria-label="Question panel">
@@ -313,7 +249,7 @@
     </main>
 <button id="sasquatch-helper" class="sasquatch-helper" type="button">
   <img 
-    src="../images/sasquatch-head.png" 
+    src="../media/sasquatch-head.png" 
     alt="" 
     class="sasquatch-icon"
   />
@@ -327,6 +263,8 @@
   </script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="level-loader.js" defer></script>
+<script>window.RP_AUTH_DISABLE_RESTORE = true;</script>
 <script src="../reading-google-auth.js" defer></script>
 <script src="reporting.js" defer></script>
 <script src="script.js" defer></script>

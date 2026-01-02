@@ -1,6 +1,13 @@
 // netlify/functions/saveReadingProgress.js
 
 const { getStore, connectLambda } = require("@netlify/blobs");
+function normalizeSetParam(raw) {
+  const v = String(raw || "").toLowerCase().trim();
+  if (v === "mini") return "mini1";
+  if (v === "full" || v === "mini1" || v === "mini2") return v;
+  return "full";
+}
+
 
 function sanitizeFragment(value) {
   return String(value || "")
@@ -90,6 +97,9 @@ function buildPartialAttemptFromProgress(
     assessmentName: payload.assessmentName || "",
     assessmentType: payload.assessmentType || "",
 
+    practiceSet: normalizeSetParam(payload.practiceSet || payload.set || "full"),
+    practiceLevel: String(payload.practiceLevel || payload.level || "on").toLowerCase(),
+
     numCorrect,
     totalQuestions,
     answeredCount,
@@ -144,18 +154,36 @@ exports.handler = async function (event, context) {
       startedAt: payload.startedAt || null,
       lastSavedAt: payload.lastSavedAt || new Date().toISOString(),
 
+      practiceSet: normalizeSetParam(payload.practiceSet || payload.set || "full"),
+      practiceLevel: String(payload.practiceLevel || payload.level || "on").toLowerCase(),
+
       currentQuestionIndex:
         typeof payload.currentQuestionIndex === "number"
           ? payload.currentQuestionIndex
           : null,
 
-      questionResults: Array.isArray(payload.questionResults)
-        ? payload.questionResults
-        : [],
+questionResults: Array.isArray(payload.questionResults)
+  ? payload.questionResults
+  : [],
 
-      // Optional Google auth info
-      user: payload.user || null,
+user: payload.user || null,
+
+ownerEmail: (
+  payload.ownerEmail ||
+  payload.teacherEmail ||
+  (payload.user && payload.user.email) ||
+  ""
+).trim(),
+
+sharedWithEmails: Array.isArray(payload.sharedWithEmails)
+  ? payload.sharedWithEmails.map((e) => String(e).trim()).filter(Boolean)
+  : [],
+
+assessmentName: payload.assessmentName || "",
+assessmentType: payload.assessmentType || "",
+
     };
+    
     console.log("[saveReadingProgress] Writing key:", key);
 
     await store.setJSON(key, dataToStore);
