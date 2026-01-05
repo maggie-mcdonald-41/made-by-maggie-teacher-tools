@@ -2675,8 +2675,11 @@ async function loadAttempts() {
 
     // ✅ NEW: leveled practice filters (full|mini1|mini2) + (below|on|above)
     // Defaults preserve current behavior.
-    params.set("set", getSelectedPracticeSet());
-    params.set("level", currentLevelParam || "on");
+  const setVal = getSelectedPracticeSet();
+if (setVal) params.set("set", setVal);
+
+const levelVal = currentLevelParam || "";
+if (levelVal) params.set("level", levelVal);
 
     // Determine if we're in a co-teacher view:
     // - There is an OWNER_EMAIL_FOR_VIEW from the URL

@@ -182,8 +182,9 @@ exports.handler = async function (event) {
         ? data.sessionInfo.sharedWithEmails
         : [];
 
-      const practiceSet = normalizeSetParam(data.practiceSet || data.set || "");
-      const practiceLevel = String(data.practiceLevel || data.level || "").toLowerCase();
+    // ✅ Backfill defaults so older attempts still match filters
+const practiceSet = normalizeSetParam(data.practiceSet || data.set || "full");
+const practiceLevel = String(data.practiceLevel || data.level || "on").toLowerCase();
 
       return {
         key,
