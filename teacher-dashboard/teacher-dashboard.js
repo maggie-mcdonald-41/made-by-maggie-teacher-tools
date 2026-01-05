@@ -126,6 +126,9 @@ let teacherUser = null;
 // - For co-teachers: comes from ?owner= in the dashboard link.
 let OWNER_EMAIL_FOR_VIEW = null;
 let OWNER_EMAIL_FROM_URL = false;
+let _historyHydrateInFlight = null;
+let _historyHydrateEmail = "";
+
 
 // ---------- UTILITIES ----------
 function normalizeSetParam(raw) {
@@ -796,192 +799,205 @@ if (deletedKeys.includes(key)) {
 // ---------- SERVER-HYDRATED SESSION HISTORY (owned + shared) ----------
 
 async function hydrateSessionHistoryFromServer(viewerEmail) {
-  if (!viewerEmail || typeof fetch === "undefined") return;
+  if (typeof fetch === "undefined") return;
 
-  try {
-    const params = new URLSearchParams();
-    params.set("viewerEmail", viewerEmail);
+  const email = String(viewerEmail || "").trim().toLowerCase();
+  if (!email) return;
 
-    const res = await fetch(
-      `/.netlify/functions/getReadingAttempts?${params.toString()}`,
-      {
-        method: "GET",
-        headers: { Accept: "application/json" },
-      }
-    );
+  // ✅ Prevent duplicate hydrates (auth restore + sign-in can fire twice)
+  if (_historyHydrateInFlight && _historyHydrateEmail === email) {
+    return _historyHydrateInFlight;
+  }
+  _historyHydrateEmail = email;
 
-    if (!res.ok) {
-      console.warn(
-        "[Dashboard] History fetch failed:",
-        res.status,
-        await res.text().catch(() => "")
+  _historyHydrateInFlight = (async () => {
+    try {
+      const params = new URLSearchParams();
+      params.set("viewerEmail", email);
+
+      const res = await fetch(
+        `/.netlify/functions/getReadingAttempts?${params.toString()}`,
+        {
+          method: "GET",
+          headers: { Accept: "application/json" },
+        }
       );
-      return;
-    }
 
-    const payload = await res.json().catch(() => ({}));
-    const attempts = Array.isArray(payload.attempts) ? payload.attempts : [];
-    // Cache all attempts for cross-session student progress graphs
-    ALL_VIEWER_ATTEMPTS = attempts;
+      if (!res.ok) {
+        console.warn(
+          "[Dashboard] History fetch failed:",
+          res.status,
+          await res.text().catch(() => "")
+        );
+        return;
+      }
 
-    if (!attempts.length) {
-      // nothing to hydrate, fall back to whatever is in localStorage
+      const payload = await res.json().catch(() => ({}));
+      const attempts = Array.isArray(payload.attempts) ? payload.attempts : [];
+      // Cache all attempts for cross-session student progress graphs
+      ALL_VIEWER_ATTEMPTS = attempts;
+
+      if (!attempts.length) {
+        // nothing to hydrate, fall back to whatever is in localStorage
+        const existing = loadHistoryFromStorage();
+        renderSessionHistory(existing);
+        return;
+      }
+
+      // Group attempts by (sessionCode + classCode)
+      const grouped = new Map();
+
+      attempts.forEach((a) => {
+        const sessionCode = (a.sessionCode || "").trim();
+        if (!sessionCode) return;
+        const classCode = (a.classCode || "").trim();
+        const key = `${sessionCode}||${classCode}`;
+
+        if (!grouped.has(key)) {
+          grouped.set(key, {
+            sessionCode,
+            classCode,
+            lastLoadedAt: null,
+            rawAttempts: [],
+          });
+        }
+
+        const entry = grouped.get(key);
+        entry.rawAttempts.push(a);
+
+        const t = a.finishedAt || a.startedAt;
+        if (t && (!entry.lastLoadedAt || t > entry.lastLoadedAt)) {
+          entry.lastLoadedAt = t;
+        }
+      });
+
+      // Dedupe by student (per session + classCode) and aggregate stats
+      const serverHistory = Array.from(grouped.values()).map((entry) => {
+        const perStudent = new Map();
+        const noKeyAttempts = [];
+
+        entry.rawAttempts.forEach((a) => {
+          const rawId = (a.studentId || "").toString().trim();
+          const rawName = (a.studentName || "").trim();
+          const key = (rawId || rawName).toLowerCase();
+
+          if (!key) {
+            // No reliable identity → include, but don't dedupe
+            noKeyAttempts.push(a);
+            return;
+          }
+
+          const existing = perStudent.get(key);
+          if (!existing) {
+            perStudent.set(key, a);
+          } else {
+            // Prefer the attempt with the most questions answered/completed
+            const prevAnswered = Number(
+              existing.answeredCount || existing.totalQuestions || 0
+            );
+            const currAnswered = Number(
+              a.answeredCount || a.totalQuestions || 0
+            );
+
+            if (currAnswered >= prevAnswered) {
+              perStudent.set(key, a);
+            }
+          }
+        });
+
+        const dedupedAttempts = [...perStudent.values(), ...noKeyAttempts];
+
+        let attemptsCount = 0;
+        let totalQuestions = 0;
+        let totalCorrect = 0;
+        const uniqueStudentNames = new Set();
+
+        if (dedupedAttempts.length > 0) {
+          attemptsCount = dedupedAttempts.length;
+
+          dedupedAttempts.forEach((a) => {
+            // Use totalQuestions if present; otherwise fall back to answeredCount
+            const questionsForThisAttempt = Number(
+              a.totalQuestions || a.answeredCount || 0
+            );
+            const correctForThisAttempt = Number(a.numCorrect || 0);
+
+            totalQuestions += questionsForThisAttempt;
+            totalCorrect += correctForThisAttempt;
+
+            if (a.studentName) {
+              uniqueStudentNames.add(String(a.studentName).trim());
+            }
+          });
+        }
+
+        const uniqueStudentsCount = uniqueStudentNames.size || attemptsCount;
+
+        return {
+          sessionCode: entry.sessionCode,
+          classCode: entry.classCode,
+          lastLoadedAt: entry.lastLoadedAt || new Date().toISOString(),
+          attemptsCount,
+          totalQuestions,
+          totalCorrect,
+          uniqueStudentsCount,
+        };
+      });
+
+      // Merge with whatever is in localStorage already
+      const localHistory = loadHistoryFromStorage();
+      const mergedByKey = new Map();
+
+      const addEntries = (entries) => {
+        entries.forEach((h) => {
+          const key = `${h.sessionCode}||${h.classCode || ""}`;
+          const existing = mergedByKey.get(key);
+
+          if (!existing) {
+            mergedByKey.set(key, h);
+          } else {
+            // keep the entry with the newer lastLoadedAt
+            const existingTime = (existing.lastLoadedAt || "").toString();
+            const newTime = (h.lastLoadedAt || "").toString();
+            if (newTime > existingTime) {
+              mergedByKey.set(key, h);
+            }
+          }
+        });
+      };
+
+      addEntries(localHistory || []);
+      addEntries(serverHistory);
+
+      const mergedHistory = Array.from(mergedByKey.values()).sort((a, b) =>
+        (b.lastLoadedAt || "").toString().localeCompare(
+          (a.lastLoadedAt || "").toString()
+        )
+      );
+
+      // NEW: respect deleted sessions on this device
+      const deletedKeys = loadDeletedHistoryKeys();
+      const filteredMerged = mergedHistory.filter((h) => {
+        const key = getHistoryKey(h.sessionCode, h.classCode || "");
+        return !deletedKeys.includes(key);
+      });
+
+      saveHistoryToStorage(filteredMerged);
+      renderSessionHistory(filteredMerged);
+    } catch (err) {
+      console.warn(
+        "[Dashboard] Could not hydrate session history from server:",
+        err
+      );
+      // fall back to local history if something goes wrong
       const existing = loadHistoryFromStorage();
       renderSessionHistory(existing);
-      return;
+    } finally {
+      _historyHydrateInFlight = null;
     }
+  })();
 
-        // Group attempts by (sessionCode + classCode)
-    const grouped = new Map();
-
-    attempts.forEach((a) => {
-      const sessionCode = (a.sessionCode || "").trim();
-      if (!sessionCode) return;
-      const classCode = (a.classCode || "").trim();
-      const key = `${sessionCode}||${classCode}`;
-
-      if (!grouped.has(key)) {
-        grouped.set(key, {
-          sessionCode,
-          classCode,
-          lastLoadedAt: null,
-          rawAttempts: []
-        });
-      }
-
-      const entry = grouped.get(key);
-      entry.rawAttempts.push(a);
-
-      const t = a.finishedAt || a.startedAt;
-      if (t && (!entry.lastLoadedAt || t > entry.lastLoadedAt)) {
-        entry.lastLoadedAt = t;
-      }
-    });
-
-    // Dedupe by student (per session + classCode) and aggregate stats
-    const serverHistory = Array.from(grouped.values()).map((entry) => {
-      const perStudent = new Map();
-      const noKeyAttempts = [];
-
-      entry.rawAttempts.forEach((a) => {
-        const rawId = (a.studentId || "").toString().trim();
-        const rawName = (a.studentName || "").trim();
-        const key = (rawId || rawName).toLowerCase();
-
-        if (!key) {
-          // No reliable identity → include, but don't dedupe
-          noKeyAttempts.push(a);
-          return;
-        }
-
-        const existing = perStudent.get(key);
-        if (!existing) {
-          perStudent.set(key, a);
-        } else {
-          // Prefer the attempt with the most questions answered/completed
-          const prevAnswered = Number(
-            existing.answeredCount || existing.totalQuestions || 0
-          );
-          const currAnswered = Number(
-            a.answeredCount || a.totalQuestions || 0
-          );
-
-          if (currAnswered >= prevAnswered) {
-            perStudent.set(key, a);
-          }
-        }
-      });
-
-      const dedupedAttempts = [...perStudent.values(), ...noKeyAttempts];
-
-      let attemptsCount = 0;
-      let totalQuestions = 0;
-      let totalCorrect = 0;
-      const uniqueStudentNames = new Set();
-
-      if (dedupedAttempts.length > 0) {
-        attemptsCount = dedupedAttempts.length;
-
-        dedupedAttempts.forEach((a) => {
-          // Use totalQuestions if present; otherwise fall back to answeredCount
-          const questionsForThisAttempt = Number(
-            a.totalQuestions || a.answeredCount || 0
-          );
-          const correctForThisAttempt = Number(a.numCorrect || 0);
-
-          totalQuestions += questionsForThisAttempt;
-          totalCorrect += correctForThisAttempt;
-
-          if (a.studentName) {
-            uniqueStudentNames.add(String(a.studentName).trim());
-          }
-        });
-      }
-
-      const uniqueStudentsCount = uniqueStudentNames.size || attemptsCount;
-
-      return {
-        sessionCode: entry.sessionCode,
-        classCode: entry.classCode,
-        lastLoadedAt: entry.lastLoadedAt || new Date().toISOString(),
-        attemptsCount,
-        totalQuestions,
-        totalCorrect,
-        uniqueStudentsCount
-      };
-    });
-
-
-    // Merge with whatever is in localStorage already
-    const localHistory = loadHistoryFromStorage();
-    const mergedByKey = new Map();
-
-    const addEntries = (entries) => {
-      entries.forEach((h) => {
-        const key = `${h.sessionCode}||${h.classCode || ""}`;
-        const existing = mergedByKey.get(key);
-
-        if (!existing) {
-          mergedByKey.set(key, h);
-        } else {
-          // keep the entry with the newer lastLoadedAt
-          const existingTime = (existing.lastLoadedAt || "").toString();
-          const newTime = (h.lastLoadedAt || "").toString();
-          if (newTime > existingTime) {
-            mergedByKey.set(key, h);
-          }
-        }
-      });
-    };
-
-    addEntries(localHistory || []);
-    addEntries(serverHistory);
-
-const mergedHistory = Array.from(mergedByKey.values()).sort((a, b) =>
-  (b.lastLoadedAt || "").toString().localeCompare(
-    (a.lastLoadedAt || "").toString()
-  )
-);
-
-// NEW: respect deleted sessions on this device
-const deletedKeys = loadDeletedHistoryKeys();
-const filteredMerged = mergedHistory.filter((h) => {
-  const key = getHistoryKey(h.sessionCode, h.classCode || "");
-  return !deletedKeys.includes(key);
-});
-
-saveHistoryToStorage(filteredMerged);
-renderSessionHistory(filteredMerged);
-
-  } catch (err) {
-    console.warn(
-      "[Dashboard] Could not hydrate session history from server:",
-      err
-    );
-    // fall back to local history if something goes wrong
-    const existing = loadHistoryFromStorage();
-    renderSessionHistory(existing);
-  }
+  return _historyHydrateInFlight;
 }
 
 // ---------- HISTORY RENDERING ----------
@@ -3342,14 +3358,15 @@ renderSessionHistory(loadHistoryFromStorage());
       localStorage.setItem("rp_lastLevel", currentLevelParam);
     } catch (e) {}
 
-    // Owner email for co-teacher / shared view
-    if (urlOwner) {
-      OWNER_EMAIL_FOR_VIEW = urlOwner;
-      OWNER_EMAIL_FROM_URL = true;
-      try {
-        localStorage.setItem("rp_lastOwnerEmail", urlOwner);
-      } catch (e) {}
-    }
+// Owner email for co-teacher / shared view (ONLY when provided by URL)
+if (urlOwner) {
+  OWNER_EMAIL_FOR_VIEW = String(urlOwner || "").trim().toLowerCase();
+  OWNER_EMAIL_FROM_URL = true;
+  try {
+    localStorage.setItem("rp_lastOwnerEmail", OWNER_EMAIL_FOR_VIEW);
+  } catch (e) {}
+}
+
 
     // Prefill session + pill
     if (urlSession && sessionInput) {

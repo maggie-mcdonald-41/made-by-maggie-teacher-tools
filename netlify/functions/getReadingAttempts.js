@@ -16,6 +16,24 @@ function sanitizeFragment(value) {
     .slice(0, 64);
 }
 
+// ✅ NEW: small concurrency helper to speed up loading blobs
+async function mapWithConcurrency(items, limit, worker) {
+  const results = new Array(items.length);
+  let i = 0;
+
+  async function run() {
+    while (true) {
+      const idx = i++;
+      if (idx >= items.length) break;
+      results[idx] = await worker(items[idx], idx);
+    }
+  }
+
+  const runners = Array.from({ length: Math.min(limit, items.length) }, run);
+  await Promise.all(runners);
+  return results;
+}
+
 exports.handler = async function (event) {
   if (event.httpMethod !== "GET") {
     return { statusCode: 405, body: "Method Not Allowed" };
@@ -46,19 +64,31 @@ exports.handler = async function (event) {
       const list = await store.list({ prefix: `session/${safeSession}/` });
       const entries = list.blobs || list || [];
 
-      for (const item of entries) {
-        if (!item.key || !item.key.endsWith(".json")) continue;
+      // ✅ Load JSON concurrently (faster)
+      const CONCURRENCY = 10;
+      const loaded = await mapWithConcurrency(entries, CONCURRENCY, async (item) => {
+        if (!item || !item.key || !item.key.endsWith(".json")) return null;
         const data = await store.get(item.key, { type: "json" });
-        if (data) attemptsRaw.push({ key: item.key, data });
+        return data ? { key: item.key, data } : null;
+      });
+
+      for (const row of loaded) {
+        if (row) attemptsRaw.push(row);
       }
     } else {
       const list = await store.list();
       const entries = list.blobs || list || [];
 
-      for (const item of entries) {
-        if (!item.key || !item.key.endsWith(".json")) continue;
+      // ✅ Load JSON concurrently (faster)
+      const CONCURRENCY = 10;
+      const loaded = await mapWithConcurrency(entries, CONCURRENCY, async (item) => {
+        if (!item || !item.key || !item.key.endsWith(".json")) return null;
         const data = await store.get(item.key, { type: "json" });
-        if (data) attemptsRaw.push({ key: item.key, data });
+        return data ? { key: item.key, data } : null;
+      });
+
+      for (const row of loaded) {
+        if (row) attemptsRaw.push(row);
       }
     }
 
