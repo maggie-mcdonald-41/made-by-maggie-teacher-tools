@@ -143,6 +143,13 @@ exports.handler = async function (event) {
 
       const studentName = data.studentName || (data.student && data.student.name) || "";
 
+      const studentId =
+        data.studentId ||
+        (data.student && data.student.id) ||
+        (data.sessionInfo && data.sessionInfo.studentId) ||
+        (data.sessionInfo && data.sessionInfo.studentKey) ||
+        "";
+
       const startedAt =
         data.startedAt || (data.sessionInfo && data.sessionInfo.startedAt) || null;
 
@@ -181,6 +188,7 @@ exports.handler = async function (event) {
       return {
         key,
         attemptId: data.attemptId || key,
+        studentId,
         studentName,
         sessionCode,
         classCode,

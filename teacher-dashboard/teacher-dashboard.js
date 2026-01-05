@@ -783,6 +783,8 @@ if (deletedKeys.includes(key)) {
     totalQuestions,
     totalCorrect,
     uniqueStudentsCount,
+    practiceSet: getSelectedPracticeSet(),          // full | mini1 | mini2
+    practiceLevel: currentLevelParam || "on",       // below | on | above
   };
 
   if (idx >= 0) {
@@ -932,6 +934,28 @@ async function hydrateSessionHistoryFromServer(viewerEmail) {
         }
 
         const uniqueStudentsCount = uniqueStudentNames.size || attemptsCount;
+    // NEW: infer practice set/level for this session (best-effort)
+    let inferredSet = "";
+    let inferredLevel = "";
+
+    // Prefer the most recent attempt that has metadata
+    const sortedForMeta = entry.rawAttempts
+      .slice()
+      .sort((a, b) => {
+        const at = (a.finishedAt || a.startedAt || "").toString();
+        const bt = (b.finishedAt || b.startedAt || "").toString();
+        return bt.localeCompare(at);
+      });
+
+    for (const a of sortedForMeta) {
+      const s = (a.practiceSet || a.set || a.setType || "").toString().trim();
+      const l = (a.practiceLevel || a.level || a.levelBand || "").toString().trim();
+      if (!inferredSet && s) inferredSet = normalizeSetParam(s);
+      if (!inferredLevel && ["below","on","above"].includes(l.toLowerCase())) {
+        inferredLevel = l.toLowerCase();
+      }
+      if (inferredSet && inferredLevel) break;
+    }
 
         return {
           sessionCode: entry.sessionCode,
@@ -941,6 +965,9 @@ async function hydrateSessionHistoryFromServer(viewerEmail) {
           totalQuestions,
           totalCorrect,
           uniqueStudentsCount,
+          practiceSet: inferredSet || undefined,
+          practiceLevel: inferredLevel || undefined,
+
         };
       });
 
@@ -1063,6 +1090,11 @@ function renderSessionHistory(history) {
     meta.className = "history-meta";
     const parts = [];
     if (entry.classCode) parts.push(entry.classCode);
+
+    // ✅ NEW: show set + level (teacher-facing)
+    if (entry.practiceLevel) parts.push(`Level: ${entry.practiceLevel}`);
+    if (entry.practiceSet) parts.push(`Set: ${entry.practiceSet}`);
+
     if (entry.uniqueStudentsCount) {
       parts.push(`${entry.uniqueStudentsCount} students`);
     }
@@ -1070,6 +1102,7 @@ function renderSessionHistory(history) {
       parts.push(`${entry.attemptsCount} attempts`);
     }
     meta.textContent = parts.join(" · ");
+
 
     main.appendChild(title);
     main.appendChild(meta);
@@ -1091,9 +1124,31 @@ function renderSessionHistory(history) {
       updateHistoryActionButtonsState();
 
       // Load this session into the filters and refresh dashboard
-      sessionInput.value = entry.sessionCode;
-      classInput.value = entry.classCode || "";
-      loadAttempts();
+sessionInput.value = entry.sessionCode;
+classInput.value = entry.classCode || "";
+
+// ✅ NEW: sync set + level selectors to this session before loading
+const setSelect = document.getElementById("practice-set");
+const levelSelect = document.getElementById("practice-level");
+
+if (entry.practiceSet && setSelect) {
+  const v = normalizeSetParam(entry.practiceSet);
+  setSelect.value = v;
+  currentSetParam = v;
+  try { localStorage.setItem("rp_lastSet", v); } catch (e) {}
+}
+
+if (entry.practiceLevel && levelSelect) {
+  const v = entry.practiceLevel.toLowerCase();
+  if (["below","on","above"].includes(v)) {
+    levelSelect.value = v;
+    currentLevelParam = v;
+    try { localStorage.setItem("rp_lastLevel", v); } catch (e) {}
+  }
+}
+
+loadAttempts();
+
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
 
