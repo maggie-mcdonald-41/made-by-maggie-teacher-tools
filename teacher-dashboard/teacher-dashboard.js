@@ -125,6 +125,7 @@ let teacherUser = null;
 // - For the main teacher: usually their own email.
 // - For co-teachers: comes from ?owner= in the dashboard link.
 let OWNER_EMAIL_FOR_VIEW = null;
+let OWNER_EMAIL_FROM_URL = false;
 
 // ---------- UTILITIES ----------
 function normalizeSetParam(raw) {
@@ -3162,16 +3163,19 @@ if (window.RP_AUTH) {
       teacherSignOutBtn.style.display = "inline-flex";
       teacherSignOutBtn.textContent = `Sign out (${teacherUser.email})`;
 
-      // If we didn't already have an owner (e.g. not a co-teacher link),
-      // default the owner to the signed-in teacher.
-      if (!OWNER_EMAIL_FOR_VIEW) {
-        OWNER_EMAIL_FOR_VIEW = teacherUser.email;
-      }
+// If owner was NOT explicitly provided by URL, the signed-in teacher IS the owner view.
+if (!OWNER_EMAIL_FROM_URL) {
+  OWNER_EMAIL_FOR_VIEW = teacherUser.email;
+}
 
-      // Figure out if this is a co-teacher view:
-      // owner from URL exists and is NOT the signed-in teacher.
-      const isCoTeacherView =
-        OWNER_EMAIL_FOR_VIEW && OWNER_EMAIL_FOR_VIEW !== teacherUser.email;
+const isCoTeacherView =
+  OWNER_EMAIL_FROM_URL &&
+  OWNER_EMAIL_FOR_VIEW &&
+  OWNER_EMAIL_FOR_VIEW !== teacherUser.email;
+
+if (!isCoTeacherView && typeof hydrateSessionHistoryFromServer === "function") {
+  hydrateSessionHistoryFromServer(teacherUser.email);
+}
 
       // Hydrate server-side Session History ONLY for the main teacher view.
       // Co-teachers should build up history only from sessions they open via links.
@@ -3341,6 +3345,7 @@ renderSessionHistory(loadHistoryFromStorage());
     // Owner email for co-teacher / shared view
     if (urlOwner) {
       OWNER_EMAIL_FOR_VIEW = urlOwner;
+      OWNER_EMAIL_FROM_URL = true;
       try {
         localStorage.setItem("rp_lastOwnerEmail", urlOwner);
       } catch (e) {}
