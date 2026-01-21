@@ -113,8 +113,22 @@ const historyDeleteBtn = document.getElementById("history-delete-btn");
 // Key format "SESSIONCODE||CLASSCODE"
 let CURRENT_HISTORY_KEY = null;
 
-// Simple color cycle using your palette
-const HISTORY_COLOR_SEQUENCE = ["", "teal", "pink", "gold", "purple"];
+// Expanded color cycle for session labels
+const HISTORY_COLOR_SEQUENCE = [
+  "",        // default / none
+  "teal",
+  "pink",
+  "gold",
+  "purple",
+  "blue",
+  "green",
+  "orange",
+  "red",
+  "indigo",
+  "mint",
+  "slate"
+];
+
 // Auth DOM
 const teacherSignInBtn = document.getElementById("teacher-signin-btn");
 const teacherSignOutBtn = document.getElementById("teacher-signout-btn");
