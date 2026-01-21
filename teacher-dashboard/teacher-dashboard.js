@@ -1434,7 +1434,12 @@ function updateTypeAccuracyChart(allAttempts, studentAttempts = [], studentName 
     responsive: true,
     maintainAspectRatio: false,
 
-    // ✅ prevents y-axis labels (0–100%) from clipping
+    onResize: (chart, size) => {
+  chart.options.scales.x.ticks = getAdaptiveXAxisTicks(size.width, "type"); 
+  chart.update("none");
+},
+
+  
 layout: { padding: { left: 14, right: 10, top: 8, bottom: 36 } },
 
     plugins: {
@@ -1446,16 +1451,9 @@ layout: { padding: { left: 14, right: 10, top: 8, bottom: 36 } },
     },
     scales: {
 x: {
-  ticks: {
-    autoSkip: false,
-    maxRotation: 0,
-    minRotation: 0,
-    callback: function(value) {
-      const label = this.getLabelForValue(value);
-      return String(label).split(" "); // wraps onto multiple lines
-    }
-  }
-},
+  ticks: getAdaptiveXAxisTicks(canvas.getBoundingClientRect().width, "type")
+}
+,
       y: {
         min: 0,
         max: 100,
@@ -1489,7 +1487,6 @@ function updateSkillAccuracyChart(skillTotalsAll, skillTotalsStudent = {}, stude
     ])
   );
 
-  // ✅ stable ordering
   allKeys.sort((a, b) => a.localeCompare(b));
 
   const labels = [];
@@ -1527,8 +1524,13 @@ function updateSkillAccuracyChart(skillTotalsAll, skillTotalsStudent = {}, stude
     responsive: true,
     maintainAspectRatio: false,
 
-    // ✅ prevents y-axis labels (0–100%) from clipping
-layout: { padding: { left: 14, right: 10, top: 8, bottom: 36 } },
+    // ✅ add this RIGHT HERE (top-level in options)
+    onResize: (chart, size) => {
+      chart.options.scales.x.ticks = getAdaptiveXAxisTicks(size.width, "skill");
+      chart.update("none");
+    },
+
+    layout: { padding: { left: 14, right: 10, top: 8, bottom: 36 } },
 
     plugins: {
       legend: {
@@ -1537,19 +1539,12 @@ layout: { padding: { left: 14, right: 10, top: 8, bottom: 36 } },
         labels: { padding: 14 }
       }
     },
+
     scales: {
-x: {
-  ticks: {
-    autoSkip: false,
-    maxRotation: 0,
-    minRotation: 0,
-    callback: function(value) {
-      const label = this.getLabelForValue(value);
-      return String(label).split("-"); // multi-line tick
-    }
-  }
-}
-,
+      x: {
+        // ✅ skill chart should use "skill"
+        ticks: getAdaptiveXAxisTicks(canvas.getBoundingClientRect().width, "skill")
+      },
       y: {
         min: 0,
         max: 100,
@@ -1561,7 +1556,7 @@ x: {
   if (skillAccuracyChart) {
     skillAccuracyChart.data.labels = labels;
     skillAccuracyChart.data.datasets = datasets;
-    skillAccuracyChart.options = options; // ✅ IMPORTANT
+    skillAccuracyChart.options = options;
     skillAccuracyChart.update();
   } else {
     skillAccuracyChart = new Chart(canvas, {
@@ -1571,6 +1566,46 @@ x: {
     });
   }
 }
+
+
+function getAdaptiveXAxisTicks(chartWidth, mode = "skill") {
+  const compact = chartWidth < 620; // tweak breakpoint as needed
+
+  if (compact) {
+    return {
+      autoSkip: true,
+      maxTicksLimit: mode === "skill" ? 6 : 8,
+      maxRotation: 0,
+      minRotation: 0,
+      font: { size: 10 },
+      padding: 6,
+      // keep labels single-line in compact view
+      callback: function (value) {
+        const label = this.getLabelForValue(value);
+        // shorten long labels a bit
+        const s = String(label);
+        return s.length > 12 ? s.slice(0, 12) + "…" : s;
+      }
+    };
+  }
+
+  // Expanded view: show all labels + wrap
+  return {
+    autoSkip: false,
+    maxRotation: 0,
+    minRotation: 0,
+    font: { size: 12 },
+    padding: 8,
+    callback: function (value) {
+      const label = this.getLabelForValue(value);
+      // skills wrap by hyphen, types wrap by space
+      return mode === "skill"
+        ? String(label).split("-")
+        : String(label).split(" ");
+    }
+  };
+}
+
 
 // ---------- SESSION TAGS + STUDENT DETAIL + HEAT MAP ----------
 function updateSessionTagsFromAttempts(attempts) {
