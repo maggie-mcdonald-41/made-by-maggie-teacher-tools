@@ -10,6 +10,7 @@ window.READING_LEVEL = {
       title: "Later Start Times Improve Student Health",
       html: `
         <h2 class="passage-title">Later Start Times Improve Student Health</h2>
+        <p class="passage-lexile"><em>Estimated Lexile Level: 940L–1010L</em></p>
 
         <p><span class="para-num">1</span>
           Should schools do more to help students stay healthy and focused? Many educators and researchers argue that one effective solution is starting school later in the morning. Research shows that students who get more sleep perform better in class, feel happier, and make healthier choices throughout the day. A later start time would benefit everyone.
@@ -49,7 +50,8 @@ window.READING_LEVEL = {
       title: "Earlier Start Times Support Family and Community Needs",
       html: `
         <h2 class="passage-title">Earlier Start Times Support Family and Community Needs</h2>
-
+        <p class="passage-lexile"><em>Estimated Lexile Level: 980L–1050L</em></p>
+        
         <p><span class="para-num">1</span>
           Should schools consider keeping their current start times? Some families and educators believe starting school earlier in the morning is better for families, teachers, and the community. While some people argue for pushing the start time later, earlier start times offer important benefits that help students stay organized, manage responsibilities, and stay connected to family schedules.
         </p>

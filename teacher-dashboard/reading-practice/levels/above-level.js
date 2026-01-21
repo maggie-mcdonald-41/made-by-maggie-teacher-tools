@@ -9,7 +9,9 @@ passages: {
   1: {
     title: "Using Artificial Intelligence to Support Learning",
     html: `
-      <p>
+    <h2 class="passage-title">Using Artificial Intelligence to Support Learning</h2>
+    <p class="passage-lexile"><em>Estimated Lexile Level: 1020L–1100L</em></p>  
+    <p>
         Artificial intelligence (AI) is becoming an increasingly common part of daily life, influencing how people work, communicate, and solve problems. As this technology continues to expand, schools must decide whether AI tools should be integrated into classrooms or kept out of academic settings. Supporters argue that when used responsibly, AI can strengthen instruction and prepare students for future challenges. Schools should allow the use of AI tools for learning because they support personalized instruction, increase engagement and accessibility, and help students develop essential digital literacy skills.
       </p>
 
@@ -41,7 +43,10 @@ passages: {
   2: {
     title: "Why Artificial Intelligence Use Should Be Limited in Schools",
     html: `
-      <p>
+        <h2 class="passage-title">Why Artificial Intelligence Use Should Be Limited in Schools</h2>
+        <p class="passage-lexile"><em>Estimated Lexile Level: 1040L–1130L</em></p>
+
+    <p>
         The rapid growth of artificial intelligence has led many educators to question its role in schools. While AI tools may offer convenience, critics argue that their use in classrooms presents serious challenges. Without clear limits, AI can reduce independent thinking, create fairness concerns, and make it difficult to measure student understanding. Schools should restrict or ban the use of AI tools in classrooms because they undermine critical thinking, threaten academic integrity, and complicate assessment.
       </p>
 

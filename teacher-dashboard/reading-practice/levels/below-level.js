@@ -9,7 +9,10 @@ passages: {
   1: {
     title: "Why Listening to Music Can Help Students While Working",
     html: `
-      <p>
+    <h2 class="passage-title">Why Listening to Music Can Help Students While Working</h2> 
+    <p class="passage-lexile"><em>Estimated Lexile Level: 720L–800L</em></p>
+ 
+    <p>
         Many students enjoy listening to music while they work. Supporters believe that music can help students stay focused and calm, especially during independent tasks. They argue that allowing music while working can improve concentration, block out distractions, and make learning more enjoyable. Students should be allowed to listen to music while working because it can help them focus and stay motivated.
       </p>
 
@@ -37,7 +40,10 @@ passages: {
   2: {
     title: "Why Listening to Music Can Be a Distraction While Working",
     html: `
-      <p>
+    <h2 class="passage-title">Why Listening to Music Can Be a Distraction While Working</h2>  
+    <p class="passage-lexile"><em>Estimated Lexile Level: 750L–820L</em></p>
+
+    <p>
         Although some students enjoy listening to music while they work, others believe it can cause problems. Critics argue that music can distract students, make it harder to follow directions, and reduce focus. Because of these concerns, students should not be allowed to listen to music while working.
       </p>
 
