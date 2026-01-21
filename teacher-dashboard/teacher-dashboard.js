@@ -1435,7 +1435,7 @@ function updateTypeAccuracyChart(allAttempts, studentAttempts = [], studentName 
     maintainAspectRatio: false,
 
     // ✅ prevents y-axis labels (0–100%) from clipping
-    layout: { padding: { left: 14, right: 10, top: 8, bottom: 22 } },
+layout: { padding: { left: 14, right: 10, top: 8, bottom: 36 } },
 
     plugins: {
       legend: {
@@ -1445,9 +1445,17 @@ function updateTypeAccuracyChart(allAttempts, studentAttempts = [], studentName 
       }
     },
     scales: {
-      x: {
-        ticks: { autoSkip: true, maxTicksLimit: 8, maxRotation: 0, minRotation: 0 }
-      },
+x: {
+  ticks: {
+    autoSkip: false,
+    maxRotation: 0,
+    minRotation: 0,
+    callback: function(value) {
+      const label = this.getLabelForValue(value);
+      return String(label).split(" "); // wraps onto multiple lines
+    }
+  }
+},
       y: {
         min: 0,
         max: 100,
@@ -1520,7 +1528,7 @@ function updateSkillAccuracyChart(skillTotalsAll, skillTotalsStudent = {}, stude
     maintainAspectRatio: false,
 
     // ✅ prevents y-axis labels (0–100%) from clipping
-    layout: { padding: { left: 14, right: 10, top: 8, bottom: 22 } },
+layout: { padding: { left: 14, right: 10, top: 8, bottom: 36 } },
 
     plugins: {
       legend: {
@@ -1530,9 +1538,18 @@ function updateSkillAccuracyChart(skillTotalsAll, skillTotalsStudent = {}, stude
       }
     },
     scales: {
-      x: {
-        ticks: { autoSkip: true, maxTicksLimit: 8, maxRotation: 0, minRotation: 0 }
-      },
+x: {
+  ticks: {
+    autoSkip: false,
+    maxRotation: 0,
+    minRotation: 0,
+    callback: function(value) {
+      const label = this.getLabelForValue(value);
+      return String(label).split("-"); // multi-line tick
+    }
+  }
+}
+,
       y: {
         min: 0,
         max: 100,
