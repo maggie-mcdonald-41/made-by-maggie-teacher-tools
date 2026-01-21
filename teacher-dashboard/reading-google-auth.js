@@ -1,6 +1,7 @@
 // reading-google-auth.js
 // Shared Google Identity wrapper for reading practice + teacher dashboard
 // ✅ Button-based GIS flow (no One Tap prompt), resilient + single-init.
+// ✅ Supports per-page container via window.RP_GSI_CONTAINER_ID
 
 (function () {
   const AUTH_STORAGE_KEY = "rp_last_google_user";
@@ -10,10 +11,24 @@
 
   let googleAuthInitialized = false;
   let initInProgress = false;
+  let renderedOnce = false;
 
-  // Visible container where we render the official GIS button.
-  // You should have <div id="rp-gsi-button-container"></div> in your modal.
-  const INTERNAL_BTN_CONTAINER_ID = "rp-gsi-button-container";
+  // Default container (student modal)
+  const DEFAULT_CONTAINER_ID = "rp-gsi-button-container";
+  // Restore behavior:
+  // "auto"     = restore currentUser immediately (teacher dashboard)
+  // "explicit" = do NOT restore currentUser until user clicks sign-in (student/shared devices)
+  // "off"      = never restore
+  const RESTORE_MODE = String(window.RP_AUTH_RESTORE_MODE || "auto").toLowerCase();
+
+  function getContainerId() {
+    // Allow a per-page override:
+    // <script>window.RP_GSI_CONTAINER_ID = "some-id";</script>
+    return (
+      (window.RP_GSI_CONTAINER_ID && String(window.RP_GSI_CONTAINER_ID)) ||
+      DEFAULT_CONTAINER_ID
+    );
+  }
 
   function notifyListeners() {
     listeners.forEach((fn) => {
@@ -59,20 +74,24 @@
 
     const cached = readUserFromStorage();
 
-    // If dashboard thinks we're logged out but we have a cached user, restore + notify.
     if (!currentUser && cached) {
+      // In explicit mode, we do NOT auto-rehydrate the user.
+      if (RESTORE_MODE === "explicit" || RESTORE_MODE === "off") {
+        return;
+      }
+
       console.log("[RP_AUTH] Rehydrating cached user (" + reason + "):", cached.email);
       currentUser = cached;
       notifyListeners();
 
-      // Optional: initialize button flow in the background (no One Tap)
+      // Optional: init button flow in background (no One Tap)
       if (!googleAuthInitialized && !initInProgress) {
         initGoogleAuth();
       }
       return;
     }
 
-    // If dashboard thinks we're logged in but storage is cleared, reflect sign-out.
+
     if (currentUser && !cached) {
       console.log("[RP_AUTH] Storage cleared; reflecting signed-out state (" + reason + ").");
       currentUser = null;
@@ -80,7 +99,6 @@
       return;
     }
 
-    // If both exist but differ (rare), trust storage (single source of truth).
     if (currentUser && cached && currentUser.email !== cached.email) {
       console.log("[RP_AUTH] Detected user mismatch; syncing from storage (" + reason + ").");
       currentUser = cached;
@@ -96,12 +114,8 @@
         return null;
       }
 
-      let payload = parts[1];
+      let payload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
 
-      // Convert from URL-safe Base64
-      payload = payload.replace(/-/g, "+").replace(/_/g, "/");
-
-      // Add padding if needed
       const pad = payload.length % 4;
       if (pad === 2) payload += "==";
       else if (pad === 3) payload += "=";
@@ -138,64 +152,87 @@
     persistUser(user);
   }
 
-  function ensureButtonContainer() {
-    let el = document.getElementById(INTERNAL_BTN_CONTAINER_ID);
-    if (el) return el;
+  function getButtonContainerElement() {
+    const id = getContainerId();
+    if (!id) return null;
 
-    // Create it if missing (fallback), but ideally this exists in your modal HTML.
-    el = document.createElement("div");
-    el.id = INTERNAL_BTN_CONTAINER_ID;
-    document.body.appendChild(el);
-    return el;
+    const el = document.getElementById(id);
+    return el || null;
   }
 
   function renderOfficialGoogleButton() {
-    const container = ensureButtonContainer();
+    const container = getButtonContainerElement();
+
+    // IMPORTANT: do NOT auto-create a container in <body>
+    // because that causes “nothing happened” confusion.
+    if (!container) {
+      console.warn(
+        `[RP_AUTH] Cannot render button. Missing container #${getContainerId()}.`
+      );
+      return false;
+    }
+
     container.innerHTML = "";
 
+    // Render the official GIS button
     google.accounts.id.renderButton(container, {
       theme: "outline",
       size: "large",
       text: "signin_with",
       shape: "pill"
     });
+
+    renderedOnce = true;
+    return true;
   }
 
   // --- Public: init ---
   function initGoogleAuth() {
-    // Hard guard: init only once
     if (googleAuthInitialized || initInProgress) return;
 
     initInProgress = true;
 
+    const maxTries = 30; // ~6 seconds @ 200ms
+    let tries = 0;
+
     const attemptInit = () => {
-      // Wait for Google Identity script to be ready
+      tries++;
+
+      // Wait for Google Identity script
       if (!window.google || !google.accounts || !google.accounts.id) {
-        console.warn("[RP_AUTH] Google Identity script not loaded yet. Retrying in 200ms...");
+        if (tries >= maxTries) {
+          console.error("[RP_AUTH] Google Identity script not loaded. Giving up.");
+          initInProgress = false;
+          return;
+        }
+        // quiet-ish retry
         setTimeout(attemptInit, 200);
         return;
       }
 
       if (!window.GOOGLE_CLIENT_ID) {
-        console.error("[RP_AUTH] Missing global window.GOOGLE_CLIENT_ID; cannot initialize Google Auth.");
+        console.error("[RP_AUTH] Missing window.GOOGLE_CLIENT_ID; cannot initialize Google Auth.");
         initInProgress = false;
         return;
       }
 
-      console.log("[RP_AUTH] Initializing Google Auth with client:", window.GOOGLE_CLIENT_ID);
-
       try {
+        console.log("[RP_AUTH] Initializing Google Auth with client:", window.GOOGLE_CLIENT_ID);
+
         google.accounts.id.initialize({
           client_id: window.GOOGLE_CLIENT_ID,
           callback: handleCredentialResponse
-          // NOTE: Intentionally NOT calling google.accounts.id.prompt()
-          // This keeps us out of One Tap/FedCM prompt mode and uses button flow.
+          // NOTE: We intentionally do NOT call google.accounts.id.prompt()
+          // to avoid One Tap/FedCM prompt mode.
         });
-
-        renderOfficialGoogleButton();
 
         googleAuthInitialized = true;
         initInProgress = false;
+
+        // If the container exists, render immediately.
+        // If not, that's okay: promptSignIn() can render later when UI is visible.
+        renderOfficialGoogleButton();
+
         console.log("[RP_AUTH] Google Auth initialized (button flow).");
       } catch (e) {
         initInProgress = false;
@@ -208,14 +245,36 @@
 
   // --- Public: "Sign in" ---
   function promptSignIn() {
+        // If we're in explicit restore mode and a cached user exists,
+    // adopt it ONLY after the user intentionally clicks sign-in.
+    if (!currentUser && RESTORE_MODE === "explicit") {
+      const cached = readUserFromStorage();
+      if (cached) {
+        console.log("[RP_AUTH] Explicit restore accepted by click:", cached.email);
+        currentUser = cached;
+        notifyListeners();
+      }
+    }
+    // If GIS isn't ready yet, kick init (safe)
     if (!googleAuthInitialized) {
-      console.warn("[RP_AUTH] Google Auth not initialized yet; initializing...");
       initGoogleAuth();
+      // also try render shortly after in case container appears (modal opens)
+      setTimeout(() => {
+        try {
+          if (window.google && google.accounts && google.accounts.id) {
+            renderOfficialGoogleButton();
+          }
+        } catch (_) {}
+      }, 50);
       return;
     }
 
+    // Re-render the official button (common when opening modal)
     try {
-      renderOfficialGoogleButton();
+      const ok = renderOfficialGoogleButton();
+      if (!ok) {
+        alert("Google sign-in isn't ready yet. Please open the sign-in box and try again.");
+      }
     } catch (e) {
       console.error("[RP_AUTH] Could not render Google button:", e);
       alert("Google sign-in isn't ready yet. Please refresh the page and try again.");
@@ -223,10 +282,21 @@
   }
 
   function signOut() {
-    console.log("[RP_AUTH] Signing out (local clear only).");
+    console.log("[RP_AUTH] Signing out (local clear + disableAutoSelect).");
+
     try {
       window.localStorage.removeItem(AUTH_STORAGE_KEY);
     } catch (e) {}
+
+    // Tell GIS not to auto-select the prior account (helps “stuck signed in” feeling)
+    try {
+      if (window.google && google.accounts && google.accounts.id) {
+        google.accounts.id.disableAutoSelect();
+      }
+    } catch (e) {
+      // ignore
+    }
+
     persistUser(null);
   }
 
@@ -237,13 +307,28 @@
     }
   }
 
+  // Optional: let pages set the container at runtime
+  function setButtonContainerId(id) {
+    if (!id) return;
+    window.RP_GSI_CONTAINER_ID = String(id);
+
+    // If already initialized and button has been rendered before,
+    // attempt a re-render into the new container.
+    try {
+      if (googleAuthInitialized && window.google && google.accounts && google.accounts.id) {
+        renderOfficialGoogleButton();
+      }
+    } catch (_) {}
+  }
+
   // Expose a single global used by teacher-dashboard.js and practice scripts
   window.RP_AUTH = {
     initGoogleAuth,
     promptSignIn,
     signOut,
     onAuthChange,
-    getCurrentUser: () => currentUser
+    getCurrentUser: () => currentUser,
+    setButtonContainerId
   };
 
   // Backwards-compatible: allow RP_AUTH.currentUser reads
@@ -253,37 +338,47 @@
     }
   });
 
-  // ---- Initial restore (teacher/dashboard only; disable in student mode) ----
+  // ---- Initial restore ----
   try {
-    if (window.RP_AUTH_DISABLE_RESTORE) {
-      console.log("[RP_AUTH] Restore disabled (student mode).");
+    if (RESTORE_MODE === "off" || window.RP_AUTH_DISABLE_RESTORE) {
+      console.log("[RP_AUTH] Restore disabled.");
+    } else if (RESTORE_MODE === "explicit") {
+      // Keep cached user in storage but do NOT set currentUser automatically.
+      const cached = readUserFromStorage();
+      if (cached) {
+        console.log("[RP_AUTH] Cached user available (explicit restore):", cached.email);
+      }
+      // Still safe to init button flow (no One Tap)
+      initGoogleAuth();
     } else {
+      // RESTORE_MODE === "auto"
       const cached = readUserFromStorage();
       if (cached) {
         console.log("[RP_AUTH] Restoring cached user:", cached.email);
         currentUser = cached;
         notifyListeners();
-        initGoogleAuth(); // no One Tap; safe
+        // Safe: button-flow init, no One Tap
+        initGoogleAuth();
+      } else {
+        initGoogleAuth();
       }
     }
   } catch (e) {
     console.warn("[RP_AUTH] Could not restore cached user:", e);
   }
 
+
   // ---- Keep auth state stable across idle/tab-sleep/BFCache ----
-  // 1) When tab becomes visible again, reconcile from storage.
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
       reconcileAuthState("visibilitychange");
     }
   });
 
-  // 2) When window refocuses, reconcile from storage.
   window.addEventListener("focus", () => {
     reconcileAuthState("focus");
   });
 
-  // 3) When BFCache restores the page, reconcile.
   window.addEventListener("pageshow", (e) => {
     if (e && e.persisted) {
       reconcileAuthState("pageshow(bfcache)");
@@ -292,14 +387,12 @@
     }
   });
 
-  // 4) If another tab signs in/out, keep this tab in sync.
   window.addEventListener("storage", (e) => {
     if (e && e.key === AUTH_STORAGE_KEY) {
       reconcileAuthState("storage");
     }
   });
 
-  // 5) Lightweight heartbeat (helps when browsers suspend timers / weird idle edge cases).
   setInterval(() => {
     reconcileAuthState("heartbeat");
   }, 60 * 1000);

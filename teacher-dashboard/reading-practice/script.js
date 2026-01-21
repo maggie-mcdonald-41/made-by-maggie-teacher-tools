@@ -526,7 +526,6 @@ if (classCodeInput && URL_CLASS_CODE) {
 const identityModalEl = document.getElementById("rp-identity-modal");
 const identityNameInput = document.getElementById("rp-id-name");
 const identityClassInput = document.getElementById("rp-id-class");
-const identityGoogleBtn = document.getElementById("rp-id-google");
 const identityContinueBtn = document.getElementById("rp-id-continue");
 const identityErrorEl = document.getElementById("rp-id-error");
 
@@ -543,6 +542,24 @@ function showIdentityModal() {
   if (identityNameInput) {
     identityNameInput.focus();
   }
+  showCachedUserOptionIfExists();
+}
+function showCachedUserOptionIfExists() {
+  const box = document.getElementById("rp-cached-user-box");
+  const label = document.getElementById("rp-cached-user-label");
+
+  if (!box || !label || !window.RP_AUTH) return;
+
+  const cached = localStorage.getItem("rp_last_google_user");
+  if (!cached) return;
+
+  try {
+    const user = JSON.parse(cached);
+    if (user?.email) {
+      label.textContent = `Continue as ${user.email}?`;
+      box.style.display = "block";
+    }
+  } catch {}
 }
 
 function hideIdentityModal() {
@@ -601,17 +618,6 @@ beginTrainerSession(payload);
   });
 }
 
-
-if (identityGoogleBtn) {
-  identityGoogleBtn.addEventListener("click", () => {
-    if (!window.RP_AUTH) {
-      alert("Google sign-in is not ready yet. Please try again in a moment.");
-      return;
-    }
-    RP_AUTH.promptSignIn();
-  });
-}
-
 // Start button behavior
 if (startBtn) {
   startBtn.addEventListener("click", () => {
@@ -659,8 +665,14 @@ beginTrainerSession(payload);
 }
 
 
-// Google auth wiring for student page
-if (window.RP_AUTH) {
+// ===============================
+// Google auth wiring (student page)
+// NOTE: This wires listeners only.
+// DO NOT call initGoogleAuth() here.
+// ===============================
+function wireStudentAuth() {
+  if (!window.RP_AUTH) return;
+
   RP_AUTH.onAuthChange((user) => {
     if (user) {
       const displayName = user.name || user.email || "";
@@ -688,7 +700,11 @@ if (window.RP_AUTH) {
       if (!rpSessionInitialized) {
         const saved = tryLoadLocalAutosaveForGoogleUser(sessionCode, user);
 
-        if (saved && Array.isArray(saved.questionResults) && saved.questionResults.length > 0) {
+        if (
+          saved &&
+          Array.isArray(saved.questionResults) &&
+          saved.questionResults.length > 0
+        ) {
           const resume = window.confirm(
             "It looks like you already started this practice set.\n\n" +
               "Click OK to jump back in where you left off, or Cancel to start a fresh attempt."
@@ -707,24 +723,23 @@ if (window.RP_AUTH) {
           } else {
             // Start session, then apply resume
             const classCode = (classCodeInput?.value || URL_CLASS_CODE || "").trim();
-           hideIdentityModal();
+            hideIdentityModal();
 
-          const payload = {
-            studentName: displayName,
-            classCode,
-            sessionCode
-          };
+            const payload = {
+              studentName: displayName,
+              classCode,
+              sessionCode
+            };
 
-          if (!rpLevelReady) {
-            rpPendingStartPayload = payload;
-            rpPendingResumeData = saved;
-            return;
-          }
+            if (!rpLevelReady) {
+              rpPendingStartPayload = payload;
+              rpPendingResumeData = saved;
+              return;
+            }
 
-          beginTrainerSession(payload);
-          applyResumeFromAutosave(saved);
-          return; // ✅ We're done – session started + resumed
-
+            beginTrainerSession(payload);
+            applyResumeFromAutosave(saved);
+            return; // ✅ session started + resumed
           }
         }
 
@@ -744,7 +759,6 @@ if (window.RP_AUTH) {
         }
 
         beginTrainerSession(payload);
-
       }
     } else {
       if (authStatusEl) {
@@ -754,18 +768,20 @@ if (window.RP_AUTH) {
       // If they sign out mid-session, we do NOT end the session.
     }
   });
-
-  RP_AUTH.initGoogleAuth();
 }
+
 
 
 if (studentGoogleBtn) {
   studentGoogleBtn.addEventListener("click", () => {
-    if (!window.RP_AUTH) {
-      alert("Google sign-in is not ready yet. Please try again in a moment.");
-      return;
+    // Put the official Google button in front of them
+    showIdentityModal();
+    showCachedUserOptionIfExists();
+
+    // Optional: if you still want promptSignIn as a backup:
+    if (window.RP_AUTH && typeof RP_AUTH.promptSignIn === "function") {
+      RP_AUTH.promptSignIn();
     }
-    RP_AUTH.promptSignIn();
   });
 }
 
@@ -2894,5 +2910,95 @@ if (window.READING_LEVEL && typeof window.READING_LEVEL === "object") {
   // Helpful log so we know the student page is waiting correctly
   console.log("[RP] Waiting for reading-level:ready ...");
 }
+
+// ===============================
+// AUTH BOOT (student page)
+// This is the ONLY place we init auth on this page.
+// ===============================
+// ===============================
+document.addEventListener("DOMContentLoaded", () => {
+  // If auth hasn't loaded yet, wait briefly (GIS script is async/defer)
+  let tries = 0;
+  const maxTries = 30; // ~3s total
+
+  const tick = () => {
+    tries++;
+
+    if (window.RP_AUTH && typeof window.RP_AUTH.initGoogleAuth === "function") {
+      // 1) Wire listeners FIRST so we don't miss the first auth change event
+      wireStudentAuth();
+
+      // 1.5) Wire cached-user buttons (if present)
+      wireCachedUserButtons();
+
+      // 2) Init google auth (renders button / restores state depending on your auth file)
+      window.RP_AUTH.initGoogleAuth();
+
+      // 3) If the identity modal is already visible on load, show cached option
+      showCachedUserOptionIfExists();
+
+      return;
+    }
+
+    if (tries < maxTries) {
+      setTimeout(tick, 100);
+    } else {
+      console.warn("[RP] RP_AUTH not ready after waiting. Google sign-in may be unavailable.");
+    }
+  };
+
+  tick();
+});
+
+// ===============================
+// Cached-user UI helpers (drop-in)
+// ===============================
+
+function wireCachedUserButtons() {
+  const useCachedBtn = document.getElementById("rp-use-cached-user");
+  const clearCachedBtn = document.getElementById("rp-clear-cached-user");
+
+  if (useCachedBtn) {
+    useCachedBtn.addEventListener("click", () => {
+      if (window.RP_AUTH) {
+        RP_AUTH.promptSignIn(); // explicit restore will adopt cached user
+      }
+    });
+  }
+
+  if (clearCachedBtn) {
+    clearCachedBtn.addEventListener("click", () => {
+      try {
+        localStorage.removeItem("rp_last_google_user");
+      } catch (e) {}
+
+      if (window.RP_AUTH) {
+        RP_AUTH.signOut();
+      }
+
+      location.reload(); // clean slate
+    });
+  }
+}
+
+function showCachedUserOptionIfExists() {
+  const box = document.getElementById("rp-cached-user-box");
+  const label = document.getElementById("rp-cached-user-label");
+
+  if (!box || !label) return;
+
+  let cached = null;
+  try {
+    cached = JSON.parse(localStorage.getItem("rp_last_google_user"));
+  } catch (e) {}
+
+  if (cached && cached.email) {
+    label.textContent = `Continue as ${cached.email}?`;
+    box.style.display = "block";
+  } else {
+    box.style.display = "none";
+  }
+}
+
 
 //script end

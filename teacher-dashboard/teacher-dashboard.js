@@ -3212,61 +3212,6 @@ if (startSessionBtn) {
   );
 }
 
-// Google auth buttons
-teacherSignInBtn.addEventListener("click", () => {
-  if (!window.RP_AUTH) {
-    alert("Google sign-in is not ready yet. Please try again in a moment.");
-    return;
-  }
-  RP_AUTH.promptSignIn();
-});
-
-teacherSignOutBtn.addEventListener("click", () => {
-  if (window.RP_AUTH) {
-    RP_AUTH.signOut();
-  }
-});
-
-// Listen for auth changes
-if (window.RP_AUTH) {
-  RP_AUTH.onAuthChange((user) => {
-    teacherUser = user;
-
-    if (teacherUser) {
-      teacherSignInBtn.style.display = "none";
-      teacherSignOutBtn.style.display = "inline-flex";
-      teacherSignOutBtn.textContent = `Sign out (${teacherUser.email})`;
-
-// If owner was NOT explicitly provided by URL, the signed-in teacher IS the owner view.
-if (!OWNER_EMAIL_FROM_URL) {
-  OWNER_EMAIL_FOR_VIEW = teacherUser.email;
-}
-
-const isCoTeacherView =
-  OWNER_EMAIL_FROM_URL &&
-  OWNER_EMAIL_FOR_VIEW &&
-  OWNER_EMAIL_FOR_VIEW !== teacherUser.email;
-
-if (!isCoTeacherView && typeof hydrateSessionHistoryFromServer === "function") {
-  hydrateSessionHistoryFromServer(teacherUser.email);
-}
-
-      // Hydrate server-side Session History ONLY for the main teacher view.
-      // Co-teachers should build up history only from sessions they open via links.
-      if (!isCoTeacherView && typeof hydrateSessionHistoryFromServer === "function") {
-        hydrateSessionHistoryFromServer(teacherUser.email);
-      }
-    } else {
-      teacherSignInBtn.style.display = "inline-flex";
-      teacherSignOutBtn.style.display = "none";
-      teacherSignOutBtn.textContent = "Sign out";
-    }
-  });
-
-}
-
-
-
 // ====== FULLSCREEN CHARTS ======
 function initChartFullscreen() {
   const overlay = document.getElementById("chart-fullscreen-backdrop");
@@ -3504,32 +3449,90 @@ if (urlOwner) {
     // ignore
   }
 })();
-// ---------- GOOGLE AUTH INIT (RUN ONCE, AFTER DOM READY) ----------
+
 document.addEventListener("DOMContentLoaded", () => {
   if (window.RP_AUTH && typeof window.RP_AUTH.initGoogleAuth === "function") {
     window.RP_AUTH.initGoogleAuth();
   }
 
-  // Render the official GIS button into your styled container
-  const target = document.getElementById("teacher-signin-btn");
+  const signInBtn = document.getElementById("teacher-signin-btn");
+  const gsiHost = document.getElementById("teacher-gsi-button-container");
+  const signOutBtn = document.getElementById("teacher-signout-btn");
+  const authStatusEl = document.getElementById("teacher-auth-status"); // optional
 
-  // Wait until GIS is ready, then render
-  const tryRender = () => {
-    if (!target) return;
-    if (!window.google?.accounts?.id) {
-      setTimeout(tryRender, 200);
-      return;
+  function openTeacherSignIn() {
+    if (gsiHost) {
+      gsiHost.style.display = "block";
+      gsiHost.setAttribute("aria-hidden", "false");
     }
 
-    target.innerHTML = "";
-    google.accounts.id.renderButton(target, {
-      theme: "outline",
-      size: "large",
-      text: "signin_with",
-      shape: "pill"
-    });
-  };
+    if (window.RP_AUTH && typeof window.RP_AUTH.promptSignIn === "function") {
+      window.RP_AUTH.promptSignIn();
+    } else {
+      alert("Google sign-in is not ready yet. Please try again in a moment.");
+    }
+  }
 
-  tryRender();
+  if (signInBtn) {
+    signInBtn.addEventListener("click", openTeacherSignIn);
+    signInBtn.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        openTeacherSignIn();
+      }
+    });
+  }
+
+  if (signOutBtn) {
+    signOutBtn.addEventListener("click", () => {
+      window.RP_AUTH?.signOut?.();
+    });
+  }
+
+  if (window.RP_AUTH && typeof window.RP_AUTH.onAuthChange === "function") {
+    window.RP_AUTH.onAuthChange((user) => {
+      teacherUser = user || null;
+      const signedIn = !!teacherUser;
+
+      // Button visibility
+      if (signInBtn) signInBtn.style.display = signedIn ? "none" : "inline-flex";
+      if (signOutBtn) signOutBtn.style.display = signedIn ? "inline-flex" : "none";
+
+      // Optional status line
+      if (authStatusEl) {
+        if (signedIn) {
+          authStatusEl.textContent = teacherUser?.email
+            ? `Signed in as ${teacherUser.email}`
+            : "Signed in";
+          authStatusEl.style.display = "";
+        } else {
+          authStatusEl.textContent = "";
+          authStatusEl.style.display = "none";
+        }
+      }
+
+      // Hide GIS host after sign-in
+      if (gsiHost && signedIn) {
+        gsiHost.style.display = "none";
+        gsiHost.setAttribute("aria-hidden", "true");
+      }
+
+      // Owner logic (your existing behavior)
+      if (signedIn && !OWNER_EMAIL_FROM_URL) {
+        OWNER_EMAIL_FOR_VIEW = teacherUser.email;
+      }
+
+      const isCoTeacherView =
+        OWNER_EMAIL_FROM_URL &&
+        OWNER_EMAIL_FOR_VIEW &&
+        teacherUser?.email &&
+        OWNER_EMAIL_FOR_VIEW !== teacherUser.email;
+
+      // Hydrate history (main teacher only)
+      if (signedIn && !isCoTeacherView && typeof hydrateSessionHistoryFromServer === "function") {
+        hydrateSessionHistoryFromServer(teacherUser.email);
+      }
+    });
+  }
 });
 

@@ -137,6 +137,16 @@
     Google sign-in saves your progress across devices. Local saving is also enabled.
   </p>
 </div>
+<div id="rp-cached-user-box" style="display:none; margin-top:8px; font-size:0.8rem;">
+  <span id="rp-cached-user-label"></span><br>
+  <button id="rp-use-cached-user" class="btn subtle" type="button">
+    Continue with this account
+  </button>
+  <button id="rp-clear-cached-user" class="btn subtle" type="button">
+    Use a different account
+  </button>
+</div>
+
 
 
     </section>
@@ -258,14 +268,16 @@
 
 
   </div>
-    <script>
-    window.GOOGLE_CLIENT_ID = "780192379486-tje7g4n83knjptkubsf8ur1g1rqb5ta6.apps.googleusercontent.com";
-  </script>
+<script>
+  window.GOOGLE_CLIENT_ID = "780192379486-...apps.googleusercontent.com";
+  window.RP_AUTH_RESTORE_MODE = "explicit";
+</script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="level-loader.js" defer></script>
-<script>window.RP_AUTH_DISABLE_RESTORE = true;</script>
 <script src="../reading-google-auth.js" defer></script>
+
+
 <script src="reporting.js" defer></script>
 <script src="script.js" defer></script>
 <footer class="app-footer">

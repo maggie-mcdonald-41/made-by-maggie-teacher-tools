@@ -2186,17 +2186,27 @@ body.dashboard-dark .filter-help {
   class="btn-small btn-secondary-small"
   role="button"
   aria-label="Sign in with Google"
+>
+  Sign in with Google
+</div>
+
+<div
+  id="teacher-gsi-button-container"
+  class="gsi-host"
+  aria-hidden="true"
+  style="display:none;"
 ></div>
+<p id="teacher-auth-status" class="muted" style="margin:8px 0 0; display:none;"></p>
 
+<button
+  id="teacher-signout-btn"
+  class="btn-small btn-secondary-small"
+  type="button"
+  style="display: none;"
+>
+  Sign out
+</button>
 
-      <button
-        id="teacher-signout-btn"
-        class="btn-small btn-secondary-small"
-        type="button"
-        style="display: none;"
-      >
-        Sign out
-      </button>
 
       <label class="theme-switch">
         <input type="checkbox" id="theme-toggle" />
@@ -2793,10 +2803,13 @@ body.dashboard-dark .filter-help {
   </footer>
   <script>
     window.GOOGLE_CLIENT_ID = "780192379486-tje7g4n83knjptkubsf8ur1g1rqb5ta6.apps.googleusercontent.com";
+    window.RP_GSI_CONTAINER_ID = "teacher-gsi-button-container";
+    window.RP_AUTH_RESTORE_MODE = "auto";
   </script>
+
   <!-- Google Identity + shared auth wrapper -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="reading-google-auth.js"></script>
+  <script src="reading-google-auth.js" defer></script>
 
   <!-- Utilities used by the dashboard -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
