@@ -1454,7 +1454,7 @@ function updateTypeAccuracyChart(allAttempts, studentAttempts = [], studentName 
 },
 
   
-layout: { padding: { left: 14, right: 10, top: 8, bottom: 36 } },
+layout: { padding: { left: 14, right: 10, top: 8, bottom: 56 } },
 
     plugins: {
       legend: {
@@ -1544,7 +1544,7 @@ function updateSkillAccuracyChart(skillTotalsAll, skillTotalsStudent = {}, stude
       chart.update("none");
     },
 
-    layout: { padding: { left: 14, right: 10, top: 8, bottom: 36 } },
+    layout: { padding: { left: 14, right: 10, top: 8, bottom: 56 } },
 
     plugins: {
       legend: {
@@ -1583,8 +1583,10 @@ function updateSkillAccuracyChart(skillTotalsAll, skillTotalsStudent = {}, stude
 
 
 function getAdaptiveXAxisTicks(chartWidth, mode = "skill") {
-  const compact = chartWidth < 620; // tweak breakpoint as needed
+  const compact = chartWidth < 620;         // small card
+  const medium = chartWidth < 980;          // laptop-ish widths
 
+  // ---------- COMPACT: skip + shorten ----------
   if (compact) {
     return {
       autoSkip: true,
@@ -1593,32 +1595,45 @@ function getAdaptiveXAxisTicks(chartWidth, mode = "skill") {
       minRotation: 0,
       font: { size: 10 },
       padding: 6,
-      // keep labels single-line in compact view
       callback: function (value) {
         const label = this.getLabelForValue(value);
-        // shorten long labels a bit
         const s = String(label);
         return s.length > 12 ? s.slice(0, 12) + "…" : s;
       }
     };
   }
 
-  // Expanded view: show all labels + wrap
+  // ---------- MEDIUM (most laptops): show all, angled ----------
+  if (medium) {
+    return {
+      autoSkip: false,
+      maxRotation: 40,
+      minRotation: 40,
+      font: { size: 11 },
+      padding: 8,
+      callback: function (value) {
+        // keep single-line when angled (cleaner)
+        return this.getLabelForValue(value);
+      }
+    };
+  }
+
+  // ---------- LARGE: show all, wrap (no angle needed) ----------
   return {
     autoSkip: false,
     maxRotation: 0,
     minRotation: 0,
     font: { size: 12 },
-    padding: 8,
+    padding: 10,
     callback: function (value) {
       const label = this.getLabelForValue(value);
-      // skills wrap by hyphen, types wrap by space
       return mode === "skill"
         ? String(label).split("-")
         : String(label).split(" ");
     }
   };
 }
+
 
 
 // ---------- SESSION TAGS + STUDENT DETAIL + HEAT MAP ----------
