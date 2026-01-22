@@ -1453,7 +1453,7 @@ const options = {
     chart.update("none");
   },
 
-  layout: { padding: { left: 14, right: 10, top: 8, bottom: 90 } },
+  layout: { padding: { left: 14, right: 10, top: 8, bottom: 40 } },
   plugins: {
     legend: { display: true, position: "bottom", labels: { padding: 14 } }
   },
@@ -1532,7 +1532,7 @@ function updateSkillAccuracyChart(skillTotalsAll, skillTotalsStudent = {}, stude
       chart.update("none");
     },
 
-    layout: { padding: { left: 14, right: 10, top: 8, bottom: 90 } },
+    layout: { padding: { left: 14, right: 10, top: 8, bottom: 40 } },
     plugins: {
       legend: { display: true, position: "bottom", labels: { padding: 14 } }
     },
@@ -1639,8 +1639,15 @@ function resolveTickLabel(scale, value) {
 function applyAdaptiveXTicks(chart, mode) {
   if (!chart?.options?.scales?.x) return;
 
-  // Only use adaptive ticks in fullscreen
-  if (!isChartFullscreen(chart)) {
+  const fs = isChartFullscreen(chart);
+
+  // Adjust layout padding depending on fullscreen vs dashboard view
+  if (chart.options.layout?.padding) {
+    chart.options.layout.padding.bottom = fs ? 110 : 40;
+  }
+
+  // Apply tick strategy
+  if (!fs) {
     chart.options.scales.x.ticks = getDefaultXAxisTicks(mode);
     return;
   }
@@ -1653,6 +1660,7 @@ function applyAdaptiveXTicks(chart, mode) {
 }
 
 
+
 function isChartFullscreen(chartOrCanvas) {
   const canvas = chartOrCanvas?.canvas || chartOrCanvas;
   if (!canvas) return false;
@@ -1661,14 +1669,24 @@ function isChartFullscreen(chartOrCanvas) {
 }
 
 function getDefaultXAxisTicks(mode = "skill") {
-  // "dashboard mode" ticks: keep it simple and readable
   return {
     autoSkip: true,
+    maxTicksLimit: mode === "skill" ? 6 : 8,
     maxRotation: 0,
     minRotation: 0,
     padding: 6,
+    font: { size: 11 },
     callback: function (value) {
-      return resolveTickLabel(this, value);
+      const label = resolveTickLabel(this, value);
+      const s = String(label);
+
+      // In small view, skill tags get long fast — keep them neat
+      if (mode === "skill") {
+        const cleaned = s.replace(/_/g, "-");
+        return cleaned.length > 14 ? cleaned.slice(0, 14) + "…" : cleaned;
+      }
+
+      return s;
     }
   };
 }
