@@ -1458,7 +1458,7 @@ const options = {
     legend: { display: true, position: "bottom", labels: { padding: 14 } }
   },
   scales: {
-    x: { ticks: {} }, // set by applyAdaptiveXTicks
+    x: { ticks: getDefaultXAxisTicks("type") },
     y: { min: 0, max: 100, ticks: { stepSize: 20, callback: (v) => `${v}%` } }
   }
 };
@@ -1537,8 +1537,8 @@ function updateSkillAccuracyChart(skillTotalsAll, skillTotalsStudent = {}, stude
       legend: { display: true, position: "bottom", labels: { padding: 14 } }
     },
     scales: {
-      x: { ticks: {} }, // set by applyAdaptiveXTicks
-      y: { min: 0, max: 100, ticks: { stepSize: 20, callback: (v) => `${v}%` } }
+        x: { ticks: getDefaultXAxisTicks("skill") },
+        y: { min: 0, max: 100, ticks: { stepSize: 20, callback: (v) => `${v}%` } }
     }
   };
 
@@ -1629,12 +1629,39 @@ function resolveTickLabel(scale, value) {
 }
 
 function applyAdaptiveXTicks(chart, mode) {
+  if (!chart?.options?.scales?.x) return;
+
+  // ✅ Only use adaptive ticks in fullscreen
+  if (!isChartFullscreen(chart)) {
+    chart.options.scales.x.ticks = getDefaultXAxisTicks(mode);
+    return;
+  }
+
   const w = getChartWidth(chart);
   if (!w) return; // avoid applying ticks when hidden/collapsed
   chart.options.scales.x.ticks = getAdaptiveXAxisTicks(w, mode);
 }
 
 
+function isChartFullscreen(chartOrCanvas) {
+  const canvas = chartOrCanvas?.canvas || chartOrCanvas;
+  if (!canvas) return false;
+  const wrapper = canvas.closest?.(".chart-wrapper");
+  return !!(wrapper && wrapper.classList.contains("chart-wrapper-fullscreen"));
+}
+
+function getDefaultXAxisTicks(mode = "skill") {
+  // "dashboard mode" ticks: keep it simple and readable
+  return {
+    autoSkip: true,
+    maxRotation: 0,
+    minRotation: 0,
+    padding: 6,
+    callback: function (value) {
+      return resolveTickLabel(this, value);
+    }
+  };
+}
 
 // ---------- SESSION TAGS + STUDENT DETAIL + HEAT MAP ----------
 function updateSessionTagsFromAttempts(attempts) {
@@ -3355,6 +3382,25 @@ function initChartFullscreen() {
       wrapper.classList.add("chart-wrapper-fullscreen");
       closeBtn.classList.add("is-visible");
       overlay.classList.add("is-active");
+      // ✅ Re-apply tick strategy now that the wrapper is fullscreen
+const canvas = wrapper.querySelector("canvas");
+if (canvas) {
+  const id = canvas.id;
+
+  const chart =
+    id === "chart-type-accuracy" ? typeAccuracyChart :
+    id === "chart-skill-accuracy" ? skillAccuracyChart :
+    id === "chart-score-bands" ? scoreBandsChart :
+    null;
+
+  if (chart) {
+    const mode = (id === "chart-type-accuracy") ? "type" : (id === "chart-skill-accuracy") ? "skill" : null;
+    if (mode) applyAdaptiveXTicks(chart, mode);
+    chart.resize();          // ensures Chart.js recalcs layout
+    chart.update("none");    // fast redraw
+  }
+}
+
     });
   });
 }
