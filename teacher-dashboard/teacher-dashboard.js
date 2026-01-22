@@ -1454,7 +1454,7 @@ function updateTypeAccuracyChart(allAttempts, studentAttempts = [], studentName 
 },
 
   
-layout: { padding: { left: 14, right: 10, top: 8, bottom: 56 } },
+layout: { padding: { left: 14, right: 10, top: 8, bottom: 90 } },
 
     plugins: {
       legend: {
@@ -1544,7 +1544,7 @@ function updateSkillAccuracyChart(skillTotalsAll, skillTotalsStudent = {}, stude
       chart.update("none");
     },
 
-    layout: { padding: { left: 14, right: 10, top: 8, bottom: 56 } },
+    layout: { padding: { left: 14, right: 10, top: 8, bottom: 90 } },
 
     plugins: {
       legend: {
@@ -1607,10 +1607,10 @@ function getAdaptiveXAxisTicks(chartWidth, mode = "skill") {
   if (medium) {
     return {
       autoSkip: false,
-      maxRotation: 40,
-      minRotation: 40,
+      maxRotation: 90,
+      minRotation: 90,
       font: { size: 11 },
-      padding: 8,
+      padding: 6,
       callback: function (value) {
         // keep single-line when angled (cleaner)
         return this.getLabelForValue(value);
