@@ -1562,9 +1562,15 @@ function updateSkillAccuracyChart(skillTotalsAll, skillTotalsStudent = {}, stude
 }
 
 
-function getAdaptiveXAxisTicks(chartWidth, mode = "skill") {
+function getAdaptiveXAxisTicks(chartWidth, mode = "skill", labelCount = 0) {
   const compact = chartWidth < 620;
-  const medium  = chartWidth < 980;
+
+  // How many pixels we have per label
+  const pxPerLabel = labelCount ? (chartWidth / labelCount) : chartWidth;
+
+  // If labels are dense, rotate vertical
+  const shouldRotateVertical =
+    (mode === "skill" && labelCount >= 12) || pxPerLabel < 45;
 
   if (compact) {
     return {
@@ -1582,7 +1588,7 @@ function getAdaptiveXAxisTicks(chartWidth, mode = "skill") {
     };
   }
 
-  if (medium) {
+  if (shouldRotateVertical) {
     return {
       autoSkip: false,
       maxRotation: 90,
@@ -1595,6 +1601,7 @@ function getAdaptiveXAxisTicks(chartWidth, mode = "skill") {
     };
   }
 
+  // Wide & not dense → keep horizontal
   return {
     autoSkip: false,
     maxRotation: 0,
@@ -1609,6 +1616,7 @@ function getAdaptiveXAxisTicks(chartWidth, mode = "skill") {
     }
   };
 }
+
 
 function getChartWidth(chartOrCanvas) {
   const canvas = chartOrCanvas?.canvas || chartOrCanvas;
@@ -1631,15 +1639,17 @@ function resolveTickLabel(scale, value) {
 function applyAdaptiveXTicks(chart, mode) {
   if (!chart?.options?.scales?.x) return;
 
-  // ✅ Only use adaptive ticks in fullscreen
+  // Only use adaptive ticks in fullscreen
   if (!isChartFullscreen(chart)) {
     chart.options.scales.x.ticks = getDefaultXAxisTicks(mode);
     return;
   }
 
   const w = getChartWidth(chart);
-  if (!w) return; // avoid applying ticks when hidden/collapsed
-  chart.options.scales.x.ticks = getAdaptiveXAxisTicks(w, mode);
+  if (!w) return;
+
+  const labelCount = Array.isArray(chart.data?.labels) ? chart.data.labels.length : 0;
+  chart.options.scales.x.ticks = getAdaptiveXAxisTicks(w, mode, labelCount);
 }
 
 
