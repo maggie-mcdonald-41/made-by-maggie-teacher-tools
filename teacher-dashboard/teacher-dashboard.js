@@ -3516,6 +3516,7 @@ if (urlOwner) {
   }
 })();
 
+
 document.addEventListener("DOMContentLoaded", () => {
   if (window.RP_AUTH && typeof window.RP_AUTH.initGoogleAuth === "function") {
     window.RP_AUTH.initGoogleAuth();
@@ -3527,20 +3528,31 @@ document.addEventListener("DOMContentLoaded", () => {
   const authStatusEl = document.getElementById("teacher-auth-status"); // optional
 
   function openTeacherSignIn() {
+    // Hide your button immediately so only Google's chooser is visible
+    if (signInBtn) signInBtn.style.display = "none";
+
+    // Show GIS host (if you’re using one)
     if (gsiHost) {
       gsiHost.style.display = "block";
       gsiHost.setAttribute("aria-hidden", "false");
     }
 
+    // Trigger Google sign-in
     if (window.RP_AUTH && typeof window.RP_AUTH.promptSignIn === "function") {
       window.RP_AUTH.promptSignIn();
     } else {
+      // Restore button if sign-in isn't ready
+      if (signInBtn) signInBtn.style.display = "inline-flex";
       alert("Google sign-in is not ready yet. Please try again in a moment.");
     }
   }
 
   if (signInBtn) {
-    signInBtn.addEventListener("click", openTeacherSignIn);
+    signInBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      openTeacherSignIn();
+    });
+
     signInBtn.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
@@ -3601,4 +3613,5 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
 
