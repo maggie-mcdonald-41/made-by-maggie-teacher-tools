@@ -1444,50 +1444,39 @@ function updateTypeAccuracyChart(allAttempts, studentAttempts = [], studentName 
     datasets.push({ label: studentName, data: studentData });
   }
 
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
+const options = {
+  responsive: true,
+  maintainAspectRatio: false,
 
-    onResize: (chart, size) => {
-  chart.options.scales.x.ticks = getAdaptiveXAxisTicks(size.width, "type"); 
-  chart.update("none");
-},
+  onResize: (chart) => {
+    applyAdaptiveXTicks(chart, "type");
+    chart.update("none");
+  },
 
-  
-layout: { padding: { left: 14, right: 10, top: 8, bottom: 90 } },
-
-    plugins: {
-      legend: {
-        display: true,
-        position: "bottom",
-        labels: { padding: 14 }
-      }
-    },
-    scales: {
-x: {
-  ticks: getAdaptiveXAxisTicks(canvas.getBoundingClientRect().width, "type")
-}
-,
-      y: {
-        min: 0,
-        max: 100,
-        ticks: { stepSize: 20, callback: (v) => `${v}%` }
-      }
-    }
-  };
-
-  if (typeAccuracyChart) {
-    typeAccuracyChart.data.labels = labels;
-    typeAccuracyChart.data.datasets = datasets;
-    typeAccuracyChart.options = options; // ✅ IMPORTANT
-    typeAccuracyChart.update();
-  } else {
-    typeAccuracyChart = new Chart(canvas, {
-      type: "bar",
-      data: { labels, datasets },
-      options
-    });
+  layout: { padding: { left: 14, right: 10, top: 8, bottom: 90 } },
+  plugins: {
+    legend: { display: true, position: "bottom", labels: { padding: 14 } }
+  },
+  scales: {
+    x: { ticks: {} }, // set by applyAdaptiveXTicks
+    y: { min: 0, max: 100, ticks: { stepSize: 20, callback: (v) => `${v}%` } }
   }
+};
+
+if (typeAccuracyChart) {
+  typeAccuracyChart.data.labels = labels;
+  typeAccuracyChart.data.datasets = datasets;
+  typeAccuracyChart.options = options;
+
+  applyAdaptiveXTicks(typeAccuracyChart, "type");
+  typeAccuracyChart.update();
+} else {
+  typeAccuracyChart = new Chart(canvas, { type: "bar", data: { labels, datasets }, options });
+
+  applyAdaptiveXTicks(typeAccuracyChart, "type");
+  typeAccuracyChart.update("none");
+}
+
 }
 
 function updateSkillAccuracyChart(skillTotalsAll, skillTotalsStudent = {}, studentName = null) {
@@ -1538,32 +1527,18 @@ function updateSkillAccuracyChart(skillTotalsAll, skillTotalsStudent = {}, stude
     responsive: true,
     maintainAspectRatio: false,
 
-    // ✅ add this RIGHT HERE (top-level in options)
-    onResize: (chart, size) => {
-      chart.options.scales.x.ticks = getAdaptiveXAxisTicks(size.width, "skill");
+    onResize: (chart) => {
+      applyAdaptiveXTicks(chart, "skill");
       chart.update("none");
     },
 
     layout: { padding: { left: 14, right: 10, top: 8, bottom: 90 } },
-
     plugins: {
-      legend: {
-        display: true,
-        position: "bottom",
-        labels: { padding: 14 }
-      }
+      legend: { display: true, position: "bottom", labels: { padding: 14 } }
     },
-
     scales: {
-      x: {
-        // ✅ skill chart should use "skill"
-        ticks: getAdaptiveXAxisTicks(canvas.getBoundingClientRect().width, "skill")
-      },
-      y: {
-        min: 0,
-        max: 100,
-        ticks: { stepSize: 20, callback: (v) => `${v}%` }
-      }
+      x: { ticks: {} }, // set by applyAdaptiveXTicks
+      y: { min: 0, max: 100, ticks: { stepSize: 20, callback: (v) => `${v}%` } }
     }
   };
 
@@ -1571,6 +1546,8 @@ function updateSkillAccuracyChart(skillTotalsAll, skillTotalsStudent = {}, stude
     skillAccuracyChart.data.labels = labels;
     skillAccuracyChart.data.datasets = datasets;
     skillAccuracyChart.options = options;
+
+    applyAdaptiveXTicks(skillAccuracyChart, "skill");
     skillAccuracyChart.update();
   } else {
     skillAccuracyChart = new Chart(canvas, {
@@ -1578,15 +1555,17 @@ function updateSkillAccuracyChart(skillTotalsAll, skillTotalsStudent = {}, stude
       data: { labels, datasets },
       options
     });
+
+    applyAdaptiveXTicks(skillAccuracyChart, "skill");
+    skillAccuracyChart.update("none");
   }
 }
 
 
 function getAdaptiveXAxisTicks(chartWidth, mode = "skill") {
-  const compact = chartWidth < 620;         // small card
-  const medium = chartWidth < 980;          // laptop-ish widths
+  const compact = chartWidth < 620;
+  const medium  = chartWidth < 980;
 
-  // ---------- COMPACT: skip + shorten ----------
   if (compact) {
     return {
       autoSkip: true,
@@ -1596,14 +1575,13 @@ function getAdaptiveXAxisTicks(chartWidth, mode = "skill") {
       font: { size: 10 },
       padding: 6,
       callback: function (value) {
-        const label = this.getLabelForValue(value);
+        const label = resolveTickLabel(this, value);
         const s = String(label);
         return s.length > 12 ? s.slice(0, 12) + "…" : s;
       }
     };
   }
 
-  // ---------- MEDIUM (most laptops): show all, angled ----------
   if (medium) {
     return {
       autoSkip: false,
@@ -1612,13 +1590,11 @@ function getAdaptiveXAxisTicks(chartWidth, mode = "skill") {
       font: { size: 11 },
       padding: 6,
       callback: function (value) {
-        // keep single-line when angled (cleaner)
-        return this.getLabelForValue(value);
+        return resolveTickLabel(this, value);
       }
     };
   }
 
-  // ---------- LARGE: show all, wrap (no angle needed) ----------
   return {
     autoSkip: false,
     maxRotation: 0,
@@ -1626,12 +1602,36 @@ function getAdaptiveXAxisTicks(chartWidth, mode = "skill") {
     font: { size: 12 },
     padding: 10,
     callback: function (value) {
-      const label = this.getLabelForValue(value);
+      const label = resolveTickLabel(this, value);
       return mode === "skill"
         ? String(label).split("-")
         : String(label).split(" ");
     }
   };
+}
+
+function getChartWidth(chartOrCanvas) {
+  const canvas = chartOrCanvas?.canvas || chartOrCanvas;
+  const el = canvas?.parentElement || canvas;
+  // parentElement is usually the chart card container that has the real width
+  return Math.max(0, el?.clientWidth || canvas?.clientWidth || 0);
+}
+
+function resolveTickLabel(scale, value) {
+  // Works whether value is an index (category scale) or a label string
+  const labels = scale?.getLabels ? scale.getLabels() : (scale?.chart?.data?.labels || []);
+  if (typeof value === "number") return labels[value] ?? String(value);
+
+  // If it's already the label, return it
+  const asStr = String(value);
+  const idx = labels.indexOf(asStr);
+  return idx >= 0 ? labels[idx] : asStr;
+}
+
+function applyAdaptiveXTicks(chart, mode) {
+  const w = getChartWidth(chart);
+  if (!w) return; // avoid applying ticks when hidden/collapsed
+  chart.options.scales.x.ticks = getAdaptiveXAxisTicks(w, mode);
 }
 
 
