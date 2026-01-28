@@ -818,14 +818,39 @@ function applySelectionHighlight(containerEl, mode) {
   if (!selection || selection.rangeCount === 0) return;
 
   const range = selection.getRangeAt(0);
-// ❗ Prevent nesting highlights inside highlights
-const ancestor = range.commonAncestorContainer.nodeType === 3
+  // ✅ Guard: do not allow highlighting across block-level boundaries
+// (Prevents DOM "repair" that causes weird spacing/indent after lots of highlighting)
+const BLOCK_SELECTOR = "p, li, h1, h2, h3, h4, h5, h6, blockquote, pre, table, tr, td, th, div";
+
+const startEl =
+  range.startContainer.nodeType === 3 ? range.startContainer.parentElement : range.startContainer;
+const endEl =
+  range.endContainer.nodeType === 3 ? range.endContainer.parentElement : range.endContainer;
+
+const startBlock = startEl ? startEl.closest(BLOCK_SELECTOR) : null;
+const endBlock = endEl ? endEl.closest(BLOCK_SELECTOR) : null;
+
+// If selection spans multiple blocks (or crosses out of a block), block it.
+if (startBlock && endBlock && startBlock !== endBlock) {
+  selection.removeAllRanges();
+  return;
+}
+
+// ❗ Prevent nesting highlights inside highlights (check both ends + ancestor)
+const startNode = range.startContainer.nodeType === 3 ? range.startContainer.parentElement : range.startContainer;
+const endNode = range.endContainer.nodeType === 3 ? range.endContainer.parentElement : range.endContainer;
+const commonNode = range.commonAncestorContainer.nodeType === 3
   ? range.commonAncestorContainer.parentElement
   : range.commonAncestorContainer;
 
-if (ancestor && ancestor.closest(".passage-highlight, .q-highlight")) {
+if (
+  (startNode && startNode.closest(".passage-highlight, .q-highlight")) ||
+  (endNode && endNode.closest(".passage-highlight, .q-highlight")) ||
+  (commonNode && commonNode.closest(".passage-highlight, .q-highlight"))
+) {
   return;
 }
+
 
   // Ignore empty selections or selections that are outside this container
   if (
@@ -852,6 +877,11 @@ range.insertNode(wrapper);
 
 // 🧹 Normalize text nodes to prevent spacing issues
 containerEl.normalize();
+// Extra cleanup: normalize the passage root too (helps after many highlights)
+if (mode === "passage") {
+  const activePassage = getActivePassageElement();
+  if (activePassage) activePassage.normalize();
+}
 
 // Clear native selection
 selection.removeAllRanges();

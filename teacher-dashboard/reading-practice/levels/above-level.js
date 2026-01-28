@@ -31,7 +31,7 @@ passages: {
       </p>
 
       <p>
-        Beyond academic support, AI tools help prepare students for a technology-driven future. Digital literacy is increasingly important in higher education and the workforce. The Organisation for Economic Co-operation and Development (OECD) emphasizes that students must learn how to evaluate digital information, use technology responsibly, and think critically about automated tools. Teaching students how to use AI appropriately encourages thoughtful decision-making rather than dependence.
+        Beyond academic support, AI tools help prepare students for a technology-driven future. Digital literacy is increasingly important in higher education and the workforce. The Organization for Economic Co-operation and Development (OECD) emphasizes that students must learn how to evaluate digital information, use technology responsibly, and think critically about automated tools. Teaching students how to use AI appropriately encourages thoughtful decision-making rather than dependence.
       </p>
 
       <p>
