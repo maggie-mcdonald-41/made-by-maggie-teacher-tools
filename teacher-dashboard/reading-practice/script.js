@@ -818,6 +818,14 @@ function applySelectionHighlight(containerEl, mode) {
   if (!selection || selection.rangeCount === 0) return;
 
   const range = selection.getRangeAt(0);
+// ❗ Prevent nesting highlights inside highlights
+const ancestor = range.commonAncestorContainer.nodeType === 3
+  ? range.commonAncestorContainer.parentElement
+  : range.commonAncestorContainer;
+
+if (ancestor && ancestor.closest(".passage-highlight, .q-highlight")) {
+  return;
+}
 
   // Ignore empty selections or selections that are outside this container
   if (
@@ -840,9 +848,14 @@ function applySelectionHighlight(containerEl, mode) {
   try {
     const contents = range.extractContents();
     wrapper.appendChild(contents);
-    range.insertNode(wrapper);
-    // Clear the native blue selection
-    selection.removeAllRanges();
+range.insertNode(wrapper);
+
+// 🧹 Normalize text nodes to prevent spacing issues
+containerEl.normalize();
+
+// Clear native selection
+selection.removeAllRanges();
+
   } catch (err) {
     console.error("Highlight error:", err);
   }
@@ -871,10 +884,15 @@ if (questionStemEl) {
  */
 function unwrapHighlightSpan(span) {
   const parent = span.parentNode;
+  if (!parent) return;
+
   while (span.firstChild) {
     parent.insertBefore(span.firstChild, span);
   }
   parent.removeChild(span);
+
+  // 🧹 Merge adjacent text nodes after unwrapping
+  parent.normalize();
 }
 
 /**
@@ -886,6 +904,7 @@ function clearPassageHighlights() {
 
   const spans = activePassage.querySelectorAll(".passage-highlight");
   spans.forEach(unwrapHighlightSpan);
+  activePassage.normalize();
 }
 
 
@@ -896,6 +915,7 @@ function clearQuestionHighlights() {
   if (!questionStemEl) return;
   const spans = questionStemEl.querySelectorAll(".q-highlight");
   spans.forEach(unwrapHighlightSpan);
+  questionStemEl.normalize();
 }
 
 
