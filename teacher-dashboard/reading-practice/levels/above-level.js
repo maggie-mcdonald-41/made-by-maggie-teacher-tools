@@ -22,6 +22,7 @@ passages: {
         <figure class="graph-placeholder">
           <img src="../media/ai-image1.png"
                alt="Image of AI benefits summary">
+          <figcaption>
             Image of AI benefits summary
           </figcaption>
         </figure>
@@ -57,7 +58,8 @@ passages: {
         <figure class="graph-placeholder">
           <img src="../media/ai-image2.png"
                alt="Image of AI negatives summary">
-            Image of AI benefits summary
+          <figcaption>
+               Image of AI negatives summary
           </figcaption>
         </figure>
 

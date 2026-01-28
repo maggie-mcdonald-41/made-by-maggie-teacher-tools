@@ -23,6 +23,7 @@ passages: {
         <figure class="graph-placeholder">
           <img src="../media/music-image1.png"
                alt="Image of Music benefits summary">
+          <figcaption>
             Image of music benefits summary
           </figcaption>
         </figure>
@@ -54,6 +55,7 @@ passages: {
         <figure class="graph-placeholder">
           <img src="../media/music-image2.png"
                alt="Image of Music issues summary">
+          <figcaption>
             Image of music issues summary
           </figcaption>
         </figure>
