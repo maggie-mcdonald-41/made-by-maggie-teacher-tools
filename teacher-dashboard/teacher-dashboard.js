@@ -802,7 +802,7 @@ if (deletedKeys.includes(key)) {
   };
 
   if (idx >= 0) {
-    history[idx] = entry;
+    history[idx] = { ...history[idx], ...entry };
   } else {
     history.push(entry);
   }
