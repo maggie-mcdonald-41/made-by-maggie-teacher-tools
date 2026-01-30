@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>2-Point Thesis Builder by Made by Maggie</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+
+  <!-- Use your existing site stylesheet -->
+  <link rel="stylesheet" href="/styles.css">
+
+  <style>
+    :root{
+      --deep-teal:#004860; --bright-teal:#05C1B8; --light-teal:#84EBE6;
+      --golden:#FFD466; --peach:#FF8F85; --light-pink:#FFA69E;
+      --chalk:#F5FDFF; --violet:#2a1933;
+    }
+    *{box-sizing:border-box}
+body{
+  margin:0;
+  font-family: "Nunito", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color:#333;
+  background:#fff;
+}
+
+    /* Optional simple top nav (if you ever want it) */
+    .topbar{
+      background:var(--deep-teal); color:#fff; padding:.75rem 1rem;
+      display:flex; justify-content:space-between; align-items:center;
+    }
+    .topbar a{color:#fff; text-decoration:none; font-weight:600}
+    .topbar a:hover{color:var(--golden)}
+
+    /* HERO with ombré like your main site */
+    .hero{
+      padding:3rem 1rem 2.5rem;
+      background: linear-gradient(90deg, var(--light-teal), var(--golden), var(--light-pink));
+      text-align:center; color:#111;
+    }
+    .hero h1{
+      margin:0 0 .5rem;
+      font-size:clamp(1.8rem, 4.5vw, 2.6rem);
+      color:#222;
+      text-shadow: 0 1px 0 rgba(255,255,255,.6);
+    }
+    .hero p{
+      margin:.5rem auto 0;
+      max-width:900px;
+      font-size:clamp(1rem, 2.2vw, 1.25rem);
+      line-height:1.6;
+    }
+
+    .cta-row{
+      margin-top:1.25rem;
+      display:flex;
+      gap:.75rem;
+      justify-content:center;
+      flex-wrap:wrap
+    }
+    .btn{
+      display:inline-block;
+      padding:.75rem 1.1rem;
+      border-radius:12px;
+      font-weight:700;
+      text-decoration:none;
+      box-shadow:0 4px 10px rgba(0,0,0,.08);
+      transition:.2s transform, .2s background;
+    }
+    .btn-primary{background:#9c6ded; color:#fff}
+    .btn-primary:hover{background:#0AD1CC; transform:translateY(-2px)}
+    .btn-ghost{background:#fff; color:#3d3d3d; border:2px solid #3d3d3d}
+    .btn-ghost:hover{background:#3d3d3d; color:#fff}
+
+    /* Sections */
+    .section{
+      padding:2.25rem 1rem;
+      max-width:1200px;
+      margin:0 auto;
+    }
+    .section h2{
+      text-align:center;
+      color:var(--deep-teal);
+      font-size:clamp(1.4rem, 3.5vw, 2rem);
+      margin:0 0 1rem;
+    }
+
+    /* Screenshot grid & card styles */
+    .features { padding:2rem 1rem; }
+    #screenshots { scroll-margin-top:90px; }
+    .screenshot-grid{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:1rem;
+      max-width:1100px;
+      margin:1rem auto 0;
+    }
+    .screenshot-grid figure{
+      margin:0;
+      background:#fff;
+      border-left:6px solid var(--bright-teal);
+      border-radius:16px;
+      padding:12px;
+      box-shadow:0 6px 18px rgba(0,0,0,.06);
+    }
+    .screenshot-grid img{
+      width:100%;
+      height:auto;
+      aspect-ratio: 4 / 3;
+      object-fit:contain;
+      background:#eee;
+      border-radius:10px;
+      display:block;
+    }
+    .screenshot-grid figcaption{
+      margin:.5rem .25rem 0;
+      font-weight:700;
+      text-align:center;
+      color:#222;
+    }
+    @media (max-width: 900px){
+      .screenshot-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 600px){
+      .screenshot-grid{ grid-template-columns: 1fr; }
+    }
+
+    /* FEATURES anchor target (for your menu jump link) */
+    #features{scroll-margin-top:90px}
+
+    /* Verification / feature callout */
+    .verify{
+      background:#f9f9f9;
+      border-left:6px solid var(--bright-teal);
+      border-radius:14px;
+      padding:1.25rem;
+      margin-top:1.5rem;
+      max-width:1100px;
+      margin-left:auto;
+      margin-right:auto;
+      text-align:left;
+    }
+    .verify h3{margin:.2rem 0 .6rem; color:#222; font-size:1.15rem}
+    .verify ul{margin:.25rem 0 0 1.25rem}
+    .verify li{margin:.35rem 0}
+
+    /* Mini “how it works” cards */
+    .how-grid{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:1rem;
+      max-width:1100px;
+      margin:1rem auto 0;
+    }
+    .how-card{
+      background:#fff;
+      border-radius:16px;
+      padding:1rem 1rem 1.1rem;
+      box-shadow:0 6px 18px rgba(0,0,0,.06);
+      border:1px solid rgba(0,0,0,.06);
+      text-align:left;
+    }
+    .how-card h3{
+      margin:.1rem 0 .35rem;
+      color:var(--deep-teal);
+      font-size:1.05rem;
+    }
+    .how-card p{margin:.25rem 0 0; color:#444; line-height:1.55}
+    @media (max-width: 900px){
+      .how-grid{ grid-template-columns: 1fr; }
+    }
+
+    /* Footer-ish */
+    .foot{
+      width: 100vw;
+      margin-left: 50%;
+      transform: translateX(-50%);
+    }
+
+    /* “Header text off-white” (matches your request from the builder UI) */
+    .header-offwhite{
+      color:#edf6f9; /* off-white */
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Navigation (mirrors your conclusion builder page) -->
+  <nav class="main-nav">
+    <div class="nav-container">
+      <a href="https://madebymaggie.org" class="nav-logo">📘 Made by Maggie</a>
+
+      <button class="nav-toggle" onclick="toggleNav()">☰</button>
+
+      <ul class="nav-links">
+        <li><a href="#tool-preview">Preview</a></li>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#screenshots">Screenshots</a></li>
+        <li><a href="#video-instruction">Video</a></li>
+        <li><a href="#privacy">Privacy</a></li>
+        <li><a href="#purchase">Purchase</a></li>
+        <li><a href="#contact">Support</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <header class="hero" id="tool-preview" style="background: linear-gradient(90deg, #84EBEE, #FFD466, #FFA69E);">
+    <h1>2-Point Thesis Builder (Google Doc add-on / Apps Script sidebar)</h1>
+
+    <p class="hero-subtext">
+      A guided builder that helps students choose a clear claim and two strong reasons, then combine them into a formal,
+      third-person thesis statement—without writing the thesis for them.
+    </p>
+
+    <div class="cta-row">
+      <!-- Update this link to wherever you host the live tool -->
+      <a class="btn btn-ghost" href="#features">See Features</a>
+    </div>
+
+    <!-- Screenshots -->
+    <section class="features" id="screenshots">
+      <h2>Screenshots</h2>
+
+      <div class="screenshot-grid">
+        <figure>
+          <img src="/images/thesis-builder-step1.png" alt="Thesis Builder showing claim or stance selection and topic prompt">
+          <figcaption>Choose a Claim</figcaption>
+        </figure>
+
+        <figure>
+          <img src="/images/thesis-builder-preview.png" alt="Thesis Builder cover image">
+          <figcaption>Pick Two Reasons</figcaption>
+        </figure>
+
+        <figure>
+          <img src="/images/thesis-builder-result.png" alt="Thesis Builder showing the drafted thesis and checks">
+          <figcaption>Draft + Checks</figcaption>
+        </figure>
+      </div>
+
+      <!-- Quick meta -->
+      <div class="doc-meta" style="max-width:1100px; margin:1rem auto 0; text-align:left;">
+        <br/>
+        <strong>Where it runs:</strong> Inside the Google-Doc<br/>
+        <strong>Best for:</strong> Instruction in argumentative writing, constructed responses, and essay planning.<br/>
+        <strong>Student promise:</strong> The builder gives suggestions and structure, but students still do the thinking and typing.
+      </div>
+
+      <!-- Verification / “specific features” you asked to include -->
+      <div class="verify" id="features">
+        <h3>What makes this Thesis Builder different</h3>
+        <ul>
+          <li><strong>Suggestions, not answers:</strong> Students can click idea chips and starters to get unstuck, but the tool encourages them to type in their own words.</li>
+          <li><strong>2-point structure built in:</strong> Students choose a claim/stance, then select <em>two</em> reasons to form a clear, grade-appropriate thesis.</li>
+          <li><strong>Formal writing checks:</strong> Built-in reminders for <strong>third-person</strong> and <strong>formal tone</strong> (no “I / me / my”).</li>
+          <li><strong>Clarity checks:</strong> Quick prompts help students confirm their thesis includes the topic + claim + two reasons (not just one idea).</li>
+          <li><strong>Teacher-friendly workflow:</strong> Works smoothly in class, small group, or independent practice; students can revise and retry without “starting over.”</li>
+        </ul>
+      </div>
+
+      <!-- How it works (simple cards) -->
+      <div class="how-grid" aria-label="How the Thesis Builder works">
+        <div class="how-card">
+          <h3>1) Pick a stance</h3>
+          <p>
+            Students read the prompt and choose a claim (Should schools increase recess or not). The builder keeps the focus on the topic.
+          </p>
+        </div>
+        <div class="how-card">
+          <h3>2) Choose two reasons</h3>
+          <p>
+            Students select two reasons from the text or their notes. The tool encourages variety and avoids repeats.
+          </p>
+        </div>
+        <div class="how-card">
+          <h3>3) Draft + revise</h3>
+          <p>
+            The builder combines their ideas into a thesis <em>draft</em> and prompts students to edit for voice, precision, and formality. Teaching the flow of a thesis being built from a claim and reasons.
+          </p>
+        </div>
+      </div>
+
+      <!-- Topic note (edit this to match your exact unit/topic if needed) -->
+      <div class="verify" style="margin-top:1rem;">
+        <h3>Current writing topic</h3>
+        <ul>
+          <li>
+            This builder is designed to support the topic of recess in school with articles built into the document.
+          </li>
+        </ul>
+      </div>
+
+    </section>
+  </header>
+
+  <!-- Video Section -->
+  <section id="video-instruction"
+    style="
+      width:100%;
+      padding:3rem 0;
+      background: linear-gradient(90deg, #84EBE6, #FFD466, #FFA69E);
+      text-align:center;
+    ">
+    <h2 style="
+      font-size:2rem;
+      margin-bottom:1.5rem;
+      color:#004860;
+      font-weight:800;
+    ">
+      How to Use the Thesis Builder
+    </h2>
+
+    <div style="
+      width:100%;
+      max-width:1000px;
+      margin:0 auto;
+    ">
+      <div style="
+        position:relative;
+        width:100%;
+        padding-bottom:56.25%;
+        height:0;
+        overflow:hidden;
+        border-radius:16px;
+        box-shadow:0 6px 20px rgba(0,0,0,0.18);
+      ">
+        <!-- Swap this for your thesis-builder video when ready -->
+        <iframe
+          src="https://www.youtube.com/watch?v=CBTU_tRAWnk"
+          title="The 2-Point Thesis Builder – YouTube"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen
+          style="
+            position:absolute;
+            top:0; left:0;
+            width:100%; height:100%;
+            border-radius:16px;
+          ">
+        </iframe>
+      </div>
+      <p style="max-width:900px; margin:1rem auto 0; color:#222; line-height:1.6;">
+        Tip: Students should use the suggestions as a starting point, then revise the final thesis to make it fully their own.
+      </p>
+    </div>
+  </section>
+
+  <!-- Privacy -->
+  <section class="features" id="privacy">
+    <h2>Data Use & Privacy</h2>
+    <p>
+      The Thesis Builder runs in the browser and is designed to support student writing with structure and suggestions.
+      We do not sell data or share data with third parties. Any saving behavior depends on how you configure the tool on your site.
+    </p>
+    <p>
+      See our <a href="/privacy.html">Privacy Policy</a> and <a href="/terms.html">Terms of Service</a>.
+    </p>
+  </section>
+
+  <!-- Purchase -->
+  <section class="features" id="purchase">
+    <div style="text-align:center; margin:2.5rem 0;">
+      <p style="
+        font-size:1.25rem;
+        font-weight:700;
+        color:var(--deep-teal);
+        margin-bottom:0.75rem;
+      ">
+        $5 — One-Time Purchase
+      </p>
+
+      <!-- Update this to your thesis builder product link -->
+      <a href="https://payhip.com/b/3lMTn"
+         target="_blank"
+         rel="noopener"
+         style="
+           display:inline-block;
+           background:#9c6ded;
+           color:#fff;
+           padding:0.9rem 1.6rem;
+           font-size:1.15rem;
+           font-weight:700;
+           border-radius:14px;
+           text-decoration:none;
+           box-shadow:0 4px 10px rgba(0,0,0,.12);
+           transition: all .25s ease;
+         "
+         onmouseover="this.style.background='#0AD1CC'; this.style.transform='scale(1.05)'"
+         onmouseout="this.style.background='#9c6ded'; this.style.transform='scale(1)'"
+      >
+        Purchase Thesis Builder
+      </a>
+
+      <p style="
+        font-size:0.95rem;
+        margin-top:0.75rem;
+        color:#555;
+      ">
+        Includes access details and classroom-friendly use guidance.
+      </p>
+    </div>
+  </section>
+
+  <!-- Support -->
+  <section class="features" id="contact">
+    <h2>Support</h2>
+    <p>Questions about setup or functionality? Contact us via the <a href="/#contact">contact form</a>.</p>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div style="text-align:center; margin:3rem 0 2rem;">
+      <img
+        src="/images/logo-3.png"
+        alt="Made by Maggie Teacher Tools logo"
+        style="max-width:180px; width:100%; height:auto; opacity:0.95;"
+      />
+    </div>
+    © <span id="y"></span> Made by Maggie | 2-Point Thesis Builder | Made for teachers, by a teacher
+  </footer>
+
+  <script>
+    document.getElementById('y').textContent = new Date().getFullYear();
+  </script>
+
+</body>
+</html>
