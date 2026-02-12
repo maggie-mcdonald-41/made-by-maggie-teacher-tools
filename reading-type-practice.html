@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Reading Test-Style Question Trainer | Made by Maggie</title>
+<title>6th Grade Reading Skills Trainer + Teacher Dashboard | Made by Maggie</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,7 +22,7 @@
 
     body{
       margin:0;
-      font-family:"Poppins", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-family:"Nunito", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       background:#fff;
       color:#333;
     }
@@ -146,6 +146,22 @@
     .verify ul{margin:.25rem 0 0 1.25rem}
     .verify li{margin:.35rem 0}
 
+
+    /* Force all lists to align left */
+ul,
+ol {
+  text-align: left;
+  padding-left: 1.5rem;   /* keeps bullets/numbers properly spaced */
+  margin: 1rem 0;
+}
+
+ul li,
+ol li {
+  text-align: left;
+  margin-bottom: 0.75rem;
+  line-height: 1.6;
+}
+
     /* Footer-ish helper from original */
     .foot{
       width: 100vw;
@@ -155,7 +171,114 @@
 
     /* Helper to make big images shrink nicely */
     .contain img{object-fit:contain}
+
+    .media-lightbox{
+  position: fixed;
+  inset: 0;
+  display: none;
+  place-items: center;
+  background: rgba(0,0,0,0.85);
+  z-index: 9999;
+  padding: 24px;
+}
+
+.media-lightbox.is-open{ display: grid; }
+
+.media-lightbox .mlb-img{
+  max-width: min(1200px, 96vw);
+  max-height: 90vh;
+  width: auto;
+  height: auto;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+  background: #111;
+}
+
+.media-lightbox .mlb-close{
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  border: none;
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  padding: 10px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 18px;
+}
+.demo-video {
+  width: 100%;
+  max-width: 100%;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+  cursor: pointer;
+  background: #000;
+}
+
+figure {
+  margin-bottom: 2rem;
+}
+
+figcaption {
+  margin-top: 0.5rem;
+  font-weight: 600;
+  text-align: center;
+}
+
   </style>
+<script>
+  (function initMediaLightbox(){
+    const lb = document.getElementById("mediaLightbox");
+    if (!lb) return;
+
+    const img = lb.querySelector(".mlb-img");
+    const closeBtn = lb.querySelector(".mlb-close");
+
+    function open(src, alt = "") {
+      const cacheBust = (src.includes("?") ? "&" : "?") + "v=" + Date.now();
+      img.src = src + cacheBust;
+      img.alt = alt;
+
+      lb.classList.add("is-open");
+      lb.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+    }
+
+    function close() {
+      lb.classList.remove("is-open");
+      lb.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = "";
+      img.src = "";
+      img.alt = "";
+    }
+
+    closeBtn.addEventListener("click", close);
+    lb.addEventListener("click", (e) => { if (e.target === lb) close(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+
+    document.addEventListener("click", (e) => {
+      const el = e.target.closest("img[data-fullsrc], img.click-to-fullscreen");
+      if (!el) return;
+      const full = el.getAttribute("data-fullsrc") || el.src;
+      open(full, el.alt || "");
+    });
+  })();
+
+  // ✅ Bind video click-to-play AFTER the page builds the <video> elements
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".demo-video").forEach((video) => {
+      video.addEventListener("click", async () => {
+        try {
+          if (video.paused) await video.play();
+          else video.pause();
+        } catch (err) {
+          console.warn("Video play blocked:", err);
+        }
+      });
+    });
+  });
+</script>
+
 </head>
 <body>
 
@@ -166,22 +289,27 @@
 
       <button class="nav-toggle" onclick="toggleNav()">☰</button>
 
-      <ul class="nav-links">
-        <li><a href="#screenshots">Preview</a></li>
-        <li><a href="#features">Features</a></li>
-        <li><a href="#purchase">Purchase</a></li>
-        <li><a href="#contact">Contact</a></li>
-      </ul>
+<ul class="nav-links">
+  <li><a href="#screenshots">Preview</a></li>
+  <li><a href="#features">Trainer</a></li>
+  <li><a href="#dashboard">Dashboard</a></li>
+  <li><a href="#standards">Standards</a></li>
+  <li><a href="#purchase">Pricing</a></li>
+  <li><a href="#contact">Support</a></li>
+</ul>
+
     </div>
   </nav>
 
   <!-- Hero / main content wrapper (matches your original structure) -->
   <header class="hero" style="background: linear-gradient(90deg, #84EBEE, #FFD466, #FFA69E);">
-    <h1>Reading Test-Style Question Trainer</h1>
-    <p class="hero-subtext">
-      Give students a low-stress way to practice the exact question types they’ll see on state tests:
-      side-by-side passages, multi-select questions, drag-and-drop ordering, matching, and “click to highlight” text evidence. All in one clean, kid-friendly practice page.
-    </p>
+<h1>6th Grade Reading Skills Trainer + Teacher Dashboard</h1>
+<p class="hero-subtext">
+  An interactive, standards-aligned reading practice platform that mirrors test-style question types
+  and gives teachers clear, actionable data. Students practice with passages, questions, and built-in tools
+  (highlighting, cross-outs, and more). Teachers can launch sessions in seconds and monitor progress live.
+</p>
+
     <br/>
 
     <!-- Screenshots block -->
@@ -190,25 +318,120 @@
       <div class="screenshot-grid">
         <figure>
           <img src="/images/reading-trainer-questions.png" alt="Two reading passages with tabs and highlight toolbar">
-          <figcaption>Passage View + Highlighting</figcaption>
+          <figcaption>Student Trainer: Passage + Highlight Tools</figcaption>
         </figure>
         <figure>
-          <img src="/images/reading-type-logo.png" alt="Multiple choice and multi-select questions next to the passage">
-          <figcaption>Question Pane</figcaption>
+          <img src="/images/reading-video.png" alt="video-based questions">
+          <figcaption>Student Trainer: Test-Style Questions</figcaption>
         </figure>
-        <figure>
-          <img src="/images/reading-trainer-dragdrop.png" alt="Drag and drop tiles for chronological order and matching questions">
-          <figcaption>Drag &amp; Drop Practice</figcaption>
-        </figure>
-      </div>
+ <figure>
+  <video 
+    class="demo-video"
+    muted
+    playsinline
+    preload="metadata"
+    controls
+    poster="/images/gif-multi-select.png"
+  >
+    <source src="/images/gif-multi-select.mp4" type="video/mp4">
+  </video>
+  <figcaption>Multi-Answer Selection</figcaption>
+</figure>
 
-      <div class="doc-meta" style="max-width:900px; margin:1.75rem auto 0; text-align:left; font-size:0.98rem; line-height:1.6;">
-        <br/>
-        <strong>Where it runs:</strong> Right in your browser on <span class="kbd">madebymaggie.org</span> — no logins required for students.<br/>
-        <strong>Best for:</strong> Upper elementary and middle grades who need test-style practice without the test-style stress.<br/>
-        <strong>What it does:</strong> Students read passages, answer a mix of question types (MCQ, multi-select, chronological order, matching, and highlight-in-text), and get instant feedback on each question.<br/>
-        <strong>Teacher-friendly:</strong> Clean layout, kid-ready colors, and built with online learners in mind — perfect for modeling live, small group practice, or independent centers.
-      </div>
+<figure>
+  <video 
+    class="demo-video"
+    muted
+    playsinline
+    preload="metadata"
+    controls
+    poster="/images/gif-passage-flip.png"
+  >
+    <source src="/images/gif-passage-flip.mp4" type="video/mp4">
+  </video>
+  <figcaption>Passage Auto-flip</figcaption>
+</figure>
+
+<figure>
+  <video 
+    class="demo-video"
+    muted
+    playsinline
+    preload="metadata"
+    controls
+    poster="/images/gif-dropdown.png"
+  >
+    <source src="/images/gif-dropdown.mp4" type="video/mp4">
+  </video>
+  <figcaption>Dropdown Select</figcaption>
+</figure>
+
+<figure>
+  <video 
+    class="demo-video"
+    muted
+    playsinline
+    preload="metadata"
+    controls
+    poster="/images/gif-sequencing.png"
+  >
+    <source src="/images/gif-sequencing.mp4" type="video/mp4">
+  </video>
+  <figcaption>Sequencing Events</figcaption>
+</figure>
+
+<figure>
+  <video 
+    class="demo-video"
+    muted
+    playsinline
+    preload="metadata"
+    controls
+    poster="/images/gif-matching.png"
+  >
+    <source src="/images/gif-matching.mp4" type="video/mp4">
+  </video>
+  <figcaption>Matching</figcaption>
+</figure>
+
+<figure>
+  <video 
+    class="demo-video"
+    muted
+    playsinline
+    preload="metadata"
+    controls
+    poster="/images/gif-sorting.png"
+  >
+    <source src="/images/gif-sorting.mp4" type="video/mp4">
+  </video>
+  <figcaption>Sorting Categories</figcaption>
+</figure>
+
+<figure>
+  <video 
+    class="demo-video"
+    muted
+    playsinline
+    preload="metadata"
+    controls
+    poster="/images/gif-highlight.png"
+  >
+    <source src="/images/gif-highlight.mp4" type="video/mp4">
+  </video>
+  <figcaption>Highlight Text Evidence</figcaption>
+</figure>
+
+</div>
+
+<div class="doc-meta" style="max-width:900px; margin:1.75rem auto 0; text-align:left; font-size:0.98rem; line-height:1.6;">
+  <br/>
+  <strong>What it is:</strong> A 6th grade reading skills trainer with test-style practice + a teacher dashboard for live monitoring and reporting.<br/>
+  <strong>Student access:</strong> Students can join by Google sign-in or name entry (teacher-controlled session link).<br/>
+  <strong>Best for:</strong> 6th grade reading comprehension practice, intervention, test prep, centers, and progress monitoring.<br/>
+  <strong>Teacher view:</strong> See class progress, question-by-question results, skill gaps, and session history at a glance.
+</div>
+
     </section>
 
     <!-- Video walkthrough (kept same structure / padding from outline) -->
@@ -243,8 +466,8 @@
           box-shadow:0 6px 20px rgba(0,0,0,0.18);
         ">
           <iframe 
-            src="https://www.youtube.com/embed/3KVuITPYb1g"
-            title="Reading Test-Style Question Trainer – Overview"
+            src="https://www.youtube.com/embed/l5imBn77dY0"
+            title="6th Grade Reading Skills Trainer + Teacher Dashboard – Overview"
             frameborder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowfullscreen
@@ -264,25 +487,130 @@
       <h2>What Students Can Practice</h2>
       <div class="verify">
         <h3>Built around common test-style reading questions:</h3>
-        <ul>
-          <li><strong>Passage tabs:</strong> Flip between two passages without losing your place.</li>
-          <li><strong>Highlight to answer:</strong> Click sentences in the passage to select text evidence.</li>
-          <li><strong>Multiple choice &amp; multi-select:</strong> A–D choices plus “select all that apply.”</li>
-          <li><strong>Chronological order:</strong> Drag tiles to put events in the correct order.</li>
-          <li><strong>Matching:</strong> Drag and drop pairs (like claim ↔ evidence or term ↔ definition).</li>
-          <li><strong>Drop-down:</strong> Drop down and select the correct answer.</li>
-          <li><strong>Test-taking skills:</strong> Annotate key terms and sentences, mark off incorrect answers.</li>
-          <li><strong>Student-friendly feedback:</strong> Check answers, see which ones need revision, and try again.</li>
-        </ul>
+<ul>
+  <li><strong>Multiple Passage Topics:</strong> Practice with a variety of engaging, grade-level texts.</li>
+  <li><strong>Part A / Part B Questions:</strong> Answer layered questions that require text evidence support.</li>
+  <li><strong>Multiple Choice Questions:</strong> Traditional A–D format for focused skill practice.</li>
+  <li><strong>Multi-Answer Selection:</strong> “Select all that apply” questions for deeper thinking.</li>
+  <li><strong>Sequencing Events:</strong> Drag and drop to place events in chronological order.</li>
+  <li><strong>Sorting Categories:</strong> Organize ideas into the correct groups.</li>
+  <li><strong>Matching:</strong> Connect related ideas (claim ↔ evidence, term ↔ definition).</li>
+  <li><strong>Dropdown-Select:</strong> Choose the best answer from embedded drop-down options.</li>
+  <li><strong>Highlighting Tools:</strong> Select and annotate text evidence directly in the passage.</li>
+  <li><strong>Graph Questions:</strong> Analyze charts and visual data.</li>
+  <li><strong>Podcast & Video Questions:</strong> Respond to multimedia content for listening comprehension.</li>
+  <li><strong>Dyslexia-Friendly Font Option:</strong> Improve readability and accessibility.</li>
+  <li><strong>Dark Mode:</strong> Reduce eye strain with an optional darker display.</li>
+  <li><strong>Confetti Celebrations:</strong> Motivate students with built-in progress celebrations.</li>
+</ul>
+
       </div>
     </section>
+
+    <section class="features" id="dashboard">
+  <h2>Teacher Dashboard</h2>
+
+  <div class="verify">
+    <h3>Launch sessions fast. Monitor progress live. Use data immediately.</h3>
+<ul>
+  <li><strong>Create a new practice session in seconds:</strong> Select the level and assign a full set (25 questions) or mini set (10 questions).</li>
+  <li><strong>Choose the text level:</strong> Below Level (720–820L), On Level (940–1050L), or Above Grade-Level (1020–1130L).</li>
+  <li><strong>Generate secure access links:</strong> Share a student link or co-teacher link instantly.</li>
+  <li><strong>Flexible student sign-in:</strong> Students join using Google or simple name entry.</li>
+  <li><strong>Monitor live student progress:</strong> See who is working, who is finished, and who needs support in real time.</li>
+  <li><strong>View class and individual data at a glance:</strong> Quickly access question-by-question results and overall performance.</li>
+  <li><strong>Analyze skill mastery:</strong> Review skill accuracy, question-type accuracy, and individual student strengths and gaps.</li>
+  <li><strong>Use the Student Detail Drawer:</strong> Track individual performance and growth over time.</li>
+  <li><strong>Access session history anytime:</strong> Compare performance across sessions and search by student name.</li>
+  <li><strong>Export with ease:</strong> Download PDF or CSV reports for documentation and planning.</li>
+  <li><strong>Inform instruction immediately:</strong> Use actionable data to drive targeted small groups and reteaching.</li>
+</ul>
+
+  </div>
+
+  <div class="screenshot-grid" style="margin-top:1.25rem;">
+    <figure>
+      <img src="/images/dashboard-01.png" alt="Teacher dashboard overview">
+      <figcaption>Dashboard Overview</figcaption>
+    </figure>
+<figure>
+  <video 
+    class="demo-video"
+    muted
+    playsinline
+    preload="metadata"
+    controls
+    poster="/images/dashboard-02.png"
+  >
+    <source src="/images/dashboard-02.mp4" type="video/mp4">
+  </video>
+  <figcaption>Create a Session</figcaption>
+</figure>
+    <figure>
+      <img src="/images/dashboard-03.png" alt="Live monitoring view of student progress">
+      <figcaption>Live Progress Monitoring</figcaption>
+    </figure>
+    <figure>
+      <img src="/images/dashboard-04.png" alt="Skill accuracy chart and breakdown">
+      <figcaption>Skill Accuracy</figcaption>
+    </figure>
+    <figure>
+      <img src="/images/dashboard-05.png" alt="Question type accuracy chart and breakdown">
+      <figcaption>Question-Type Accuracy</figcaption>
+    </figure>
+<figure>
+  <video 
+    class="demo-video"
+    muted
+    playsinline
+    preload="metadata"
+    controls
+    poster="/images/student-search.png"
+  >
+    <source src="/images/student-search.mp4" type="video/mp4">
+  </video>
+  <figcaption>Create a Session</figcaption>
+</figure>
+  </div>
+</section>
+
+<section class="features" id="standards">
+  <h2>Georgia Standards Alignment (Grade 6)</h2>
+
+  <p style="max-width:900px; margin:0 auto; line-height:1.6;">
+    Built to reinforce Georgia’s current Grade 6 ELA standards through authentic passage practice,
+    skill-based question types, and test-ready reading routines.
+  </p>
+
+<ul>
+  <li><strong>6.F.FL.1:</strong> Build reading fluency through accuracy, appropriate rate, phrasing, and comprehension monitoring.</li>
+  <li><strong>6.F.VA.1:</strong> Determine or clarify the meaning of unknown and multiple-meaning words and phrases using context clues, Greek and Latin roots and affixes, reference materials, and word relationships.</li>
+  <li><strong>6.F.VA.2:</strong> Demonstrate understanding of figurative language, word relationships, and nuances in word meanings.</li>
+  <li><strong>6-8.L.GC.1:</strong> Demonstrate command of grammar, usage, and conventions, including parts of speech, pronoun use, verb moods, sentence types, punctuation, capitalization, and spelling.</li>
+  <li><strong>6-8.L.GC.2:</strong> Apply knowledge of language to combine ideas, choose precise words, maintain tone, and improve clarity in writing.</li>
+  <li><strong>6.L.VA.1:</strong> Acquire and accurately use academic and domain-specific vocabulary appropriate to grade level.</li>
+  <li><strong>6.L.VA.2:</strong> Demonstrate understanding of academic and content-area vocabulary through reading, writing, speaking, and listening.</li>
+  <li><strong>6.T.RA.1:</strong> Cite textual evidence to support analysis of what the text says explicitly and inferences drawn from the text.</li>
+  <li><strong>6.T.RA.2:</strong> Determine central ideas or themes of a text and analyze their development; summarize key supporting details and ideas.</li>
+  <li><strong>6.T.SS.1:</strong> Analyze how text structure (e.g., chronological order, cause/effect, problem/solution) contributes to meaning and how sentences and paragraphs build ideas.</li>
+  <li><strong>6.T.T.1:</strong> Analyze an author’s purpose, point of view, and perspective.</li>
+  <li><strong>6.T.T.2:</strong> Compare and contrast texts on similar topics or themes.</li>
+  <li><strong>6.T.I.1:</strong> Integrate information from multiple sources and media formats, including charts, graphs, audio, video, and visual representations.</li>
+  <li><strong>6.P.CA.1:</strong> Construct clear and coherent arguments supported with relevant evidence.</li>
+  <li><strong>6.P.EE.1:</strong> Evaluate claims and reasoning using valid evidence and logical support.</li>
+  <li><strong>6.P.CI.1:</strong> Collaborate and communicate effectively about texts and ideas in a variety of formats.</li>
+</ul>
+
+</section>
 
     <!-- Data / privacy -->
     <section class="features" id="privacy">
       <h2>Data Use &amp; Student Privacy</h2>
-      <p>
-        This Reading Test-Style Question Trainer runs entirely in the browser. Student highlighting and answers live in the page while it’s open and are not sent to Made by Maggie servers.
-      </p>
+<p>
+  The student trainer runs in the browser, and the teacher dashboard is designed for classroom reporting and progress monitoring.
+  Student responses are associated with the practice session the teacher creates so teachers can view results and session history.
+</p>
+
       <p>
         For more, see our <a href="/privacy.html">Privacy Policy</a> and <a href="/terms.html">Terms of Service</a>.
       </p>
@@ -303,40 +631,32 @@
       <div style="text-align:center; margin:2.5rem 0; max-width:700px; margin-inline:auto;">
 
         <p style="
-          font-size:1.05rem;
-          margin-bottom:0.75rem;
-          color:#333;
-        ">
-          The Reading Test-Style Question Trainer is being finalized for teacher use.  
-          If you’d like early access or to use it with your team, get in touch and I’ll send details.
-        </p>
+  font-size:1.05rem;
+  margin-bottom:0.75rem;
+  color:#333;
+">
+  <strong>Individual Teacher License:</strong> $49/year<br/>
+  Includes 1 year of access for one teacher and all students on that teacher’s roster, plus updates added during your active subscription.
+</p>
 
-        <a href="/#contact" 
-           style="
-             display:inline-block;
-             background:#9c6ded;
-             color:#fff;
-             padding:0.9rem 1.6rem;
-             font-size:1.05rem;
-             font-weight:700;
-             border-radius:14px;
-             text-decoration:none;
-             box-shadow:0 4px 10px rgba(0,0,0,.12);
-             transition: all .25s ease;
-           "
-           onmouseover="this.style.background='#0AD1CC'; this.style.transform='scale(1.05)'"
-           onmouseout="this.style.background='#9c6ded'; this.style.transform='scale(1)'"
-        >
-          📩 Ask About Classroom Access
-        </a>
+<div class="cta-row" style="margin-top:1rem;">
+<!--put new payhip here-->
+  <a class="btn btn-primary" href="/https://payhip.com/b/WlM8C">
+    ✅ Get 1-Year Access – $49
+  </a>
+  <a class="btn btn-ghost" href="/#contact">
+    🏫 Request School/District Pricing
+  </a>
+</div>
 
-        <p style="
-          font-size:0.95rem;
-          margin-top:0.75rem;
-          color:#555;
-        ">
-          Perfect for modeling strategies live, small group practice, intervention blocks, and independent online practice.
-        </p>
+<p style="
+  font-size:0.95rem;
+  margin-top:0.9rem;
+  color:#555;
+">
+  Future grade-level expansions are included during active subscription.
+</p>
+
 
       </div>
     </section>
@@ -358,6 +678,12 @@
   <script>
     document.getElementById('y').textContent = new Date().getFullYear();
   </script>
+
+<!-- Fullscreen GIF/Image Viewer -->
+<div id="mediaLightbox" class="media-lightbox" aria-hidden="true">
+  <button class="mlb-close" type="button" aria-label="Close viewer">✕</button>
+  <img class="mlb-img" alt="" />
+</div>
 
 </body>
 </html>
