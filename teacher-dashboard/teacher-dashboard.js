@@ -14,7 +14,6 @@ let ALL_VIEWER_ATTEMPTS = [];
 
 // ---- Live Monitor shared state ----
 let currentSessionCode = "";   // e.g. "MONDAY EVENING"
-let currentClassFilter = "";   // e.g. "7TH", or "" for all
 let currentSetParam = "full";  // "full" or "mini1" or "mini2"
 let currentLevelParam = "on"; // "on" | "below" | "above"
 
@@ -24,7 +23,6 @@ const HISTORY_KEY = "rp_teacherSessionHistory_v1";
 
 // ---------- DOM HOOKS ----------
 const sessionInput = document.getElementById("filter-session");
-const classInput = document.getElementById("filter-class");
 const loadBtn = document.getElementById("load-attempts-btn");
 const loadStatusEl = document.getElementById("load-status");
 const sessionPill = document.getElementById("current-session-pill");
@@ -110,7 +108,7 @@ const historyRenameBtn = document.getElementById("history-rename-btn");
 const historyColorBtn = document.getElementById("history-color-btn");
 const historyDeleteBtn = document.getElementById("history-delete-btn");
 
-// Key format "SESSIONCODE||CLASSCODE"
+// Key format "SESSIONCODE"
 let CURRENT_HISTORY_KEY = null;
 
 // Expanded color cycle for session labels
@@ -286,15 +284,10 @@ function updateViewSummary() {
   if (!currentViewSummaryEl) return;
 
   const sessionCodeRaw = sessionInput.value.trim();
-  const classCodeRaw = classInput.value.trim();
 
   const sessionPart = sessionCodeRaw
     ? `Session: ${sessionCodeRaw}`
     : "Session: all sessions";
-
-  const classPart = classCodeRaw
-    ? `Class: ${classCodeRaw}`
-    : "Class: all classes";
 
   let studentPart;
   if (CURRENT_STUDENT_FOR_CHARTS) {
@@ -303,7 +296,7 @@ function updateViewSummary() {
     studentPart = "Student overlay: none (click a row to compare)";
   }
 
-  currentViewSummaryEl.textContent = `${sessionPart} · ${classPart} · ${studentPart}`;
+  currentViewSummaryEl.textContent = `${sessionPart} · ${studentPart}`;
 }
 
 
@@ -525,7 +518,6 @@ function saveDashboardPrefs() {
   try {
     const prefs = {
       filterSession: sessionInput.value.trim(),
-      filterClass: classInput.value.trim()
     };
     localStorage.setItem(DASHBOARD_PREFS_KEY, JSON.stringify(prefs));
   } catch (e) {
@@ -540,9 +532,6 @@ function loadDashboardPrefs() {
     const prefs = JSON.parse(raw);
     if (prefs.filterSession && !sessionInput.value) {
       sessionInput.value = prefs.filterSession;
-    }
-    if (prefs.filterClass && !classInput.value) {
-      classInput.value = prefs.filterClass;
     }
   } catch (e) {
     console.warn("[Dashboard] Could not load prefs:", e);
@@ -563,13 +552,12 @@ function loadDashboardPrefs() {
 
   const refreshOutputs = () => {
     const session = (sessionInput?.value || "").trim();
-    const cls = (classInput?.value || "").trim();
     if (!session) return;
 
-    if (sessionLinkInput) sessionLinkInput.value = buildStudentLink(session, cls);
-    if (coTeacherLinkInput) coTeacherLinkInput.value = buildCoTeacherLink(session, cls);
+    if (sessionLinkInput) sessionLinkInput.value = buildStudentLink(session);
+    if (coTeacherLinkInput) coTeacherLinkInput.value = buildCoTeacherLink(session);
 
-enableMonitorButton(session, cls);
+enableMonitorButton(session);
 if (typeof updateCurrentViewSummary === "function") updateCurrentViewSummary();
 
   };
@@ -597,17 +585,16 @@ if (typeof updateCurrentViewSummary === "function") updateCurrentViewSummary();
 
   const refreshOutputs = () => {
     const session = (sessionInput?.value || "").trim();
-    const cls = (classInput?.value || "").trim();
 
     if (session) {
-      const studentLink = buildStudentLink(session, cls);
+      const studentLink = buildStudentLink(session);
       if (sessionLinkInput) sessionLinkInput.value = studentLink;
 
-      const coLink = buildCoTeacherLink(session, cls);
+      const coLink = buildCoTeacherLink(session);
       if (coTeacherLinkInput) coTeacherLinkInput.value = coLink;
     }
 
-    enableMonitorButton(session, cls);
+    enableMonitorButton(session);
     if (typeof updateCurrentViewSummary === "function") updateCurrentViewSummary();
   };
 
@@ -674,8 +661,8 @@ function saveHistoryToStorage(history) {
   }
 }
 // Helper for consistent keys
-function getHistoryKey(sessionCode, classCode) {
-  return `${(sessionCode || "").trim()}||${(classCode || "").trim()}`;
+function getHistoryKey(sessionCode) {
+  return `${(sessionCode || "").trim()}`;
 }
 
 const HISTORY_DELETED_KEY = "rp_teacherSessionHistoryDeleted_v1";
@@ -710,17 +697,16 @@ function updateHistoryActionButtonsState() {
 /**
  * Update history based on the latest loaded attempts.
  */
-function updateSessionHistory(sessionCodeRaw, classCodeRaw, attempts) {
-  if (!sessionCodeRaw) return;
+function updateSessionHistory(sessionCodeRaw, attempts) {
+    if (!sessionCodeRaw) return;
 
   const sessionCode = sessionCodeRaw.trim();
-  const classCode = (classCodeRaw || "").trim();
   const nowIso = new Date().toISOString();
 
   const history = loadHistoryFromStorage() || [];
 
 // if this session was previously deleted, clear its tombstone
-const key = getHistoryKey(sessionCode, classCode);
+const key = getHistoryKey(sessionCode);
 let deletedKeys = loadDeletedHistoryKeys();
 if (deletedKeys.includes(key)) {
   deletedKeys = deletedKeys.filter((k) => k !== key);
@@ -782,16 +768,13 @@ if (deletedKeys.includes(key)) {
   const uniqueStudentsCount = uniqueStudentNames.size || attemptsCount;
 
   // ---------- MERGE INTO HISTORY ----------
-  const idx = history.findIndex(
-    (entry) =>
-      entry.sessionCode === sessionCode &&
-      (entry.classCode || "") === classCode
-  );
+const idx = history.findIndex(
+  (entry) => entry.sessionCode === sessionCode
+);
 
   
   const entry = {
     sessionCode,
-    classCode,
     lastLoadedAt: nowIso,
     attemptsCount,
     totalQuestions,
@@ -860,34 +843,33 @@ async function hydrateSessionHistoryFromServer(viewerEmail) {
         return;
       }
 
-      // Group attempts by (sessionCode + classCode)
-      const grouped = new Map();
+// Group attempts by sessionCode 
+const grouped = new Map();
 
-      attempts.forEach((a) => {
-        const sessionCode = (a.sessionCode || "").trim();
-        if (!sessionCode) return;
-        const classCode = (a.classCode || "").trim();
-        const key = `${sessionCode}||${classCode}`;
+attempts.forEach((a) => {
+  const sessionCode = (a.sessionCode || "").trim();
+  if (!sessionCode) return;
 
-        if (!grouped.has(key)) {
-          grouped.set(key, {
-            sessionCode,
-            classCode,
-            lastLoadedAt: null,
-            rawAttempts: [],
-          });
-        }
+  const key = sessionCode;
 
-        const entry = grouped.get(key);
-        entry.rawAttempts.push(a);
+  if (!grouped.has(key)) {
+    grouped.set(key, {
+      sessionCode,
+      lastLoadedAt: null,
+      rawAttempts: [],
+    });
+  }
 
-        const t = a.finishedAt || a.startedAt;
-        if (t && (!entry.lastLoadedAt || t > entry.lastLoadedAt)) {
-          entry.lastLoadedAt = t;
-        }
-      });
+  const entry = grouped.get(key);
+  entry.rawAttempts.push(a);
 
-      // Dedupe by student (per session + classCode) and aggregate stats
+  const t = a.finishedAt || a.startedAt;
+  if (t && (!entry.lastLoadedAt || t > entry.lastLoadedAt)) {
+    entry.lastLoadedAt = t;
+  }
+});
+
+      // Dedupe by student (per session ) and aggregate stats
       const serverHistory = Array.from(grouped.values()).map((entry) => {
         const perStudent = new Map();
         const noKeyAttempts = [];
@@ -973,7 +955,6 @@ async function hydrateSessionHistoryFromServer(viewerEmail) {
 
         return {
           sessionCode: entry.sessionCode,
-          classCode: entry.classCode,
           lastLoadedAt: entry.lastLoadedAt || new Date().toISOString(),
           attemptsCount,
           totalQuestions,
@@ -991,7 +972,7 @@ async function hydrateSessionHistoryFromServer(viewerEmail) {
 
       const addEntries = (entries) => {
         entries.forEach((h) => {
-          const key = `${h.sessionCode}||${h.classCode || ""}`;
+          const key = `${h.sessionCode}`;
           const existing = mergedByKey.get(key);
 
           if (!existing) {
@@ -1019,7 +1000,7 @@ async function hydrateSessionHistoryFromServer(viewerEmail) {
       // NEW: respect deleted sessions on this device
       const deletedKeys = loadDeletedHistoryKeys();
       const filteredMerged = mergedHistory.filter((h) => {
-        const key = getHistoryKey(h.sessionCode, h.classCode || "");
+        const key = getHistoryKey(h.sessionCode);
         return !deletedKeys.includes(key);
       });
 
@@ -1047,7 +1028,7 @@ function renderSessionHistory(history) {
 
   const deletedKeys = loadDeletedHistoryKeys();
   const visibleHistory = (history || []).filter((entry) => {
-    const key = getHistoryKey(entry.sessionCode, entry.classCode || "");
+    const key = getHistoryKey(entry.sessionCode);
     return !deletedKeys.includes(key);
   });
 
@@ -1079,7 +1060,7 @@ function renderSessionHistory(history) {
     btn.type = "button";
     btn.className = "history-item";
 
-    const key = getHistoryKey(entry.sessionCode, entry.classCode || "");
+    const key = getHistoryKey(entry.sessionCode);
     btn.dataset.key = key;
 
     // Apply any saved color
@@ -1103,7 +1084,6 @@ function renderSessionHistory(history) {
     const meta = document.createElement("div");
     meta.className = "history-meta";
     const parts = [];
-    if (entry.classCode) parts.push(entry.classCode);
 
     // ✅ NEW: show set + level (teacher-facing)
     if (entry.practiceLevel) parts.push(`Level: ${entry.practiceLevel}`);
@@ -1139,7 +1119,6 @@ function renderSessionHistory(history) {
 
       // Load this session into the filters and refresh dashboard
 sessionInput.value = entry.sessionCode;
-classInput.value = entry.classCode || "";
 
 // ✅ NEW: sync set + level selectors to this session before loading
 const setSelect = document.getElementById("practice-set");
@@ -1175,7 +1154,7 @@ function findHistoryEntryByKey(key) {
   if (!key) return { history: [], index: -1 };
   const history = loadHistoryFromStorage() || [];
   const index = history.findIndex(
-    (h) => getHistoryKey(h.sessionCode, h.classCode || "") === key
+    (h) => getHistoryKey(h.sessionCode) === key
   );
   return { history, index };
 }
@@ -2362,7 +2341,6 @@ function renderDashboard(attempts) {
 
     tr.innerHTML = `
       <td>${studentName || "—"}</td>
-      <td>${a.classCode || "—"}</td>
       <td>${a.sessionCode || "—"}</td>
       <td>${formatAttemptStatus(a)}</td>
       <td>
@@ -2492,7 +2470,6 @@ function exportCombinedCSV() {
   rows.push([
     "AttemptID",
     "StudentName",
-    "ClassCode",
     "SessionCode",
     "SkillTag",
     "SkillCorrect",
@@ -2527,7 +2504,6 @@ function exportCombinedCSV() {
       rows.push([
         a.attemptId || "",
         a.studentName || "",
-        a.classCode || "",
         a.sessionCode || "",
         skill,
         skillCorrect,
@@ -2543,13 +2519,10 @@ function exportCombinedCSV() {
   });
 
   const sessionCodeRaw = sessionInput.value.trim() || "ALL";
-  const classCodeRaw = classInput.value.trim() || "ALL";
 
   const safeSession = sessionCodeRaw.replace(/[^A-Z0-9]+/gi, "-");
-  const safeClass = classCodeRaw.replace(/[^A-Z0-9]+/gi, "-");
 
-  const filename = `reading-trainer-results-session-${safeSession}-class-${safeClass}.csv`;
-
+const filename = `reading-trainer-results-session-${safeSession}.csv`;
   downloadCSV(filename, rows);
 }
 
@@ -2611,13 +2584,12 @@ function renderStudentSearchResults(searchTerm, attempts) {
     return;
   }
 
-  // Group by session + class + assessment so each row is "one session"
+  // Group by session + assessment so each row is "one session"
   const byKey = new Map();
   attempts.forEach((a) => {
     const sessionCode = (a.sessionCode || "").trim();
-    const classCode = (a.classCode || "").trim();
     const assessmentName = (a.assessmentName || "").trim();
-    const key = `${sessionCode}||${classCode}||${assessmentName}`;
+    const key = `${sessionCode}||${assessmentName}`;
 
     const existing = byKey.get(key);
     if (!existing) {
@@ -2651,7 +2623,6 @@ function renderStudentSearchResults(searchTerm, attempts) {
     <thead>
       <tr>
         <th>Session</th>
-        <th>Class</th>
         <th>Assessment</th>
         <th>Score (%)</th>
         <th>Answered</th>
@@ -2683,7 +2654,6 @@ function renderStudentSearchResults(searchTerm, attempts) {
 
     tr.innerHTML = `
       <td>${(a.sessionCode || "—").trim()}</td>
-      <td>${(a.classCode || "—").trim()}</td>
       <td>${(a.assessmentName || "—").trim()}</td>
       <td><span class="${accuracyTagClass(scorePct)}">${scorePct}%</span></td>
       <td>${formatAnsweredLabel(a)}</td>
@@ -2693,7 +2663,6 @@ function renderStudentSearchResults(searchTerm, attempts) {
     tr.addEventListener("click", () => {
       const studentName = (a.studentName || "").trim();
       const sessionCode = (a.sessionCode || "").trim();
-      const classCode = (a.classCode || "").trim();
 
       if (!sessionCode) return;
 
@@ -2702,7 +2671,6 @@ function renderStudentSearchResults(searchTerm, attempts) {
 
       // Set filters and load that session
       if (sessionInput) sessionInput.value = sessionCode;
-      if (classInput) classInput.value = classCode;
 
       // Update the pill right away so teachers see where they're going
       if (sessionPill) {
@@ -2794,7 +2762,6 @@ async function runStudentSearch() {
 // ---------- DATA LOADING (real backend + demo fallback) ----------
 async function loadAttempts() {
   const sessionCodeRaw = sessionInput.value.trim();
-  const classCodeRaw = classInput.value.trim();
 
   // Update pill
   sessionPill.textContent = sessionCodeRaw
@@ -2807,7 +2774,6 @@ async function loadAttempts() {
   try {
     const params = new URLSearchParams();
     if (sessionCodeRaw) params.set("sessionCode", sessionCodeRaw);
-    if (classCodeRaw) params.set("classCode", classCodeRaw);
 
     // ✅ NEW: leveled practice filters (full|mini1|mini2) + (below|on|above)
     // Defaults preserve current behavior.
@@ -2825,7 +2791,7 @@ if (levelVal) params.set("level", levelVal);
       ownerEmail && (!teacherUser || teacherUser.email !== ownerEmail);
 
     // 🔐 Scoping rules:
-    // - Co-teacher view → always use ownerEmail + sessionCode/classCode
+    // - Co-teacher view → always use ownerEmail + sessionCode/
     // - Regular signed-in teacher → use viewerEmail (owned + shared)
     // - Not signed in but we know an owner (e.g. owner opens link before sign-in)
     //   → fall back to ownerEmail
@@ -2862,14 +2828,14 @@ if (levelVal) params.set("level", levelVal);
     } else {
       renderDashboard(attempts);
       // Hydrate session history with real attempts
-      updateSessionHistory(sessionCodeRaw, classCodeRaw, attempts);
+      updateSessionHistory(sessionCodeRaw, attempts);
       loadStatusEl.textContent = `Loaded ${attempts.length} attempt${
         attempts.length === 1 ? "" : "s"
       } from server. (first attempt per student)`;
     }
 
     // Enable live monitor for this session
-    enableMonitorButton(sessionCodeRaw, classCodeRaw);
+    enableMonitorButton(sessionCodeRaw);
   } catch (err) {
     console.error("[Dashboard] Error loading attempts:", err);
 
@@ -2880,17 +2846,16 @@ if (levelVal) params.set("level", levelVal);
 
     // You can still allow live monitor; if the server is fully down,
     // that page will show the same issue.
-    enableMonitorButton(sessionCodeRaw, classCodeRaw);
+    enableMonitorButton(sessionCodeRaw);
   } finally {
     loadBtn.disabled = false;
   }
 }
 
-function enableMonitorButton(sessionCodeRaw, classCodeRaw) {
+function enableMonitorButton(sessionCodeRaw) {
   if (!monitorSessionBtn) return;
 
   const session = (sessionCodeRaw || "").trim();
-  const classCode = (classCodeRaw || "").trim();
 
   // No session? Turn the button off.
   if (!session) {
@@ -2904,9 +2869,8 @@ function enableMonitorButton(sessionCodeRaw, classCodeRaw) {
   monitorSessionBtn.onclick = requireTeacherSignedIn(() => {
     const params = new URLSearchParams();
 
-    // Live monitor expects `session`, `class`, `set`
+    // Live monitor expects `session`,  `set`
     params.set("session", session.toUpperCase());
-    if (classCode) params.set("class", classCode);
 
     // ✅ NEW: practice set selector (full | mini1 | mini2)
     const setParam = getSelectedPracticeSet();
@@ -2962,13 +2926,11 @@ async function exportDashboardPDF() {
 }
 
 // ---------- BUILD & COPY STUDENT LINK ----------
-function buildStudentLink(sessionCode, classCode) {
+function buildStudentLink(sessionCode) {
   const cleanSession = (sessionCode || "").trim().toUpperCase();
-  const cleanClass = (classCode || "").trim();
 
   // Keep the normalized value in the inputs so the teacher sees it
   if (sessionInput) sessionInput.value = cleanSession;
-  if (classInput && cleanClass) classInput.value = cleanClass;
 
   if (!cleanSession) return "";
 
@@ -2976,7 +2938,6 @@ function buildStudentLink(sessionCode, classCode) {
   const params = new URLSearchParams();
   params.set("session", cleanSession);
 
-  if (cleanClass) params.set("class", cleanClass);
 
   // NEW: set = full | mini1 | mini2 (from selector)
   const setParam = getSelectedPracticeSet();
@@ -3000,7 +2961,6 @@ function buildStudentLink(sessionCode, classCode) {
 
   try {
     window.localStorage.setItem("rp_lastSessionCode", cleanSession);
-    if (cleanClass) window.localStorage.setItem("rp_lastSessionClass", cleanClass);
     window.localStorage.setItem("rp_lastSet", setParam);
     if (level) window.localStorage.setItem("rp_lastLevel", level);
     if (ownerEmail) window.localStorage.setItem("rp_lastOwnerEmail", ownerEmail);
@@ -3010,9 +2970,8 @@ function buildStudentLink(sessionCode, classCode) {
 
   return link;
 }
-function buildCoTeacherLink(sessionCode, classCode) {
+function buildCoTeacherLink(sessionCode) {
   const cleanSession = (sessionCode || "").trim().toUpperCase();
-  const cleanClass = (classCode || "").trim();
 
   if (!cleanSession) {
     if (coTeacherLinkInput) coTeacherLinkInput.value = "";
@@ -3023,7 +2982,6 @@ function buildCoTeacherLink(sessionCode, classCode) {
   const params = new URLSearchParams();
   params.set("sessionCode", cleanSession);
 
-  if (cleanClass) params.set("classCode", cleanClass);
 
   // NEW: include selected practice set (full | mini1 | mini2)
   const setParam = getSelectedPracticeSet();
@@ -3068,7 +3026,6 @@ function buildCoTeacherLink(sessionCode, classCode) {
 
 function startNewSession() {
   const rawSession = sessionInput.value.trim();
-  const rawClass = classInput.value.trim();
 
   if (!rawSession) {
     alert(
@@ -3079,8 +3036,8 @@ function startNewSession() {
   }
 
   // Build both links: student practice link + co-teacher dashboard link
-  const studentLink = buildStudentLink(rawSession, rawClass);
-  const coLink = buildCoTeacherLink(rawSession, rawClass);
+  const studentLink = buildStudentLink(rawSession);
+  const coLink = buildCoTeacherLink(rawSession);
 
   // Show the student link in its box
   if (sessionLinkInput) {
@@ -3106,7 +3063,6 @@ function startNewSession() {
   // Remember this session in localStorage for convenience
   try {
     window.localStorage.setItem("rp_lastSessionCode", normalizedSession);
-    window.localStorage.setItem("rp_lastSessionClass", rawClass || "");
     window.localStorage.setItem("rp_lastSessionLink", studentLink);
     // Note: rp_lastCoTeacherLink is already saved inside buildCoTeacherLink()
 
@@ -3121,7 +3077,7 @@ function startNewSession() {
     // non-fatal
   }
 
-  enableMonitorButton(rawSession, rawClass);
+  enableMonitorButton(rawSession);
 }
 (function wireLinkPreviewAutofill() {
   const setSelect = document.getElementById("practice-set");
@@ -3129,24 +3085,16 @@ function startNewSession() {
 
   const refresh = () => {
     const session = (sessionInput?.value || "").trim();
-    const cls = (classInput?.value || "").trim();
     if (!session) return;
+if (sessionLinkInput) sessionLinkInput.value = buildStudentLink(session);
+if (coTeacherLinkInput) coTeacherLinkInput.value = buildCoTeacherLink(session);
 
-    // only update the boxes if they already have something
-    // (prevents overwriting if you later allow custom links)
-    if (sessionLinkInput && sessionLinkInput.value) {
-      sessionLinkInput.value = buildStudentLink(session, cls);
-    }
-    if (coTeacherLinkInput && coTeacherLinkInput.value) {
-      coTeacherLinkInput.value = buildCoTeacherLink(session, cls);
-    }
+enableMonitorButton(session);
 
-    enableMonitorButton(session, cls);
     if (typeof updateCurrentViewSummary === "function") updateCurrentViewSummary();
   };
 
   if (sessionInput) sessionInput.addEventListener("input", refresh);
-  if (classInput) classInput.addEventListener("input", refresh);
 
   // NEW: selector change instead of checkbox
   if (setSelect) setSelect.addEventListener("change", refresh);
@@ -3306,7 +3254,6 @@ if (clearFiltersBtn) {
     requireTeacherSignedIn((e) => {
       e.preventDefault();
       sessionInput.value = "";
-      classInput.value = "";
       CURRENT_STUDENT_FOR_CHARTS = null;
       loadAttempts();
     })
@@ -3315,7 +3262,6 @@ if (clearFiltersBtn) {
 
 // Save prefs when filters change
 sessionInput.addEventListener("input", () => saveDashboardPrefs());
-classInput.addEventListener("input", () => saveDashboardPrefs());
 
 // Clear student overlay button
 if (clearStudentOverlayBtn) {
@@ -3490,13 +3436,12 @@ initChartFullscreen();
 renderDashboard([]);
 renderSessionHistory(loadHistoryFromStorage());
 
-// Use URL ?sessionCode=&classCode=&owner= to pre-fill filters
+// Use URL ?sessionCode=&owner= to pre-fill filters
 (function applyUrlFiltersOnLoad() {
   try {
     const params = new URLSearchParams(window.location.search);
 
     const urlSession = params.get("sessionCode") || params.get("session");
-    const urlClass = params.get("classCode") || params.get("class");
     const urlOwner = params.get("owner") || params.get("ownerEmail");
 
     // NEW: set can be full | mini1 | mini2 (and legacy "mini")
@@ -3532,10 +3477,6 @@ if (urlOwner) {
       if (sessionPill) sessionPill.textContent = `Session: ${urlSession}`;
     }
 
-    // Prefill class
-    if (urlClass && classInput) {
-      classInput.value = urlClass;
-    }
 
     // ✅ Sync practice set from URL into selector
     const setSelect = document.getElementById("practice-set");
@@ -3549,14 +3490,13 @@ if (urlOwner) {
     } catch (e) {}
 
     // Auto-load if a session or class was provided
-    if ((urlSession || urlClass) && typeof loadAttempts === "function") {
+    if ((urlSession) && typeof loadAttempts === "function") {
       loadAttempts();
     }
 
     // Keep monitor button & view summary aligned after URL-prefill
     const session = (sessionInput?.value || "").trim();
-    const cls = (classInput?.value || "").trim();
-    enableMonitorButton(session, cls);
+    enableMonitorButton(session);
     if (typeof updateCurrentViewSummary === "function") updateCurrentViewSummary();
   } catch (e) {
     console.warn("[Dashboard] Could not parse URL filters:", e);
@@ -3569,7 +3509,6 @@ if (urlOwner) {
 (function restoreLastSession() {
   try {
     const lastCode = window.localStorage.getItem("rp_lastSessionCode");
-    const lastClass = window.localStorage.getItem("rp_lastSessionClass");
     const lastLink = window.localStorage.getItem("rp_lastSessionLink");
     const lastCoLink = window.localStorage.getItem("rp_lastCoTeacherLink");
     const lastOwner = window.localStorage.getItem("rp_lastOwnerEmail");
@@ -3579,9 +3518,6 @@ if (urlOwner) {
       sessionPill.textContent = `Session: ${lastCode}`;
     }
 
-    if (lastClass && classInput && !classInput.value) {
-      classInput.value = lastClass;
-    }
 
     if (lastLink && sessionLinkInput && !sessionLinkInput.value) {
       sessionLinkInput.value = lastLink;
@@ -3598,7 +3534,7 @@ if (urlOwner) {
 
     // Also re-enable the live monitor button for this session
     if (lastCode) {
-      enableMonitorButton(lastCode, lastClass || "");
+      enableMonitorButton(lastCode);
     }
   } catch (e) {
     // ignore

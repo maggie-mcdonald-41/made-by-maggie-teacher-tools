@@ -105,10 +105,6 @@ if (!totalQuestions && answeredCount) {
         (data.sessionInfo && data.sessionInfo.sessionCode) ||
         "";
 
-      const classCode =
-        data.classCode ||
-        (data.sessionInfo && data.sessionInfo.classCode) ||
-        "";
 
       const studentName =
         data.studentName || (data.student && data.student.name) || "";
@@ -600,7 +596,6 @@ if (!totalQuestions && answeredCount) {
       return {
         attemptId: data.attemptId || key,
         studentName,
-        classCode,
         sessionCode,
         startedAt,
         finishedAt,

@@ -30,7 +30,6 @@ exports.handler = async function (event, context) {
 
     const sessionCode = (body.sessionCode || "").trim();
     const studentName = (body.studentName || "").trim();
-    const classCode = (body.classCode || "").trim();
 
     // NEW: teacher ownership (more robust)
     const ownerEmail = (
@@ -102,7 +101,6 @@ exports.handler = async function (event, context) {
     const attempt = {
       attemptId,
       studentName,
-      classCode,
       sessionCode,
 
       // === Ownership ===

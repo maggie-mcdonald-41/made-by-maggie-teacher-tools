@@ -46,7 +46,6 @@ exports.handler = async function (event) {
     const params = event.queryStringParameters || {};
 
     const rawSession = (params.sessionCode || "").trim();
-    const rawClass = (params.classCode || "").trim();
 
     const rawOwnerEmail = (params.ownerEmail || params.teacherEmail || params.owner || "").trim();
     const rawViewerEmail = (params.viewerEmail || "").trim();
@@ -138,8 +137,6 @@ exports.handler = async function (event) {
         (data.sessionInfo && data.sessionInfo.sessionCode) ||
         "";
 
-      const classCode =
-        data.classCode || (data.sessionInfo && data.sessionInfo.classCode) || "";
 
       const studentName = data.studentName || (data.student && data.student.name) || "";
 
@@ -192,7 +189,6 @@ const practiceLevel = String(data.practiceLevel || data.level || "on").toLowerCa
         studentId,
         studentName,
         sessionCode,
-        classCode,
         assessmentName,
         assessmentType,
         ownerEmail,
@@ -231,10 +227,6 @@ const practiceLevel = String(data.practiceLevel || data.level || "on").toLowerCa
     }
 
     // ---------- Filters ----------
-    if (rawClass) {
-      const classUpper = rawClass.toUpperCase();
-      attempts = attempts.filter((a) => (a.classCode || "").toUpperCase() === classUpper);
-    }
 
     if (setParam) {
       attempts = attempts.filter((a) => normalizeSetParam(a.practiceSet) === setParam);

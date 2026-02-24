@@ -27,7 +27,6 @@ exports.handler = async function (event) {
     const sessionCode = (qs.sessionCode || "").trim();
     const studentKeyRaw = (qs.studentKey || "").trim();
 
-    const classCodeRaw = (qs.classCode || qs.class || "").trim();
     const ownerEmailRaw = (qs.ownerEmail || qs.owner || "").trim();
     const viewerEmailRaw = (qs.viewerEmail || "").trim();
     const setRaw = (qs.set || "").trim().toLowerCase();
@@ -83,13 +82,6 @@ exports.handler = async function (event) {
     // ---------- FILTERS ----------
     let filtered = allProgress;
 
-    // class filter
-    if (classCodeRaw) {
-      const classUpper = classCodeRaw.toUpperCase();
-      filtered = filtered.filter(
-        (d) => (d.classCode || "").toUpperCase() === classUpper
-      );
-    }
 
     // set filter
     const setParam = normalizeSetParam(setRaw);

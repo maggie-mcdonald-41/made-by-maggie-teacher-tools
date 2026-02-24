@@ -6,7 +6,6 @@
   const state = {
     sessionInfo: {
       studentName: "",
-      classCode: "",
       sessionCode: "",
       assessmentName: "",
       ownerEmail: "",
@@ -122,7 +121,6 @@ function buildSummary() {
    * Example payload:
    *   {
    *     studentName: "Ava",
-   *     classCode: "3rd Period",
    *     sessionCode: "ABC123",
    *     assessmentName: "Start Times Article",
    *     // NEW:
@@ -140,7 +138,6 @@ function buildSummary() {
 
     state.sessionInfo = {
       studentName: cleanString(info.studentName),
-      classCode: cleanString(info.classCode),
       sessionCode: cleanString(info.sessionCode),
       assessmentName: cleanString(info.assessmentName),
       ownerEmail,

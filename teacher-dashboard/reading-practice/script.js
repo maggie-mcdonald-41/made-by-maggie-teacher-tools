@@ -420,9 +420,7 @@ function getSessionCodeFromUrl() {
 }
 
 function getClassCodeFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  const val = params.get("class");
-  return val ? val.trim() : "";
+  return "";
 }
 
 function getOwnerEmailFromUrl() {
@@ -432,18 +430,17 @@ function getOwnerEmailFromUrl() {
 }
 
 const SESSION_CODE = getSessionCodeFromUrl();
-const URL_CLASS_CODE = getClassCodeFromUrl();
+const URL_CLASS_CODE = "";
 const URL_OWNER_EMAIL = getOwnerEmailFromUrl();
 
 
 let rpSessionInitialized = false;
 
-function beginTrainerSession({ studentName, classCode, sessionCode }) {
+function beginTrainerSession({ studentName, sessionCode }) {
   if (rpSessionInitialized) return;
   rpSessionInitialized = true;
 
   const cleanName = (studentName || "").trim();
-  const cleanClass = (classCode || "").trim();
   const cleanSession = (sessionCode || SESSION_CODE || "").trim();
 
   if (!cleanSession) {
@@ -465,7 +462,6 @@ function beginTrainerSession({ studentName, classCode, sessionCode }) {
   if (window.RP_REPORT && typeof RP_REPORT.setSessionInfo === "function") {
     RP_REPORT.setSessionInfo({
       studentName: cleanName,
-      classCode: cleanClass,
       sessionCode: cleanSession,
       assessmentName: ASSESSMENT_NAME,
       ownerEmail, //this ties attempts to the teacher
@@ -508,7 +504,6 @@ const trainerScreenEl = document.getElementById("trainer-screen");
 
 // New session bar inputs
 const studentNameInput = document.getElementById("rp-student-name");
-const classCodeInput = document.getElementById("rp-class-code");
 const sessionCodeInput = document.getElementById("rp-session-code");
 const startBtn = document.getElementById("rp-start-session");
 const startErrorMsg = document.getElementById("rp-session-status");
@@ -519,23 +514,15 @@ if (sessionCodeInput && SESSION_CODE) {
   sessionCodeInput.readOnly = true;
 }
 
-if (classCodeInput && URL_CLASS_CODE) {
-  classCodeInput.value = URL_CLASS_CODE;
-}
 // ===== IDENTITY MODAL (student) =====
 const identityModalEl = document.getElementById("rp-identity-modal");
 const identityNameInput = document.getElementById("rp-id-name");
-const identityClassInput = document.getElementById("rp-id-class");
 const identityContinueBtn = document.getElementById("rp-id-continue");
 const identityErrorEl = document.getElementById("rp-id-error");
 
 function showIdentityModal() {
   if (!identityModalEl || rpSessionInitialized) return;
 
-  // Prefill class from URL if available
-  if (identityClassInput && URL_CLASS_CODE && !identityClassInput.value) {
-    identityClassInput.value = URL_CLASS_CODE;
-  }
 
   identityModalEl.classList.add("active");
   identityModalEl.setAttribute("aria-hidden", "false");
@@ -572,7 +559,6 @@ if (identityContinueBtn) {
   identityContinueBtn.addEventListener("click", () => {
     if (rpSessionInitialized) return;
     const name = (identityNameInput?.value || "").trim();
-    const classCode = (identityClassInput?.value || "").trim();
     const sessionCode = (SESSION_CODE || "").trim();
 
 
@@ -597,15 +583,12 @@ if (identityContinueBtn) {
     if (studentNameInput) {
       studentNameInput.value = name;
     }
-    if (classCodeInput && classCode) {
-      classCodeInput.value = classCode;
-    }
     if (sessionCodeInput && sessionCode) {
       sessionCodeInput.value = sessionCode;
     }
 
     hideIdentityModal();
-const payload = { studentName: name, classCode, sessionCode };
+const payload = { studentName: name, sessionCode };
 
 // ✅ Do not require Google sign-in, but do require level/questions to be ready
 if (!rpLevelReady) {
@@ -623,7 +606,6 @@ if (startBtn) {
   startBtn.addEventListener("click", () => {
     if (rpSessionInitialized) return;
     const name = (studentNameInput?.value || "").trim();
-    const classCode = (classCodeInput?.value || "").trim();
     const sessionCode = (SESSION_CODE || "").trim();
 
     if (!name) {
@@ -649,7 +631,7 @@ if (startBtn) {
     }
 
     hideIdentityModal();
-const payload = { studentName: name, classCode, sessionCode };
+const payload = { studentName: name, sessionCode };
 
 if (!rpLevelReady) {
   rpPendingStartPayload = payload;
@@ -722,12 +704,10 @@ function wireStudentAuth() {
             }
           } else {
             // Start session, then apply resume
-            const classCode = (classCodeInput?.value || URL_CLASS_CODE || "").trim();
             hideIdentityModal();
 
             const payload = {
               studentName: displayName,
-              classCode,
               sessionCode
             };
 
@@ -744,12 +724,10 @@ function wireStudentAuth() {
         }
 
         // If no autosave or they chose "start fresh", just auto-start like before
-        const classCode = (classCodeInput?.value || URL_CLASS_CODE || "").trim();
         hideIdentityModal();
 
         const payload = {
           studentName: displayName,
-          classCode,
           sessionCode
         };
 
@@ -2822,10 +2800,8 @@ function getStudentKey() {
 
       const session = safe(info.sessionCode, "nosession");
       const name = safe(info.studentName, "noname");
-      const cls = safe(info.classCode, "noclass");
-
-      // Example: sess_new_test__class_6a__name_maya_j
-      return `sess_${session}__class_${cls}__name_${name}`;
+      // classCode removed from studentKey to prevent splitting
+      return `sess_${session}__name_${name}`;
     }
   } catch (e) {
     console.warn(
@@ -2887,7 +2863,6 @@ async function autosaveProgress() {
     studentKey,
     sessionCode,
     studentName: info.studentName || "",
-    classCode: info.classCode || "",
     assessmentName: info.assessmentName || "",
     ownerEmail,
 

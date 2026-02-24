@@ -86,7 +86,6 @@ function buildPartialAttemptFromProgress(
   return {
     attemptId,
     studentName: payload.studentName || "",
-    classCode: payload.classCode || "",
     sessionCode,
 
     // Ownership
@@ -149,7 +148,6 @@ exports.handler = async function (event, context) {
       sessionCode,
 
       studentName: payload.studentName || "",
-      classCode: payload.classCode || "",
 
       startedAt: payload.startedAt || null,
       lastSavedAt: payload.lastSavedAt || new Date().toISOString(),
