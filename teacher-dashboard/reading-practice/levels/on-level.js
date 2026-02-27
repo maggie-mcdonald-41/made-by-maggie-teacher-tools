@@ -97,14 +97,14 @@ window.READING_LEVEL = {
         id: 1,
         type: "mcq",
         linkedPassage: 1,
-        stem: "What is the main claim the author makes in Passage 1?",
-        instructions: "Select the best answer from the choices below.",
-        options: [
-        "The school day should start later so students can be healthier and more focused.",
-        "Students should visit the nurse less often during the school day.",
-        "Walking or biking to school is too dangerous for most students.",
-        "Schools should give students more homework so they learn responsibility."
-        ],
+      stem: "Which option best states Passage 1’s main claim AND reflects how the author supports it across the passage?",
+      instructions: "Select the best answer from the choices below.",
+      options: [
+        "Schools should move start times later because research-based evidence links additional sleep to improved learning, health, attendance, and safety.",
+        "Schools should move start times later mainly because teens dislike waking up early and feel happier when mornings are easier.",
+        "Schools should keep start times the same because transportation schedules are too complicated to change without major problems.",
+        "Schools should focus on after-school programs instead of start times because activities are the strongest predictor of student success."
+      ],
         correctIndex: 0,
         skills: [
         "claim",
@@ -119,15 +119,15 @@ window.READING_LEVEL = {
         id: 2,
         type: "mcq",
         linkedPassage: 2,
-        stem: "Which statement best describes the central idea of Passage 2?",
-        instructions: "Choose the answer that best summarizes the author’s main point.",
-        options: [
-        "Later school start times always improve student health and happiness.",
-        "Students should quit after-school activities so they have more time for sleep.",
-        "Bus rides are the most important part of a student’s school experience.",
-        "Earlier school start times are better because they fit family schedules, activities, and transportation needs."
-        ],
-        correctIndex: 3,
+  stem: "Which statement best captures Passage 2’s central idea without overstating or oversimplifying the author’s position?",
+  instructions: "Choose the answer that best summarizes the author’s main point.",
+  options: [
+    "Earlier start times are the only fair option because later starts always harm student achievement and family routines.",
+    "Earlier start times better support community logistics and responsibilities, and the author argues the trade-offs of later starts can outweigh the benefits.",
+    "Later start times improve student health so much that families should adjust their schedules no matter the cost.",
+    "Transportation concerns are the single most important reason schools should keep earlier start times."
+  ],
+  correctIndex: 1,
         skills: [
         "central-idea",
         "summarizing",
@@ -141,15 +141,15 @@ window.READING_LEVEL = {
         id: 3,
         type: "multi",
         linkedPassage: 1,
-        stem: "Which details from Passage 1 support the idea that later start times improve student health and safety?",
+        stem: "Which details from Passage 1 function as evidence (not just explanation) that later start times improve student health or safety?",
         instructions: "Select all answers that apply. There may be more than one correct answer.",
         options: [
-        "Students at later-start schools had fewer headaches and fewer nurse visits.",
-        "Communities with later school start times saw a decrease in morning car accidents involving teen drivers.",
-        "One district in Colorado saw chronic absenteeism drop by 12% after starting later.",
-        "Many students with a 7:30 a.m. start time wake up between 5:30 and 6:00 a.m."
+            "The National Sleep Foundation study found students at later-start schools had fewer headaches, fewer nurse visits, and higher energy levels.",
+            "Researchers at the University of Minnesota found communities with later school start times saw a 16% decrease in morning car accidents involving teen drivers.",
+            "Schools that pushed their start time to 8:30 a.m. reported an increase in average student sleep by nearly one hour.",
+            "When school starts at 7:30 a.m., many students wake up between 5:30 and 6:00 a.m., making it hard to get enough rest."
         ],
-        correctIndices: [0, 1],
+        correctIndices: [0, 1, 2],
         minSelections: 2,
         maxSelections: 3,
         skills: [
@@ -165,16 +165,17 @@ window.READING_LEVEL = {
         id: 4,
         type: "multi",
         linkedPassage: 2,
-        stem: "Which details from Passage 2 support the author’s argument that moving to a later start time causes problems?",
+        stem: "Which details from Passage 2 most directly support the author’s argument that later start times can create community-wide problems?",
         instructions: "Select all answers that apply.",
         options: [
-        "Parents struggle to rearrange their work schedules or find extra childcare when school starts later.",
-        "Practices and rehearsals often run later into the evening, leaving students with less free time.",
-        "Students learn to wake up early, prepare, and arrive on time, just like in real-world jobs.",
-        "Bus routes became longer and traffic heavier when districts changed to a later school start time."
+            "A 2022 survey reported that 48% of parents said a later school start would make their work schedule significantly harder to manage.",
+            "After districts moved the start time later, practices and rehearsals often ran later into the evening.",
+            "One high school in Ohio found that tardiness increased by 18% when administrators experimented with a later start.",
+            "Districts that changed to a later start reported longer bus rides, heavier traffic, and higher transportation costs.",
+            "Middle-school students need between 9 and 12 hours of sleep per night."
         ],
-        correctIndices: [0, 1, 3],
-        minSelections: 2,
+        correctIndices: [0, 1, 2, 3],
+        minSelections: 3,
         maxSelections: 4,
         skills: [
         "text-evidence",
@@ -189,13 +190,13 @@ window.READING_LEVEL = {
         id: 5,
         type: "order",
         linkedPassage: 1,
-        stem: "Put these ideas from Passage 1 in the order they appear in the text.",
+        stem: "Put these ideas from Passage 1 in the order they appear based on how the author builds the argument from problem to outcomes.",
         instructions: "Drag and drop the ideas so they appear from first to last.",
         items: [
-        { id: "e2", text: "The author describes a study showing students at later-start schools are healthier and less tired." },
-        { id: "e4", text: "The author explains that later start times lead to safer travel for students in the morning." },
-        { id: "e1", text: "The author explains how much sleep middle-school students need and how early schedules make this difficult." },
-        { id: "e3", text: "The author gives an example of a district where attendance improved after starting school later." }
+            { id: "e2", text: "The author presents research showing that students at later-start schools report better health and less tiredness." },
+            { id: "e4", text: "The author explains that later start times can improve morning safety by reducing accident risk." },
+            { id: "e1", text: "The author explains how middle-school students need more sleep and how early start times make adequate rest difficult." },
+            { id: "e3", text: "The author uses an attendance example to show how increased sleep can improve school participation." }
         ],
         correctOrder: ["e1", "e2", "e3", "e4"],
         skills: [
@@ -211,13 +212,13 @@ window.READING_LEVEL = {
         id: 6,
         type: "order",
         linkedPassage: 2,
-        stem: "Sequence the ideas from Passage 2 in the order they are presented.",
+        stem: "Sequence the ideas from Passage 2 based on how the author expands the argument from family routines to broader community systems.",
         instructions: "Drag and drop the ideas so they are in the correct sequence.",
         items: [
-        { id: "s3", text: "The author explains that earlier start times teach real-world responsibility and time management." },
-        { id: "s1", text: "The author explains how earlier start times fit with parents’ work schedules." },
-        { id: "s4", text: "The author discusses transportation problems that appear when schools move to later start times." },
-        { id: "s2", text: "The author describes how later start times push after-school activities later into the evening." }
+            { id: "s3", text: "The author argues that earlier start times help students build responsibility and time-management habits aligned with adult work routines." },
+            { id: "s1", text: "The author explains how earlier start times fit many parents’ work schedules and reduce childcare complications." },
+            { id: "s4", text: "The author describes transportation ripple effects, including bus routes, traffic, and costs, when start times shift later." },
+            { id: "s2", text: "The author explains that later dismissal can push after-school activities later and increase time pressure for students." }
         ],
         correctOrder: ["s1", "s2", "s3", "s4"],
         skills: [
@@ -234,22 +235,22 @@ window.READING_LEVEL = {
         id: 7,
         type: "match",
         linkedPassage: 1,
-        stem: "Match each part of the argument in Passage 1 with the best description.",
+        stem: "Match each part of Passage 1’s argument with the description that best explains how the author uses it in the text.",
         instructions: "Drag the descriptions into the boxes to match the argument parts.",
         left: [
-        { id: "m1", text: "Claim" },
-        { id: "m2", text: "Reason" },
-        { id: "m3", text: "Evidence" }
+            { id: "m1", text: "Claim" },
+            { id: "m2", text: "Reason" },
+            { id: "m3", text: "Evidence" }
         ],
         right: [
-        { id: "r1", text: "A statement that school should start later to help students be healthier and more focused." },
-        { id: "r2", text: "Information from research, such as a study showing fewer headaches and nurse visits at later-start schools." },
-        { id: "r3", text: "An explanation of why more sleep helps students get the rest they need to learn and stay healthy." }
+            { id: "r1", text: "The author’s overall position about what schools should do regarding start times." },
+            { id: "r2", text: "An explanation that connects increased sleep to improved learning, health, attendance, or safety." },
+            { id: "r3", text: "Specific studies, statistics, or real examples used to prove the author’s reasoning is valid." }
         ],
         pairs: {
-        m1: "r1",
-        m2: "r3",
-        m3: "r2"
+            m1: "r1",
+            m2: "r2",
+            m3: "r3"
         },
         skills: [
         "argument-structure",
@@ -265,17 +266,17 @@ window.READING_LEVEL = {
         id: 8,
         type: "match",
         linkedPassage: 2,
-        stem: "Match each part of the author’s argument in Passage 2 with what it focuses on.",
+        stem: "Match each category from Passage 2 with the description that best explains how the author supports that part of the argument.",
         instructions: "Drag the descriptions into the boxes to match the ideas.",
         left: [
-        { id: "f1", text: "Family impact" },
-        { id: "f2", text: "After-school activities" },
-        { id: "f3", text: "Transportation issue" }
+            { id: "f1", text: "Family impact" },
+            { id: "f2", text: "After-school activities" },
+            { id: "f3", text: "Transportation systems" }
         ],
         right: [
-        { id: "g1", text: "Parents’ work schedules are harder to manage when school starts later, so they may need extra childcare." },
-        { id: "g2", text: "Practices, rehearsals, or tutoring sessions run later into the evening after start times move to 8:30 a.m." },
-        { id: "g3", text: "Bus routes become longer, traffic gets heavier, and other schools’ schedules are affected when start times change." }
+            { id: "g1", text: "Uses survey data and examples of work schedules and childcare complications to show how later starts strain household routines." },
+            { id: "g2", text: "Explains that later dismissal shifts practices, tutoring, and rehearsals later into the evening, increasing time pressure for students." },
+            { id: "g3", text: "Describes ripple effects across bus routes, traffic flow, costs, and even start times at other grade levels." }
         ],
         pairs: {
         f1: "g1",
@@ -295,29 +296,34 @@ window.READING_LEVEL = {
         id: 9,
         type: "highlight",
         linkedPassage: 1,
-        stem: "Which sentences from Passage 1 give specific evidence that later start times reduce how tired students feel?",
-        instructions: "Click to highlight all the sentences that are evidence, not just opinions. You may select more than one.",
+        stem: "Which sentences from Passage 1 most directly provide measurable evidence that later start times reduce student tiredness?",
+        instructions: "Highlight all sentences that clearly show data or research specifically about reduced tiredness. You may select more than one.",
         sentences: [
-        {
+            {
             id: "h1",
             text: "Research shows that students who get more sleep perform better in class, feel happier, and make healthier choices throughout the day.",
             correct: false
-        },
-        {
+            },
+            {
             id: "h2",
+            text: "Schools that pushed their start time to 8:30 a.m. reported an increase in average student sleep by nearly one hour.",
+            correct: false
+            },
+            {
+            id: "h3",
             text: "The study found that students at later-start schools had fewer headaches, fewer nurse visits, and reported higher energy levels.",
             correct: true
-        },
-        {
-            id: "h3",
+            },
+            {
+            id: "h4",
             text: "The percentage of students who reported feeling \"very tired\" during the school day dropped from 56% to 31%.",
             correct: true
-        },
-        {
-            id: "h4",
-            text: "A later start time is a simple change that would make a big difference.",
+            },
+            {
+            id: "h5",
+            text: "A later start time is a simple change that could make a big difference.",
             correct: false
-        }
+            }
         ],
         skills: [
         "text-evidence",
@@ -333,29 +339,34 @@ window.READING_LEVEL = {
         id: 10,
         type: "highlight",
         linkedPassage: 2,
-        stem: "Which sentences from Passage 2 show the author’s opinion rather than just a fact?",
-        instructions: "Click to highlight all of the sentences that reveal the author’s opinion. You may select more than one.",
+        stem: "Which sentences from Passage 2 communicate the author’s stance through evaluative or persuasive language rather than neutral reporting?",
+        instructions: "Highlight all sentences that reveal the author’s position. You may select more than one.",
         sentences: [
-        {
+            {
             id: "k1",
             text: "Should schools consider keeping their current start times?",
             correct: true
-        },
-        {
+            },
+            {
             id: "k2",
             text: "Some families and educators believe starting school earlier in the morning is better for families, teachers, and the community.",
             correct: true
-        },
-        {
+            },
+            {
             id: "k3",
-            text: "Districts that changed to a later start reported longer bus rides, heavier traffic, and higher transportation costs.",
-            correct: false
-        },
-        {
+            text: "Earlier start times offer important benefits that help students stay organized, manage responsibilities, and stay connected to family schedules.",
+            correct: true
+            },
+            {
             id: "k4",
+            text: "A 2022 survey from the National Family Planning Council reported that 48% of parents said a later school start would make their work schedule “significantly harder to manage,” while only 23% said it would help.",
+            correct: false
+            },
+            {
+            id: "k5",
             text: "In some cases, younger elementary students were forced to begin even earlier to make the schedule work.",
             correct: false
-        }
+            }
         ],
         skills: [
         "author-opinion",
@@ -370,13 +381,18 @@ window.READING_LEVEL = {
         id: 11,
         type: "dropdown",
         linkedPassage: 1,
-        stem: "Select the option that best completes the sentence so it matches the author’s meaning in Passage 1.",
+        stem: "Select the option that best completes the sentence so it accurately reflects the author’s cause-and-effect reasoning in Passage 1.",
         sentenceParts: [
-        "The passage explains that changing the school start time would ",
-        " student health and safety."
+            "The author argues that moving the school start time later could ",
+            " student health and safety by increasing sleep and reducing morning risks."
         ],
-        options: ["not affect", "slightly change", "improve"],
-        correctIndex: 2,
+        options: [
+            "eliminate risks to",
+            "have little impact on",
+            "guarantee improvements in",
+            "significantly improve"
+        ],
+        correctIndex: 3,
         skills: [
         "author-meaning",
         "precision-language",
@@ -389,13 +405,18 @@ window.READING_LEVEL = {
         id: 12,
         type: "dropdown",
         linkedPassage: 2,
-        stem: "Choose the phrase that most clearly expresses the author’s opinion in Passage 2.",
+        stem: "Choose the phrase that best reflects the author’s overall stance in Passage 2 without exaggerating the claim.",
         sentenceParts: [
-        "The author argues that earlier start times are ",
-        " for families and the community."
+            "Overall, the author suggests that earlier start times are ",
+            " for families and the community."
         ],
-        options: ["somewhat okay", "often confusing", "better overall"],
-        correctIndex: 2,
+        options: [
+            "the only acceptable solution",
+            "often a better fit",
+            "never worth reconsidering",
+            "slightly helpful but not important"
+        ],
+        correctIndex: 1,
         skills: [
         "author-opinion",
         "precision-language",
@@ -408,28 +429,33 @@ window.READING_LEVEL = {
         id: 13,
         type: "classify",
         linkedPassage: 1,
-        stem: "Sort each detail into the category it best supports in Passage 1.",
+        stem: "Sort each detail into the category it most directly supports in Passage 1’s argument. Some details may relate to more than one idea, so choose the strongest match.",
         instructions: "Drag each detail into the correct column.",
         categories: [
-        { id: "health", label: "Health & Tiredness" },
-        { id: "attendance", label: "Attendance & Participation" }
+            { id: "health", label: "Health & Tiredness" },
+            { id: "attendance", label: "Attendance & Participation" }
         ],
         items: [
-        {
+            {
             id: "c1",
-            text: "Students at later-start schools had fewer headaches and fewer nurse visits.",
+            text: "Students at later-start schools had fewer headaches, fewer nurse visits, and reported higher energy levels.",
             categoryId: "health"
-        },
-        {
+            },
+            {
             id: "c2",
             text: "The percentage of students who reported feeling \"very tired\" dropped from 56% to 31%.",
             categoryId: "health"
-        },
-        {
+            },
+            {
             id: "c3",
-            text: "One district in Colorado saw chronic absenteeism drop by 12% after starting later.",
+            text: "One district in Colorado saw chronic absenteeism drop by 12% after pushing back its start time.",
             categoryId: "attendance"
-        }
+            },
+            {
+            id: "c4",
+            text: "Better attendance means better learning, stronger grades, and more classroom participation.",
+            categoryId: "attendance"
+            }
         ],
         skills: [
         "details",
@@ -444,28 +470,33 @@ window.READING_LEVEL = {
         id: 14,
         type: "classify",
         linkedPassage: 2,
-        stem: "Sort each detail into the category it best supports in Passage 2.",
+        stem: "Sort each detail into the category it most directly supports in Passage 2’s argument. Consider who is primarily affected by the issue described.",
         instructions: "Drag each detail into the correct column.",
         categories: [
-        { id: "family", label: "Family Schedules" },
-        { id: "activities", label: "After-School Activities" }
+            { id: "family", label: "Family Schedules" },
+            { id: "activities", label: "After-School Activities" }
         ],
         items: [
-        {
-            id: "c4",
-            text: "Parents struggle to rearrange their work schedules or find extra childcare when school starts later.",
-            categoryId: "family"
-        },
-        {
+            {
             id: "c5",
-            text: "Practices and rehearsals often run later into the evening, leaving students with less free time.",
-            categoryId: "activities"
-        },
-        {
+            text: "Many parents begin work between 7:00 and 8:00 a.m., so dropping off children earlier allows families to stay on the same routine.",
+            categoryId: "family"
+            },
+            {
             id: "c6",
-            text: "Students reported feeling more rushed after school instead of less.",
+            text: "Parents often struggle to find extra childcare or rearrange their jobs when school start times shift later.",
+            categoryId: "family"
+            },
+            {
+            id: "c7",
+            text: "Practices and rehearsals often ran later into the evening, leaving students with less free time and later bedtimes.",
             categoryId: "activities"
-        }
+            },
+            {
+            id: "c8",
+            text: "Many students reported feeling more rushed after school instead of less.",
+            categoryId: "activities"
+            }
         ],
         skills: [
         "details",
@@ -482,26 +513,26 @@ window.READING_LEVEL = {
         linkedPassage: 1,
         stem: "Answer Part A and Part B about Passage 1.",
         partA: {
-        label: "Part A",
-        stem: "What is the best statement of the author’s claim in Passage 1?",
-        options: [
-            "Students should do more homework so they are ready for high school.",
-            "School should start later so students can be healthier, safer, and more focused.",
-            "Students should avoid walking or biking to school in the dark.",
-            "Students need fewer after-school activities so they can sleep more."
-        ],
-        correctIndex: 1
+            label: "Part A",
+            stem: "Which statement best expresses the author’s full claim in Passage 1?",
+            options: [
+            "Students should start school later mainly to avoid walking or biking in the dark.",
+            "Schools should move start times later because doing so can improve student health, learning readiness, attendance, and safety.",
+            "Students should be allowed to decide their own start times based on personal preference.",
+            "Early start times are the only reason students struggle in school."
+            ],
+            correctIndex: 1
         },
         partB: {
-        label: "Part B",
-        stem: "Which sentence from Passage 1 best supports your answer to Part A?",
-        options: [
+            label: "Part B",
+            stem: "Which piece of evidence from Passage 1 provides the strongest overall support for the claim in Part A?",
+            options: [
             "\"When school starts at 7:30 a.m., many students wake up between 5:30 and 6:00 a.m.\"",
             "\"The percentage of students who reported feeling 'very tired' during the school day dropped from 56% to 31%.\"",
             "\"One district in Colorado saw chronic absenteeism drop by 12% after pushing back its start time.\"",
             "\"Researchers at the University of Minnesota found that communities with later school start times saw a 16% decrease in morning car accidents involving teen drivers.\""
-        ],
-        correctIndex: 3
+            ],
+            correctIndex: 3
         },
         skills: [
         "claim",
@@ -518,27 +549,28 @@ window.READING_LEVEL = {
         linkedPassage: 2,
         stem: "Answer Part A and Part B about Passage 2.",
         partA: {
-        label: "Part A",
-        stem: "What is one main reason the author gives for keeping an earlier start time in Passage 2?",
-        options: [
-            "It completely eliminates transportation problems.",
-            "It allows students to sleep as late as they want.",
-            "It matches many parents’ work schedules and routines.",
-            "It shortens after-school activities."
-        ],
-        correctIndex: 2
+            label: "Part A",
+            stem: "Which reason is most central to the author’s argument for keeping earlier start times in Passage 2?",
+            options: [
+            "Earlier start times eliminate transportation challenges entirely.",
+            "Earlier start times better coordinate with family routines and community schedules.",
+            "Earlier start times guarantee that students will complete more homework.",
+            "Earlier start times allow students to sleep longer."
+            ],
+            correctIndex: 1
         },
         partB: {
-        label: "Part B",
-        stem: "Which sentence from Passage 2 best supports your answer to Part A?",
-        options: [
+            label: "Part B",
+            stem: "Which sentence from Passage 2 most directly supports the central reason identified in Part A?",
+            options: [
             "\"Many parents begin work between 7:00 and 8:00 a.m., so dropping off children earlier allows families to stay on the same routine.\"",
             "\"Practices often ran later into the evening, leaving students with less free time.\"",
-            "\"Bus routes became longer and traffic heavier when districts changed to a later school start time.\"",
+            "\"One high school in Ohio found that when administrators experimented with a later start, tardiness increased by 18%.\"",
             "\"In some cases, younger elementary students were forced to begin even earlier to make the schedule work.\""
-        ],
-        correctIndex: 0
+            ],
+            correctIndex: 0
         },
+
         skills: [
         "reason",
         "text-evidence",
@@ -551,33 +583,33 @@ window.READING_LEVEL = {
     {
         id: 17,
         type: "classify",
-        stem: "Sort each statement into the passage it best describes.",
-        instructions: "Drag each statement into the correct column. Use both Passage 1 and Passage 2.",
+        stem: "Sort each statement into the passage whose overall argument and emphasis it most closely reflects.",
+        instructions: "Drag each statement into the correct column. Consider how each author frames the issue.",
         categories: [
-        { id: "p1", label: "Passage 1" },
-        { id: "p2", label: "Passage 2" }
+            { id: "p1", label: "Passage 1" },
+            { id: "p2", label: "Passage 2" }
         ],
         items: [
-        {
+            {
             id: "cp1",
-            text: "Argues that later school start times help students be healthier, more rested, and safer.",
+            text: "Frames later start times as a research-supported reform that improves measurable student outcomes.",
             categoryId: "p1"
-        },
-        {
+            },
+            {
             id: "cp2",
-            text: "Argues that earlier school start times work better for families, activities, and the community.",
+            text: "Emphasizes how schedule changes can create ripple effects that disrupt families and community systems.",
             categoryId: "p2"
-        },
-        {
+            },
+            {
             id: "cp3",
-            text: "Focuses on benefits like fewer nurse visits, fewer headaches, and improved attendance.",
+            text: "Builds its argument primarily around health, safety, and attendance improvements.",
             categoryId: "p1"
-        },
-        {
+            },
+            {
             id: "cp4",
-            text: "Focuses on matching parents’ work schedules and keeping after-school activities on track.",
+            text: "Highlights trade-offs and logistical complications that may outweigh the benefits of change.",
             categoryId: "p2"
-        }
+            }
         ],
         skills: [
         "compare-passages",
@@ -592,33 +624,33 @@ window.READING_LEVEL = {
     {
         id: 18,
         type: "classify",
-        stem: "Sort each detail into the passage it comes from or best matches.",
-        instructions: "Drag each detail into the correct column. Use clues from both passages.",
+        stem: "Sort each detail into the passage whose argumentative approach it best represents. Consider the type of evidence and how each author builds credibility.",
+        instructions: "Drag each detail into the correct column. Think about whether the detail reflects research-based outcomes or logistical/community concerns.",
         categories: [
-        { id: "p1", label: "Passage 1" },
-        { id: "p2", label: "Passage 2" }
+            { id: "p1", label: "Passage 1" },
+            { id: "p2", label: "Passage 2" }
         ],
         items: [
-        {
+            {
             id: "cp5",
             text: "Reports that the percentage of students who felt \"very tired\" dropped from 56% to 31%.",
             categoryId: "p1"
-        },
-        {
+            },
+            {
             id: "cp6",
+            text: "Cites a 2022 parent survey showing that 48% said later start times would make work schedules significantly harder to manage.",
+            categoryId: "p2"
+            },
+            {
+            id: "cp7",
             text: "Describes a 16% decrease in morning car accidents involving teen drivers after later start times.",
             categoryId: "p1"
-        },
-        {
-            id: "cp7",
-            text: "Explains that many parents would struggle to rearrange work schedules or find extra childcare.",
-            categoryId: "p2"
-        },
-        {
+            },
+            {
             id: "cp8",
-            text: "Says that practices and rehearsals often run later into the evening when school starts later.",
+            text: "Explains that later dismissal can push practices and rehearsals later into the evening, affecting student routines.",
             categoryId: "p2"
-        }
+            }
         ],
         skills: [
         "compare-passages",
@@ -634,18 +666,19 @@ window.READING_LEVEL = {
         id: 19,
         type: "revise",
         linkedPassage: 1,
-        stem: "Improve the sentence so it best matches the author’s tone and meaning in Passage 1.",
+        stem: "Choose the revision that best matches the author’s formal, evidence-based tone and accurately reflects the strength of the argument in Passage 1.",
         originalSentence: "Starting school later might be kind of helpful for students who feel tired during the day.",
         sentenceParts: [
-        "Starting school later would be ",
-        " for students who feel tired during the day."
+            "Starting school later would be ",
+            " for students who feel tired during the day."
         ],
         options: [
-        "kind of helpful",
-        "a little better",
-        "very beneficial"
+            "somewhat helpful",
+            "a meaningful improvement",
+            "a complete solution",
+            "nice but not essential"
         ],
-        correctIndex: 2,
+        correctIndex: 1,
         skills: [
         "revise-sentence",
         "precision-language",
@@ -659,18 +692,19 @@ window.READING_LEVEL = {
         id: 20,
         type: "revise",
         linkedPassage: 2,
-        stem: "Choose the revision that makes the author’s opinion in Passage 2 clearer and stronger.",
+        stem: "Choose the revision that makes the author’s opinion in Passage 2 clear while maintaining a balanced and credible argumentative tone.",
         originalSentence: "Keeping an earlier start time is sort of okay for families and the community.",
         sentenceParts: [
-        "Keeping an earlier start time is ",
-        " for families and the community."
+            "Keeping an earlier start time is ",
+            " for families and the community."
         ],
         options: [
-        "often a good fit",
-        "sort of okay",
-        "the best possible choice in every situation"
+            "the only responsible choice",
+            "often a better fit",
+            "always the best decision for every district",
+            "barely helpful at all"
         ],
-        correctIndex: 0,
+        correctIndex: 1,
         skills: [
         "revise-sentence",
         "author-opinion",
@@ -721,15 +755,15 @@ window.READING_LEVEL = {
         captions: "../media/later-start-times-debate.vtt",
         label: "Audio Debate: Later School Start Times"
         },
-        stem: "Based on the audio debate, what is the main disagreement between the two speakers?",
-        instructions: "Use information from both passages and the audio debate to choose the best answer.",
+        stem: "Based on the audio debate and the passages, what is the central disagreement between the two speakers?",
+        instructions: "Consider how each speaker frames the issue when selecting your answer.",
         options: [
-        "Whether students need more sleep than adults.",
-        "Whether after-school activities are more important than academic learning.",
-        "Whether schools should eliminate extracurricular activities to reduce stress.",
-        "Whether the health and safety benefits of later start times outweigh the scheduling problems they create for families and communities."
+            "Whether teenagers biologically need more sleep than adults.",
+            "Whether research about accident reduction is trustworthy.",
+            "Whether later start times are primarily a public health priority or a systemic change that creates significant community trade-offs.",
+            "Whether after-school activities should be eliminated to protect student sleep."
         ],
-        correctIndex: 3,
+        correctIndex: 2,
         skills: [
         "central-idea",
         "compare-passages",
@@ -751,13 +785,13 @@ window.READING_LEVEL = {
         captions: "../media/later-start-times-debate.vtt",
         label: "Audio Debate: Later School Start Times"
         },
-        stem: "How does the graph in Passage 1 most clearly support a claim made by Speaker 1 in the audio debate?",
-        instructions: "Use the graph and the audio to answer the question.",
+        stem: "How does the graph in Passage 1 most effectively strengthen Speaker 1’s argument in the audio debate?",
+        instructions: "Use both the visual data and the speaker’s claims when selecting your answer.",
         options: [
-        "The graph shows that later start times sharply reduce the percentage of students who feel very tired, supporting Speaker 1’s argument about improved health and alertness.",
-        "The graph proves that students at all schools sleep the same amount of time.",
-        "The graph shows that after-school participation decreases when school starts later.",
-        "The graph reveals that transportation costs always increase when start times change."
+            "It provides measurable data showing a significant reduction in students who feel very tired, reinforcing the claim that later start times are supported by scientific evidence.",
+            "It proves that later start times improve every aspect of student life, including grades and extracurricular success.",
+            "It shows that participation in after-school activities increases when schools start later.",
+            "It demonstrates that transportation costs decrease when start times are adjusted."
         ],
         correctIndex: 0,
         skills: [
@@ -781,13 +815,13 @@ window.READING_LEVEL = {
         captions: "../media/video-clip-captions.vtt",
         label: "Video Report: The School Start Time Debate"
         },
-        stem: "Based on the video, which inference can the viewer make about why communities struggle to agree on school start times?",
-        instructions: "Watch the video, then choose the answer that is supported by evidence but not directly stated.",
+        stem: "Based on the video, which inference is best supported about why communities struggle to reach agreement on school start times?",
+        instructions: "Choose the answer that is supported by the perspectives presented but not directly stated.",
         options: [
-        "Most communities prefer to change start times every few years to test new schedules.",
-        "Students generally agree that earlier start times are the best way to prepare for future careers.",
-        "The majority of parents believe that later start times will automatically fix every problem schools face.",
-        "Both sides have valid concerns, so any decision will create a trade-off that affects different groups in different ways."
+            "Communities struggle mainly because students frequently change their opinions about start times.",
+            "Communities struggle because most stakeholders agree on the solution but lack the funding to implement it.",
+            "Communities struggle because later start times automatically solve health problems but create no additional challenges.",
+            "Communities struggle because improving one group’s outcomes (such as student sleep) can create new challenges for other groups, leading to unavoidable trade-offs."
         ],
         correctIndex: 3,
         skills: [
@@ -812,13 +846,13 @@ window.READING_LEVEL = {
         captions: "../media/video-clip-captions.vtt",
         label: "Video Report: The School Start Time Debate"
         },
-        stem: "Based on the video and the passages, which statement best explains why changing school start times is such a difficult decision for communities?",
-        instructions: "Use information from the video and both passages to infer the best answer.",
+        stem: "Using the video, the audio debate, and both passages, which explanation best synthesizes why changing school start times is such a complex decision for communities?",
+        instructions: "Choose the answer that most fully integrates the perspectives presented across all sources.",
         options: [
-        "Most communities change their school schedules every year and are used to rapid adjustments.",
-        "The evidence shows that only one side of the debate has meaningful concerns.",
-        "Any schedule change creates trade-offs that affect student health, family routines, transportation, and after-school activities.",
-        "Most parents and students want to eliminate extracurricular activities to simplify the schedules."
+            "Communities frequently change school schedules, so start times are rarely a long-term concern.",
+            "The evidence shows that only one side of the debate has meaningful concerns, making the decision straightforward.",
+            "Changing school start times affects multiple interconnected systems—student health and safety, family work routines, after-school activities, and transportation—so gains in one area can create costs in another.",
+            "The main solution is to eliminate extracurricular activities so students can sleep more without affecting schedules."
         ],
         correctIndex: 2,
         skills: [

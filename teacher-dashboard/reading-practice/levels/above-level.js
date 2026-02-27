@@ -88,14 +88,14 @@ let questions = [
     id: 1,
     type: "mcq",
     linkedPassage: 1,
-    stem: "What is the main claim the author makes in Passage 1?",
+    stem: "Which statement best captures Passage 1’s central claim AND reflects the scope of the author’s reasoning?",
     instructions: "Select the best answer.",
-    options: [
-      "AI tools should be banned because they replace teachers.",
-      "AI tools are mainly useful for grading student work faster.",
-      "AI tools should be used in schools because they support personalized learning and digital literacy.",
-      "AI tools are only helpful for students with disabilities."
-    ],
+options: [
+  "Because AI is common in society, schools should require AI tools in every class and replace many traditional lessons.",
+  "AI tools are most valuable for grading and efficiency, so schools should adopt them mainly to reduce teacher workload.",
+  "With clear guidelines and teacher oversight, schools should allow AI tools because they can personalize learning, improve access, and build digital literacy.",
+  "Since AI helps some learners, schools should allow AI only for students with disabilities and multilingual learners."
+],
     correctIndex: 2,
     skills: ["claim", "central-idea", "passage-1", "mcq"]
   },
@@ -105,14 +105,14 @@ let questions = [
     id: 2,
     type: "mcq",
     linkedPassage: 2,
-    stem: "Which statement best expresses the central idea of Passage 2?",
+    stem: "Which statement best expresses Passage 2’s central idea, including the author’s main reasoning?",
     instructions: "Choose the answer that best summarizes the author’s main point.",
-    options: [
-      "Unrestricted AI use can weaken independent thinking and create fairness issues.",
-      "Teachers should rely more heavily on automated grading systems.",
-      "Technology always improves education outcomes.",
-      "AI tools help students learn more efficiently."
-    ],
+options: [
+  "Without clear limits, AI can reduce independent thinking, raise fairness and integrity concerns, and make it harder to assess what students truly understand.",
+  "AI should be used more often because it saves time for teachers and reduces grading burdens.",
+  "Technology generally improves learning outcomes, so schools should expand AI access to close achievement gaps.",
+  "AI tools mainly help students work faster, which makes them the best solution for modern classrooms."
+],
     correctIndex: 0,
     skills: ["central-idea", "summarizing", "passage-2", "mcq"]
   },
@@ -122,14 +122,14 @@ let questions = [
     id: 3,
     type: "multi",
     linkedPassage: 1,
-    stem: "Which details from Passage 1 support the idea that AI tools can personalize learning?",
-    instructions: "Select all that apply.",
-    options: [
-      "AI programs adjust instruction based on student performance data.",
-      "Teachers no longer need to plan lessons when AI is used.",
-      "Adaptive systems provide targeted feedback and practice opportunities.",
-      "AI tools remove the need for student effort."
-    ],
+stem: "Which details best support the idea that AI tools can personalize learning in a way that changes instruction for individual students?",   
+instructions: "Select all that apply.",
+options: [
+  "AI programs analyze student performance and adjust instruction based on learning needs.",
+  "AI makes learning more fun, which helps students stay motivated to complete work.",
+  "Adaptive systems can provide targeted feedback and extra practice to address learning gaps.",
+  "AI offers translation and speech-to-text features that help students access academic content."
+],
     correctIndices: [0, 2],
     minSelections: 2,
     maxSelections: 3,
@@ -141,14 +141,13 @@ let questions = [
     id: 4,
     type: "multi",
     linkedPassage: 2,
-    stem: "Which details from Passage 2 support the concern that AI may weaken critical thinking?",
-    instructions: "Select all that apply.",
-    options: [
-      "Students may rely on AI instead of engaging in productive struggle.",
-      "AI tools always provide incorrect answers.",
-      "Overuse of automation can limit opportunities for independent problem-solving.",
-      "Teachers benefit from faster grading."
-    ],
+stem: "Which details best support the author’s concern that AI use may weaken critical thinking by reducing productive struggle?",    instructions: "Select all that apply.",
+options: [
+  "Students may rely on AI-generated explanations instead of working through challenging tasks.",
+  "AI tools often simplify complex ideas, which can help students understand difficult content quickly.",
+  "Overuse of automation can reduce opportunities for independent problem-solving and analysis.",
+  "Teachers may need time to monitor technology use, which can reduce instructional time."
+],
     correctIndices: [0, 2],
     minSelections: 2,
     maxSelections: 3,
@@ -201,12 +200,11 @@ let questions = [
       { id: "c2", text: "Reason" },
       { id: "c3", text: "Evidence" }
     ],
-    right: [
-        { id: "d3", text: "Research organizations report benefits of adaptive learning technologies." },
-        { id: "d1", text: "Schools should use AI tools to support learning." },
-        { id: "d2", text: "AI allows instruction to adapt to individual student needs." },
-        
-    ],
+right: [
+  { id: "d3", text: "A cited organization explains that adaptive technologies can identify gaps and provide targeted support." },
+  { id: "d1", text: "Schools should allow AI tools for learning when implemented with guidelines and oversight." },
+  { id: "d2", text: "Instruction can shift based on student needs when tools adjust practice and feedback." }
+],
     pairs: { c1: "d1", c2: "d2", c3: "d3" },
     skills: ["argument-structure", "claim", "reason", "evidence", "matching"]
   },
@@ -223,11 +221,11 @@ let questions = [
       { id: "e2", text: "Fairness" },
       { id: "e3", text: "Assessment" }
     ],
-    right: [
-      { id: "f2", text: "Not all students have equal access to advanced AI tools." },
-      { id: "f3", text: "Teachers struggle to verify student understanding." },
-      { id: "f1", text: "Students may depend on AI instead of thinking independently." }
-    ],
+right: [
+  { id: "f2", text: "Differences in access can create unequal advantages for some students." },
+  { id: "f3", text: "AI-generated work makes it harder to judge what a student actually understands." },
+  { id: "f1", text: "Students may lean on AI responses instead of developing independent problem-solving." }
+],
     pairs: { e1: "f1", e2: "f2", e3: "f3" },
     skills: ["details", "cause-effect", "matching"]
   },
@@ -239,12 +237,12 @@ let questions = [
     linkedPassage: 1,
     stem: "Which sentences from Passage 1 provide evidence rather than opinion?",
     instructions: "Highlight all sentences that provide evidence.",
-    sentences: [
-      { id: "h1", text: "AI tools have the potential to strengthen education.", correct: false },
-      { id: "h2", text: "UNESCO reports that adaptive technologies can provide targeted feedback.", correct: true },
-      { id: "h3", text: "Research shows interactive platforms improve student engagement.", correct: true },
-      { id: "h4", text: "Schools should embrace innovation.", correct: false }
-    ],
+sentences: [
+  { id: "h1", text: "When used with teacher oversight, AI tools can strengthen learning without replacing instruction.", correct: false }, 
+  { id: "h2", text: "UNESCO states that adaptive learning technologies can help identify learning gaps and provide targeted support.", correct: true },
+  { id: "h3", text: "A Brookings report notes that well-designed digital tools can improve motivation when paired with clear instructional goals.", correct: true },
+  { id: "h4", text: "Rather than banning AI outright, schools should focus on responsible use.", correct: false }
+],
     skills: ["text-evidence", "fact-opinion", "highlight"]
   },
 
@@ -255,12 +253,12 @@ let questions = [
     linkedPassage: 2,
     stem: "Which sentences from Passage 2 express the author’s opinion?",
     instructions: "Highlight all sentences that reflect opinion.",
-    sentences: [
-      { id: "i1", text: "AI-generated work makes assessment difficult.", correct: false },
-      { id: "i2", text: "Schools should restrict AI use until safeguards exist.", correct: true },
-      { id: "i3", text: "Overreliance on AI threatens independent learning.", correct: true },
-      { id: "i4", text: "Some tools provide automated feedback.", correct: false }
-    ],
+sentences: [
+  { id: "i1", text: "AI-generated content can complicate traditional assessment methods and lead to inaccurate evaluations.", correct: false },
+  { id: "i2", text: "Until safeguards are established, schools should restrict or ban AI tools in classrooms.", correct: true },
+  { id: "i3", text: "Unrestricted AI use risks weakening essential academic skills by reducing productive struggle.", correct: true },
+  { id: "i4", text: "Educational Testing Service notes that AI-generated content complicates traditional assessment approaches.", correct: false }
+],
     skills: ["author-opinion", "fact-opinion", "highlight"]
   },
 
@@ -274,7 +272,7 @@ let questions = [
       "The author suggests that AI tools can ",
       " student learning when used responsibly."
     ],
-    options: ["limit", "replace", "enhance"],
+options: ["limit", "standardize", "enhance", "replace"],
     correctIndex: 2,
     skills: ["author-meaning", "precision-language", "dropdown"]
   },
@@ -289,7 +287,12 @@ let questions = [
       "The author argues that AI use in classrooms should be ",
       "."
     ],
-    options: ["fully unrestricted", "carefully limited", "encouraged without rules"],
+options: [
+  "expanded with few restrictions",
+  "carefully limited until safeguards exist",
+  "encouraged as a replacement for challenging tasks",
+  "left to individual student choice"
+],
     correctIndex: 1,
     skills: ["author-opinion", "precision-language", "dropdown"]
   },
@@ -360,12 +363,12 @@ let questions = [
     },
     partB: {
       stem: "Which evidence best supports this claim?",
-      options: [
-        "Students enjoy technology.",
-        "UNESCO reports benefits of adaptive learning tools.",
-        "Teachers benefit from reduced workload.",
-        "AI is common in society."
-      ],
+options: [
+  "The author mentions that technology is common in daily life.",
+  "UNESCO is cited to show adaptive tools can identify gaps and provide targeted support.",
+  "The author claims students will enjoy school more when AI is used.",
+  "The author suggests teachers will not need to plan as much when AI is available."
+],
       correctIndex: 1
     },
     skills: ["claim", "text-evidence", "two-part"]
@@ -389,12 +392,12 @@ let questions = [
     },
     partB: {
       stem: "Which detail best supports this reason?",
-      options: [
-        "AI tools are expensive.",
-        "Teachers enjoy automation.",
-        "AI works quickly.",
-        "Students rely on AI instead of productive struggle."
-      ],
+options: [
+  "Some AI tools require paid subscriptions.",
+  "Teachers may prefer technology that automates tasks.",
+  "AI tools work quickly and can produce complete responses.",
+  "Researchers warn that relying on AI can replace productive struggle that builds thinking skills."
+],
       correctIndex: 3
     },
     skills: ["reason", "text-evidence", "two-part"]
@@ -406,12 +409,12 @@ let questions = [
   type: "order",
   stem: "Put the ideas in the order they are developed across both passages.",
   instructions: "Drag and drop from first to last.",
-  items: [
-    { id: "o3", text: "Critics warn unrestricted AI use may weaken critical thinking." },
-    { id: "o1", text: "AI tools can personalize instruction and support diverse learners." },
-    { id: "o4", text: "Concerns emerge about fairness, honesty, and assessment accuracy." },
-    { id: "o2", text: "Supporters argue AI prepares students for future careers." }
-  ],
+items: [
+  { id: "o3", text: "Passage 2 argues that AI can interfere with learning by reducing productive struggle and independent thinking." },
+  { id: "o1", text: "Passage 1 explains how AI can adapt instruction to student needs through targeted feedback and practice." },
+  { id: "o4", text: "Passage 2 expands the critique to fairness, integrity, and the difficulty of valid assessment." },
+  { id: "o2", text: "Passage 1 adds that students must learn responsible digital literacy for future academic and workplace demands." }
+],
   correctOrder: ["o1", "o2", "o3", "o4"],
   skills: ["compare-passages", "argument-development", "drag-drop"]
 },
@@ -423,12 +426,12 @@ let questions = [
     type: "multi",
     stem: "Which details from the passages provide strong evidence rather than opinion?",
     instructions: "Select all that apply.",
-    options: [
-      "UNESCO reports that adaptive technologies can help identify learning gaps.",
-      "AI tools are dangerous if students rely on them too often.",
-      "The OECD emphasizes the importance of digital literacy in modern education.",
-      "Schools should prioritize fairness over convenience."
-    ],
+options: [
+  "UNESCO reports that adaptive technologies can help identify learning gaps and support students who need additional assistance.",
+  "Researchers prove that AI always reduces critical thinking in students.",
+  "The OECD emphasizes that students must learn to evaluate digital information and use technology responsibly.",
+  "Most educators agree that convenience should never outweigh fairness in schools."
+],
     correctIndices: [0, 2],
     minSelections: 2,
     maxSelections: 3,
@@ -446,14 +449,14 @@ let questions = [
       captions: "../media/AI_in_the_Classroom.mp4.vtt",
       label: "Video: AI in the Classroom"
     },
-    stem: "What is the main idea of the video?",
-    instructions: "Choose the best answer.",
-    options: [
-      "Artificial intelligence will replace teachers in schools.",
-      "Students should be allowed to use AI tools for all schoolwork.",
-      "AI tools are already perfect and should be used without limits.",
-      "AI can support learning, but it also raises concerns that schools must consider."
-    ],
+ stem: "Which statement best captures the central message of the video?",
+ instructions: "Choose the best answer.",
+  options: [
+    "AI should be treated mainly as a cheating problem, so schools must focus on detection and punishment.",
+    "Because AI tools can generate complete work, schools should avoid them until technology becomes more accurate and fair.",
+    "The main issue with AI is that it is impossible to detect, so traditional writing assignments should be replaced completely.",
+    "AI can support learning, but it raises serious concerns (like cheating and fairness), so schools need clear guidelines for how it should be used."
+  ],
     correctIndex: 3,
     skills: ["central-idea", "listening-comprehension", "video-media", "mcq"]
   },
@@ -469,14 +472,14 @@ let questions = [
       captions: "../media/AI_in_the_Classroom.mp4.vtt",
       label: "Video: AI in the Classroom"
     },
-    stem: "According to the video, what is one concern about using AI tools in classrooms?",
-    instructions: "Choose the best answer.",
-    options: [
-      "Students may rely on AI instead of doing their own thinking.",
-      "AI tools are too slow to be useful.",
-      "Teachers are unable to learn how AI works.",
-      "AI tools always give incorrect answers."
-    ],
+  stem: "According to the video, what is one concern when students use AI as a shortcut rather than a tool?",
+  instructions: "Choose the best answer.",
+  options: [
+    "Students may let AI do the thinking or writing instead of finishing work themselves.",
+    "AI detectors can always identify AI-written work with complete accuracy.",
+    "Most students say they will stop using AI if schools ban it.",
+    "AI use eliminates fairness concerns because the internet provides equal training data."
+  ],
     correctIndex: 0,
     skills: ["details", "listening-comprehension", "video-media", "mcq"]
   },
@@ -492,14 +495,14 @@ let questions = [
       captions: "../media/AI_in_the_Classroom.mp4.vtt",
       label: "Video: AI in the Classroom"
     },
-    stem: "Which inference can be made based on the video?",
-    instructions: "Choose the answer that is supported by the video but not directly stated.",
-    options: [
-      "All schools should ban AI tools immediately.",
-      "Clear rules are needed to decide how and when AI should be used in schools.",
-      "AI tools are more helpful for teachers than for students.",
-      "Students learn best when AI completes work for them."
-    ],
+  stem: "Which inference is best supported by the video?",
+  instructions: "Choose the answer that is supported by the video but not directly stated.",
+  options: [
+    "Because AI detectors are unreliable, schools should stop assigning any writing tasks.",
+    "Schools will need clear rules that define when AI support is appropriate and when it becomes replacement for thinking.",
+    "Most students will avoid AI completely as long as teachers increase the consequences.",
+    "The fairest solution is to use AI detection software to decide grades automatically."
+  ],
     correctIndex: 1,
     skills: ["inference", "evaluate-ideas", "video-media", "mcq"]
   },
@@ -517,12 +520,12 @@ let questions = [
     },
     stem: "What central question frames the debate in the podcast?",
     instructions: "Choose the best answer.",
-    options: [
-      "Should teachers rely on AI for grading?",
-      "Is AI already replacing educators?",
-      "Does AI help learning more than it harms it?",
-      "Should students decide when to use AI tools?"
-    ],
+  options: [
+    "Should teachers use AI mainly to save time on planning and communication tasks?",
+    "Is generative AI already replacing teachers from K–12 through university?",
+    "Does AI help learning overall, or do risks like fairness and honesty hurt learning more than they help?",
+    "Should schools treat AI use as cheating in every situation?"
+  ],
     correctIndex: 2,
     skills: ["central-idea", "listening-comprehension", "audio-media", "mcq"]
   },
@@ -540,12 +543,12 @@ let questions = [
     },
     stem: "How do the two speakers differ in their views of AI in education?",
     instructions: "Choose the best answer.",
-    options: [
-      "Both agree AI should be banned in schools.",
-      "Both believe AI improves thinking skills.",
-      "One argues AI is necessary, while the other warns the risks are too high.",
-      "One supports AI only for grading, the other only for lesson planning."
-    ],
+  options: [
+    "Both argue that AI should be avoided because it reduces learning for most students.",
+    "Both agree that AI is useful only for students, not for teachers.",
+    "One argues AI is becoming necessary (especially for efficiency), while the other warns the risks—bias, cheating, and weaker thinking skills—are too high.",
+    "One supports AI only for students with disabilities, while the other supports AI only for grading."
+  ],
     correctIndex: 2,
     skills: ["compare-ideas", "speaker-perspective", "audio-media", "mcq"]
   },
@@ -563,12 +566,12 @@ let questions = [
     },
     stem: "Which concerns about AI use are raised in the podcast?",
     instructions: "Select all that apply.",
-    options: [
-      "Bias in AI systems",
-      "Cheating and academic dishonesty",
-      "Reduced development of thinking skills",
-      "Lack of access to physical textbooks"
-    ],
+  options: [
+    "Bias in AI systems",
+    "Cheating and academic dishonesty",
+    "Reduced development of thinking skills",
+    "Less time for teachers to plan lessons"
+  ],
     correctIndices: [0, 1, 2],
     minSelections: 2,
     maxSelections: 3,
@@ -588,12 +591,12 @@ let questions = [
     },
     stem: "Which inference is best supported by the podcast discussion?",
     instructions: "Choose the best answer.",
-    options: [
-      "AI tools should immediately replace traditional teaching methods.",
-      "Schools should allow unrestricted AI use.",
-      "Clear guidelines are needed to balance AI benefits and risks.",
-      "AI has no role in modern education."
-    ],
+  options: [
+    "Because AI saves time, schools should treat it as required for teachers and students.",
+    "Since the risks are mentioned, schools should ban AI tools across K–12 and university settings immediately.",
+    "Schools will need careful guidelines to balance AI’s benefits with risks like fairness, honesty, and thinking skills.",
+    "The debate suggests AI has little impact on learning because it only affects convenience."
+  ],
     correctIndex: 2,
     skills: ["inference", "synthesize", "audio-media", "mcq"]
   }

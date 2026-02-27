@@ -29,16 +29,146 @@
 <meta name="twitter:title" content="Ultimate Argumentative Essay Organizer">
 <meta name="twitter:description" content="Scaffolded support, built-in writing coach, and teacher-friendly tools.">
 <meta name="twitter:image" content="https://maggie-mcdonald-41.github.io/made-by-maggie-teacher-tools/images/social-preview.jpg">
+<style>
+/* =========================
+   VIDEO PREVIEW GRID (scoped)
+   Bigger cards + bigger videos
+   ========================= */
 
+#video-preview {
+  padding: 3.5rem 1rem;
+  text-align: center;
+}
+
+#video-preview .video-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)); /* always 2 across */
+  gap: 1.5rem;
+  max-width: 1200px; /* controls overall size */
+  margin: 0 auto;
+  padding: 0;
+}
+
+/* Mobile: stack 1 per row */
+@media (max-width: 700px) {
+  #video-preview .video-grid {
+    grid-template-columns: 1fr;
+  }
+}
+#video-preview .video-card {
+  background-color: #2a1933;
+  border-radius: 16px;
+  padding: 1.1rem;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.14);
+  color: #fff;
+}
+
+/* Make videos a consistent, larger presence */
+#video-preview .video-card video {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  border-radius: 12px;
+  display: block;
+  background: #000;
+
+  /* Keep as cover if you like the “fills the box” look */
+  object-fit: cover;
+}
+
+/* Slightly larger caption */
+#video-preview .video-caption {
+  margin-top: 0.75rem;
+  font-weight: 800;
+  font-size: 1.12rem;
+  color: #fff;
+}
+
+/* Extra boost on big screens (optional but nice) */
+@media (min-width: 1100px) {
+  #video-preview .video-grid {
+    gap: 1.75rem;
+  }
+  #video-preview .video-card {
+    padding: 1.25rem;
+  }
+}
+
+/* Mobile: allow 1 column and keep it roomy */
+@media (max-width: 520px) {
+  #video-preview .video-grid {
+    grid-template-columns: 1fr;
+  }
+}
+/* =========================
+   MBM FEATURED VIDEO (single)
+   ========================= */
+
+section#mbm-feature-video.mbm-feature-video {
+  padding: 4rem 1rem;
+  text-align: center;
+}
+
+/* Heading */
+#mbm-feature-video .mbm-feature-video__title {
+  margin: 0 0 2rem;
+  font-size: clamp(1.6rem, 2.2vw, 2.2rem);
+  font-weight: 800;
+}
+
+/* Wide card */
+#mbm-feature-video .mbm-feature-video__card {
+  width: min(1300px, 100%);
+  margin: 0 auto;
+}
+
+/* 16:9 responsive iframe */
+#mbm-feature-video .mbm-feature-video__frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9; /* modern browsers */
+  background: #000;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+}
+
+/* Fallback for older browsers that ignore aspect-ratio */
+@supports not (aspect-ratio: 16 / 9) {
+  #mbm-feature-video .mbm-feature-video__frame {
+    height: 0;
+    padding-bottom: 56.25%;
+  }
+}
+
+#mbm-feature-video .mbm-feature-video__frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* Caption + info */
+#mbm-feature-video .mbm-feature-video__caption {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+#mbm-feature-video .mbm-feature-video__info {
+  margin: 0.5rem auto 0;
+  width: min(980px, 100%);
+  line-height: 1.5;
+}
+</style>
 </head>
 
-
-<body>
   <body id="top">
   <!-- Navigation -->
 <nav class="main-nav">
   <div class="nav-container">
-    <a href="#top" class="nav-logo">📘 Made by Maggie</a>
+      <a href="https://madebymaggie.org" class="nav-logo">📘 Made by Maggie</a>
 
     <button class="nav-toggle" onclick="toggleNav()">☰</button>
 
@@ -164,18 +294,26 @@ async function verifyCode() {
 </section>
 </section>
 <!-- Insert video here -->
-<section class="video-section">
-  <h2>🎥 Why I Made This Tool</h2>
-  <div class="video-card">
-    <div class="responsive-video-wrapper">
-      <iframe src="https://www.youtube.com/embed/Kc6zL0Jhf2o?si=1zqje8h54aKox3NI"
-              title="District Overview Video"
-              frameborder="0" 
-              allowfullscreen 
-              class="responsive-video"></iframe>
+<!-- Featured single video (scoped + unique classes) -->
+<section class="mbm-feature-video" id="mbm-feature-video">
+  <h2 class="mbm-feature-video__title">🎥 Why I Made This Tool</h2>
+
+  <div class="mbm-feature-video__card">
+    <div class="mbm-feature-video__frame">
+      <iframe
+        src="https://www.youtube.com/embed/Kc6zL0Jhf2o?si=1zqje8h54aKox3NI"
+        title="Argumentative Essay Overview Video"
+        loading="lazy"
+        allowfullscreen>
+      </iframe>
     </div>
-    <p class="video-caption">Argumentative Essay Overview</p>
-    <p class="info"><strong>Perfect for:</strong> Middle school ELA, high school ELA, resource/inclusion classes, writing intervention groups, or any teacher who wants to scaffold argumentative writing with confidence.</p>
+
+    <p class="mbm-feature-video__caption">Argumentative Essay Overview</p>
+
+    <p class="mbm-feature-video__info">
+      <strong>Perfect for:</strong> Middle school ELA, high school ELA, resource/inclusion classes,
+      writing intervention groups, or any teacher who wants to scaffold argumentative writing with confidence.
+    </p>
   </div>
 </section>
 
@@ -319,7 +457,7 @@ async function verifyCode() {
   </section>
 
   <!-- Carousel Preview -->
-<section id="tool-preview">
+<section id="video-preview">
     <h2>🔍 Take a Peek Inside</h2>
   <div class="video-grid">
       <div class="video-card">
