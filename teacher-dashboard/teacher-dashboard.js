@@ -3662,5 +3662,3 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-
-

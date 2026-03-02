@@ -6,7 +6,7 @@ function normalizeSetParam(raw) {
   const v = String(raw || "").toLowerCase().trim();
   if (v === "mini") return "mini1"; // legacy support
   if (v === "full" || v === "mini1" || v === "mini2") return v;
-return "full";
+  return "";
 }
 
 function sanitizeFragment(value) {
@@ -67,13 +67,8 @@ exports.handler = async function (event) {
       const CONCURRENCY = 10;
       const loaded = await mapWithConcurrency(entries, CONCURRENCY, async (item) => {
         if (!item || !item.key || !item.key.endsWith(".json")) return null;
-try {
-  const data = await store.get(item.key, { type: "json" });
-  return data ? { key: item.key, data } : null;
-} catch (e) {
-  console.warn("[getReadingAttempts] Skipping unreadable blob:", item.key, e?.message || e);
-  return null;
-}
+        const data = await store.get(item.key, { type: "json" });
+        return data ? { key: item.key, data } : null;
       });
 
       for (const row of loaded) {
@@ -87,13 +82,8 @@ try {
       const CONCURRENCY = 10;
       const loaded = await mapWithConcurrency(entries, CONCURRENCY, async (item) => {
         if (!item || !item.key || !item.key.endsWith(".json")) return null;
-try {
-  const data = await store.get(item.key, { type: "json" });
-  return data ? { key: item.key, data } : null;
-} catch (e) {
-  console.warn("[getReadingAttempts] Skipping unreadable blob:", item.key, e?.message || e);
-  return null;
-}
+        const data = await store.get(item.key, { type: "json" });
+        return data ? { key: item.key, data } : null;
       });
 
       for (const row of loaded) {
@@ -109,36 +99,34 @@ try {
         ? data.questions.length
         : 0;
 
-// answeredCount = how many we KNOW are answered (safe to use questionResultsLen)
-const answeredCount = Number(
-  Math.max(
-    Number(data.answeredCount ?? 0),
-    questionResultsLen,
-    0
-  )
-);
+      const answeredCount = Number(
+        Math.max(
+          Number(data.answeredCount ?? 0),
+          questionResultsLen,
+          Number(data.totalQuestions ?? 0),
+          Number(data.numQuestions ?? 0),
+          0
+        )
+      );
 
-// totalQuestions = ONLY trust explicit totals (do NOT fall back to questionResultsLen)
-// If total is unknown, keep it null so the dashboard can treat it as in-progress.
-const totalFromPayload = Number(
-  Math.max(
-    Number(data.totalQuestions ?? 0),
-    Number(data.numQuestions ?? 0),
-    0
-  )
-);
+      let totalQuestions = Number(
+        Math.max(
+          Number(data.totalQuestions ?? 0),
+          Number(data.numQuestions ?? 0),
+          questionResultsLen,
+          0
+        )
+      );
 
-const totalQuestions = totalFromPayload > 0 ? totalFromPayload : null;
+      if (!totalQuestions && answeredCount) totalQuestions = answeredCount;
 
-const numCorrect = Number(data.numCorrect ?? 0);
-const numIncorrect = Math.max(0, answeredCount - numCorrect);
+      const numCorrect = Number(data.numCorrect ?? 0);
+      const numIncorrect = Math.max(0, answeredCount - numCorrect);
 
-const accuracy =
-  answeredCount > 0 ? Math.round((numCorrect / answeredCount) * 100) : 0;
+      const accuracy =
+        answeredCount > 0 ? Math.round((numCorrect / answeredCount) * 100) : 0;
 
-// Complete ONLY when we actually know the total
-const isComplete =
-  totalQuestions != null && totalQuestions > 0 && answeredCount >= totalQuestions;
+      const isComplete = totalQuestions > 0 && answeredCount >= totalQuestions;
 
       const bySkill = data.bySkill || data.perSkill || {};
       const byType = data.byType || data.perType || {};
@@ -162,11 +150,11 @@ const isComplete =
       const startedAt =
         data.startedAt || (data.sessionInfo && data.sessionInfo.startedAt) || null;
 
-const finishedAt =
-  data.finishedAt ||
-  ((isComplete && data.storedAt) ? data.storedAt : null) ||
-  (data.sessionInfo && data.sessionInfo.finishedAt) ||
-  null;
+      const finishedAt =
+        data.finishedAt ||
+        data.storedAt ||
+        (data.sessionInfo && data.sessionInfo.finishedAt) ||
+        null;
 
       const assessmentName =
         data.assessmentName ||

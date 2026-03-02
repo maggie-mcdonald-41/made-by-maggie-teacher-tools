@@ -52,14 +52,13 @@ exports.handler = async function (event, context) {
     const assessmentType = (body.assessmentType || "").trim();
 
     if (!sessionCode || !studentName) {
-return {
-  statusCode: 400,
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    success: false,
-    error: "sessionCode and studentName are required",
-  }),
-};
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          success: false,
+          error: "sessionCode and studentName are required",
+        }),
+      };
     }
 
     const safeSession = sanitizeFragment(sessionCode);
@@ -77,25 +76,21 @@ return {
     const questionResultsArray = Array.isArray(body.questionResults)
       ? body.questionResults
       : [];
-const totalQuestionsFromBodyRaw = Number(body.totalQuestions);
-const totalQuestionsFromBody = Number.isFinite(totalQuestionsFromBodyRaw)
-  ? totalQuestionsFromBodyRaw
-  : 0;
 
-const answeredFromBodyRaw = Number(body.answeredCount);
-const answeredFromBody = Number.isFinite(answeredFromBodyRaw)
-  ? answeredFromBodyRaw
-  : 0;
+    const totalQuestionsFromBody = Number(body.totalQuestions || 0);
 
-const answeredFromArray = questionResultsArray.length || 0;
+    const answeredFromBody =
+      typeof body.answeredCount === "number" ? Number(body.answeredCount) : 0;
 
-// ✅ Always trust the strongest evidence we have
-const answeredCount = Math.max(answeredFromBody, answeredFromArray, 0);
+    const answeredFromArray = questionResultsArray.length || 0;
 
-// ✅ If totalQuestions is missing (or zero), infer it from the array length
-// (We do NOT override a valid totalQuestionsFromBody—only fill gaps.)
-const totalQuestions =
-  totalQuestionsFromBody > 0 ? totalQuestionsFromBody : answeredFromArray;
+    // ✅ Always trust the strongest evidence we have
+    const answeredCount = Math.max(answeredFromBody, answeredFromArray, 0);
+
+    // ✅ If totalQuestions is missing (or zero), infer it from the array length
+    // (We do NOT override a valid totalQuestionsFromBody—only fill gaps.)
+    const totalQuestions =
+      totalQuestionsFromBody > 0 ? totalQuestionsFromBody : answeredFromArray;
 
     const numCorrect = Number(body.numCorrect || 0);
 
@@ -132,8 +127,7 @@ const totalQuestions =
 
       // Timestamps
       startedAt: body.startedAt || null,
-finishedAt: body.finishedAt || (isComplete ? new Date().toISOString() : null),
-storedAt: new Date().toISOString(), // optional but helpful for sorting/debug
+      finishedAt: body.finishedAt || new Date().toISOString(),
 
       // Detailed item-level results
       questionResults: questionResultsArray,
@@ -142,20 +136,18 @@ storedAt: new Date().toISOString(), // optional but helpful for sorting/debug
     // Store JSON
     await store.setJSON(key, attempt);
 
-return {
-  statusCode: 200,
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ success: true, attemptId }),
-};
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ success: true, attemptId }),
+    };
   } catch (err) {
     console.error("[logReadingAttempt] Error:", err);
-return {
-  statusCode: 500,
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    success: false,
-    error: "Failed to store attempt",
-  }),
-};
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        success: false,
+        error: "Failed to store attempt",
+      }),
+    };
   }
 };
