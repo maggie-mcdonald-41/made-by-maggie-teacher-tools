@@ -62,10 +62,10 @@ function buildPartialAttemptFromProgress(
     }
   }
 
-  const totalQuestions =
-    typeof payload.totalQuestions === "number" && payload.totalQuestions > 0
-      ? payload.totalQuestions
-      : answeredCount;
+const totalQuestions =
+  typeof payload.totalQuestions === "number" && payload.totalQuestions > 0
+    ? payload.totalQuestions
+    : null;
 
   const attemptId = `${safeSession}_${safeStudentKey}`;
 
@@ -199,36 +199,43 @@ assessmentType: payload.assessmentType || "",
           ? payload.questionResults.length
           : 0;
 
-      const totalQuestions =
-        typeof payload.totalQuestions === "number" && payload.totalQuestions > 0
-          ? payload.totalQuestions
-          : answeredCount;
+const hasTotalQuestions =
+  typeof payload.totalQuestions === "number" && payload.totalQuestions > 0;
 
-      // Only write a partial attempt if the student has started
-      // but has NOT finished the full set. Completed attempts are
-      // logged separately via logReadingAttempt/sendFinalReport.
-      if (answeredCount > 0 && answeredCount < totalQuestions) {
-        const partialAttempt = buildPartialAttemptFromProgress(
-          sessionCode,
-          safeSession,
-          safeStudentKey,
-          payload
-        );
-        const attemptKey = `session/${safeSession}/${partialAttempt.attemptId}.json`;
-        console.log(
-          "[saveReadingProgress] Upserting partial attempt:",
-          attemptKey
-        );
-        await attemptsStore.setJSON(attemptKey, partialAttempt);
-      } else {
-        console.log(
-          "[saveReadingProgress] Skipping partial attempt upsert (answeredCount:",
-          answeredCount,
-          "totalQuestions:",
-          totalQuestions,
-          ")"
-        );
-      }
+const totalQuestions = hasTotalQuestions ? payload.totalQuestions : null;
+
+// Only write a partial attempt if the student has started AND
+// either:
+//  - we know totalQuestions and they're not done yet, OR
+//  - we don't know totalQuestions (still treat as in-progress snapshot)
+let shouldWritePartial = false;
+
+if (answeredCount > 0) {
+  if (!hasTotalQuestions) {
+    shouldWritePartial = true; // started but total unknown → treat as in-progress snapshot
+  } else {
+    shouldWritePartial = answeredCount < totalQuestions;
+  }
+}
+if (shouldWritePartial) {
+  const partialAttempt = buildPartialAttemptFromProgress(
+    sessionCode,
+    safeSession,
+    safeStudentKey,
+    payload
+  );
+  const attemptKey = `session/${safeSession}/${partialAttempt.attemptId}.json`;
+  console.log("[saveReadingProgress] Upserting partial attempt:", attemptKey);
+  await attemptsStore.setJSON(attemptKey, partialAttempt);
+} else {
+  console.log(
+    "[saveReadingProgress] Skipping partial attempt upsert (answeredCount:",
+    answeredCount,
+    "totalQuestions:",
+    totalQuestions,
+    ")"
+  );
+}
     } catch (attemptErr) {
       console.warn(
         "[saveReadingProgress] Failed to upsert partial attempt:",

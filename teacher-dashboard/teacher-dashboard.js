@@ -2763,6 +2763,19 @@ async function runStudentSearch() {
 async function loadAttempts() {
   const sessionCodeRaw = sessionInput.value.trim();
 
+// ✅ Model A: If this is a co-teacher link view, require a sessionCode.
+// Prevents co-teachers from ever loading "all sessions" for the owner.
+const isCoTeacherLinkView = !!(OWNER_EMAIL_FROM_URL && OWNER_EMAIL_FOR_VIEW);
+
+if (isCoTeacherLinkView && !sessionCodeRaw) {
+  loadStatusEl.textContent =
+    "This co-teacher link is for a specific session. Please enter the session code from the link.";
+  loadBtn.disabled = false;
+  renderDashboard([]);
+  enableMonitorButton(""); // no session = no monitor
+  return;
+}
+
   // Update pill
   sessionPill.textContent = sessionCodeRaw
     ? `Session: ${sessionCodeRaw}`
@@ -3253,7 +3266,18 @@ if (clearFiltersBtn) {
     "click",
     requireTeacherSignedIn((e) => {
       e.preventDefault();
-      sessionInput.value = "";
+
+      const isCoTeacherLinkView = !!(OWNER_EMAIL_FROM_URL && OWNER_EMAIL_FOR_VIEW);
+
+      // ✅ Model A: co-teacher link view should always stay pinned to its session
+      if (isCoTeacherLinkView) {
+        const params = new URLSearchParams(window.location.search);
+        const urlSession = params.get("sessionCode") || params.get("session") || "";
+        sessionInput.value = urlSession;
+      } else {
+        sessionInput.value = "";
+      }
+
       CURRENT_STUDENT_FOR_CHARTS = null;
       loadAttempts();
     })
