@@ -2381,5 +2381,51 @@ body.dark-theme .rp-modal input {
   }
 }
 
+/* ================================
+   Floating Read-Aloud Controls (Dark Mode)
+   ================================ */
+
+body.dark-theme .rp-tts-float {
+  background: rgba(12, 18, 26, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(10px);
+}
+
+body.dark-theme .rp-tts-label {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+body.dark-theme .rp-tts-select {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+body.dark-theme .rp-tts-select option {
+  background: #0c121a; /* ensures dropdown options are readable */
+  color: rgba(255, 255, 255, 0.92);
+}
+
+body.dark-theme .rp-tts-btn {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+body.dark-theme .rp-tts-btn:hover {
+  filter: brightness(1.08);
+}
+
+body.dark-theme .rp-tts-btn:focus {
+  outline: 2px solid rgba(132, 235, 230, 0.55); /* matches your teal vibe */
+  outline-offset: 2px;
+}
+
+body.dark-theme .rp-tts-btn-primary {
+  background: rgba(132, 235, 230, 0.20);
+  border-color: rgba(132, 235, 230, 0.45);
+  color: rgba(255, 255, 255, 0.95);
+}
 
 /*CSS end*/
