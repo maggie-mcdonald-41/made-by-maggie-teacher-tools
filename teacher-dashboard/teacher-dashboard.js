@@ -2823,6 +2823,10 @@ if (levelVal) params.set("level", levelVal);
 
     if (!attempts.length) {
       renderDashboard([]);
+
+      // ✅ Keep the session in history even before attempts exist
+      updateSessionHistory(sessionCodeRaw, []);
+
       loadStatusEl.textContent =
         "No attempts found yet. Once students complete the practice, load again.";
     } else {
@@ -3053,6 +3057,8 @@ function startNewSession() {
   const normalizedSession = rawSession.trim().toUpperCase();
   sessionPill.textContent = `Session: ${normalizedSession}`;
 
+  // ✅ Ensure the session appears in Session History immediately
+  updateSessionHistory(normalizedSession, []);
   // Little helper text
   if (copyLinkStatusEl) {
     copyLinkStatusEl.textContent =
