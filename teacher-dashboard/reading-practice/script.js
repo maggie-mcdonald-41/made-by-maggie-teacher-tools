@@ -3,8 +3,14 @@
 // ====== HIGHLIGHTING STATE ======
 let currentHighlightColor = "yellow"; // default color
 // ====== ASSESSMENT LABEL ======
-const ASSESSMENT_NAME = "School Start Time";
+//const ASSESSMENT_NAME = "School Start Time";
 
+// ---- Read Aloud: allow app to stop speech from anywhere (safe no-op if unsupported) ----
+window.RP_TTS_STOP = function RP_TTS_STOP() {
+  try {
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+  } catch (_) {}
+};
 
 function setHighlightColor(color) {
   currentHighlightColor = color;
@@ -1383,8 +1389,12 @@ function renderQuestion() {
   if (typeof updateQuestionNavStrip === "function") {
     updateQuestionNavStrip();
   }
-}
 
+  // ---- Read Aloud: stop any current speech when question changes ----
+  if (typeof window.RP_TTS_STOP === "function") {
+    window.RP_TTS_STOP();
+  }
+}
 
 
 // ====== TYPE: MCQ ======

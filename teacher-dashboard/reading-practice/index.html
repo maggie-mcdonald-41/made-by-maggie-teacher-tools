@@ -277,6 +277,24 @@
 
 <script src="reporting.js" defer></script>
 <script src="script.js" defer></script>
+<script src="readaloud-trainer.js" defer></script>
+<!-- Floating Read Aloud Controls -->
+<div id="rp-tts-float" class="rp-tts-float" aria-label="Read aloud controls">
+  <div class="rp-tts-row">
+    <label class="rp-tts-label" for="rp-tts-voice">🔊 Reader:</label>
+    <select id="rp-tts-voice" class="rp-tts-select" aria-label="Select reader voice"></select>
+  </div>
+
+  <div class="rp-tts-buttons">
+    <button type="button" id="rp-tts-read-passage" class="rp-tts-btn">📖 Passage</button>
+    <button type="button" id="rp-tts-read-question" class="rp-tts-btn">❓ Question</button>
+
+    <!-- This toggles play/pause depending on state -->
+    <button type="button" id="rp-tts-toggle" class="rp-tts-btn rp-tts-btn-primary">▶️ Play</button>
+
+    <button type="button" id="rp-tts-stop" class="rp-tts-btn">⏹ Stop</button>
+  </div>
+</div>
 <footer class="app-footer">
   © 2025 Maggie McDonald ☀️| Built for teachers, by a teacher.  <a href="/privacy.html" style="color: #84EBE6;">Privacy Policy</a>
 </footer>
