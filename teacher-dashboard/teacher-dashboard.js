@@ -138,6 +138,10 @@ let teacherUser = null;
 // - For co-teachers: comes from ?owner= in the dashboard link.
 let OWNER_EMAIL_FOR_VIEW = null;
 let OWNER_EMAIL_FROM_URL = false;
+
+// ✅ Session-scoped owner override (for co-teacher linked sessions)
+// If set, it applies ONLY to the currently loaded session/history item.
+let CURRENT_SESSION_OWNER_OVERRIDE = null;
 let _historyHydrateInFlight = null;
 let _historyHydrateEmail = "";
 
@@ -349,20 +353,19 @@ async function loadAttemptQnPanel(attemptSummary) {
   try {
     const params = new URLSearchParams();
     params.set("attemptId", attemptSummary.attemptId);
+// ✅ Use session-scoped owner override ONLY when present.
+// This prevents a co-teacher link from changing the whole dashboard context.
+const ownerEmail = (CURRENT_SESSION_OWNER_OVERRIDE || OWNER_EMAIL_FOR_VIEW || "").trim().toLowerCase();
+const isOverrideOwner =
+  !!ownerEmail && (!teacherUser || teacherUser.email !== ownerEmail);
 
-    // Same scoping rules as loadAttempts() / loadStudentSearch
-    const ownerEmail = OWNER_EMAIL_FOR_VIEW || "";
-    const isCoTeacherView =
-      ownerEmail && (!teacherUser || teacherUser.email !== ownerEmail);
-
-    if (isCoTeacherView && ownerEmail) {
-      params.set("ownerEmail", ownerEmail);
-    } else if (teacherUser && teacherUser.email) {
-      params.set("viewerEmail", teacherUser.email);
-    } else if (ownerEmail) {
-      params.set("ownerEmail", ownerEmail);
-    }
-
+if (isOverrideOwner) {
+  params.set("ownerEmail", ownerEmail);
+} else if (teacherUser && teacherUser.email) {
+  params.set("viewerEmail", teacherUser.email);
+} else if (ownerEmail) {
+  params.set("ownerEmail", ownerEmail);
+}
     const res = await fetch(
       `/.netlify/functions/getReadingAttemptDetail?${params.toString()}`,
       {
@@ -782,6 +785,7 @@ const idx = history.findIndex(
     uniqueStudentsCount,
     practiceSet: getSelectedPracticeSet(),          // full | mini1 | mini2
     practiceLevel: currentLevelParam || "on",       // below | on | above
+    ownerEmail: CURRENT_SESSION_OWNER_OVERRIDE || null   //  Persist session-specific ownerEmail ONLY when we loaded via override
   };
 
   if (idx >= 0) {
@@ -1119,6 +1123,8 @@ function renderSessionHistory(history) {
 
       // Load this session into the filters and refresh dashboard
 sessionInput.value = entry.sessionCode;
+// ✅ Restore session-scoped owner override (only for this session)
+CURRENT_SESSION_OWNER_OVERRIDE = entry.ownerEmail || null;
 
 // ✅ NEW: sync set + level selectors to this session before loading
 const setSelect = document.getElementById("practice-set");
@@ -2712,18 +2718,15 @@ async function runStudentSearch() {
   try {
     const params = new URLSearchParams();
 
-    const ownerEmail = OWNER_EMAIL_FOR_VIEW || "";
-    const isCoTeacherView =
-      ownerEmail && (!teacherUser || teacherUser.email !== ownerEmail);
+    const ownerEmail = (CURRENT_SESSION_OWNER_OVERRIDE || OWNER_EMAIL_FOR_VIEW || "").trim().toLowerCase();
+    const useOwnerScope =
+      !!ownerEmail && (!teacherUser || teacherUser.email.toLowerCase() !== ownerEmail);
 
-    if (isCoTeacherView && ownerEmail) {
-      // Co-teacher view → always scope to the owner
+    if (useOwnerScope) {
       params.set("ownerEmail", ownerEmail);
     } else if (teacherUser && teacherUser.email) {
-      // Main teacher, signed in → owned + shared sessions
       params.set("viewerEmail", teacherUser.email);
     } else if (ownerEmail) {
-      // Fallback: owner known but not signed in yet
       params.set("ownerEmail", ownerEmail);
     }
 
@@ -2786,22 +2789,17 @@ if (levelVal) params.set("level", levelVal);
     // Determine if we're in a co-teacher view:
     // - There is an OWNER_EMAIL_FOR_VIEW from the URL
     // - And it's different from the currently signed-in teacher (if any)
-    const ownerEmail = OWNER_EMAIL_FOR_VIEW || "";
-    const isCoTeacherView =
-      ownerEmail && (!teacherUser || teacherUser.email !== ownerEmail);
+   const ownerEmail = (CURRENT_SESSION_OWNER_OVERRIDE || OWNER_EMAIL_FOR_VIEW || "").trim().toLowerCase();
+const useOwnerScope =
+  !!ownerEmail && (!teacherUser || teacherUser.email.toLowerCase() !== ownerEmail);
 
-    // 🔐 Scoping rules:
-    // - Co-teacher view → always use ownerEmail + sessionCode/
-    // - Regular signed-in teacher → use viewerEmail (owned + shared)
-    // - Not signed in but we know an owner (e.g. owner opens link before sign-in)
-    //   → fall back to ownerEmail
-    if (isCoTeacherView) {
-      params.set("ownerEmail", ownerEmail);
-    } else if (teacherUser && teacherUser.email) {
-      params.set("viewerEmail", teacherUser.email);
-    } else if (ownerEmail) {
-      params.set("ownerEmail", ownerEmail);
-    }
+if (useOwnerScope) {
+  params.set("ownerEmail", ownerEmail);
+} else if (teacherUser && teacherUser.email) {
+  params.set("viewerEmail", teacherUser.email);
+} else if (ownerEmail) {
+  params.set("ownerEmail", ownerEmail);
+}
 
     const res = await fetch(
       `/.netlify/functions/getReadingAttempts?${params.toString()}`,
@@ -2881,20 +2879,28 @@ function enableMonitorButton(sessionCodeRaw) {
     const level = (levelSelect?.value || currentLevelParam || "").trim();
     if (level) params.set("level", level);
 
-    // 🔑 Tie the live monitor to the same owner as the student link
+    // 🔑 Tie the live monitor to the SAME OWNER as the currently loaded session
     let ownerEmail = null;
-    if (teacherUser && teacherUser.email) {
+
+    // ✅ 1) If this session was loaded via a co-teacher link, use that owner
+    if (CURRENT_SESSION_OWNER_OVERRIDE) {
+      ownerEmail = CURRENT_SESSION_OWNER_OVERRIDE;
+    } else if (teacherUser && teacherUser.email) {
+      // ✅ 2) Otherwise, default to the signed-in teacher (normal owner behavior)
       ownerEmail = teacherUser.email;
     } else if (OWNER_EMAIL_FOR_VIEW) {
       ownerEmail = OWNER_EMAIL_FOR_VIEW;
     }
+
     if (ownerEmail) params.set("owner", ownerEmail);
 
     // Remember set/level for refresh behavior (non-fatal)
     try {
       window.localStorage.setItem("rp_lastSet", setParam);
       if (level) window.localStorage.setItem("rp_lastLevel", level);
-      if (ownerEmail) window.localStorage.setItem("rp_lastOwnerEmail", ownerEmail);
+
+      // ✅ IMPORTANT: do NOT persist ownerEmail globally — prevents "stuck in co-teacher mode"
+      // if (ownerEmail) window.localStorage.setItem("rp_lastOwnerEmail", ownerEmail);
     } catch (e) {}
 
     const url = `${window.location.origin}/teacher-dashboard/reading-practice/live-monitor.html?${params.toString()}`;
@@ -2995,16 +3001,17 @@ function buildCoTeacherLink(sessionCode) {
   // the teacher who OWNS this data (for co-teacher access)
   let ownerEmail = null;
 
-  if (teacherUser && teacherUser.email) {
-    ownerEmail = teacherUser.email;
-  } else if (OWNER_EMAIL_FOR_VIEW) {
-    ownerEmail = OWNER_EMAIL_FOR_VIEW;
-  } else {
-    try {
-      const lastOwner = window.localStorage.getItem("rp_lastOwnerEmail");
-      if (lastOwner) ownerEmail = lastOwner;
-    } catch (e) {}
-  }
+if (teacherUser && teacherUser.email) {
+  ownerEmail = teacherUser.email;
+} else if (OWNER_EMAIL_FOR_VIEW) {
+  ownerEmail = OWNER_EMAIL_FOR_VIEW;
+}
+
+// If we still don't know the owner, don't generate a link.
+if (!ownerEmail) {
+  if (coTeacherLinkInput) coTeacherLinkInput.value = "";
+  return "";
+}
 
   if (ownerEmail) params.set("owner", ownerEmail);
 
@@ -3016,7 +3023,6 @@ function buildCoTeacherLink(sessionCode) {
     window.localStorage.setItem("rp_lastCoTeacherLink", link);
     window.localStorage.setItem("rp_lastSet", setParam);
     if (level) window.localStorage.setItem("rp_lastLevel", level);
-    if (ownerEmail) window.localStorage.setItem("rp_lastOwnerEmail", ownerEmail);
   } catch (e) {
     // non-fatal
   }
@@ -3255,6 +3261,7 @@ if (clearFiltersBtn) {
       e.preventDefault();
       sessionInput.value = "";
       CURRENT_STUDENT_FOR_CHARTS = null;
+      CURRENT_SESSION_OWNER_OVERRIDE = null;
       loadAttempts();
     })
   );
@@ -3461,14 +3468,14 @@ renderSessionHistory(loadHistoryFromStorage());
       localStorage.setItem("rp_lastLevel", currentLevelParam);
     } catch (e) {}
 
-// Owner email for co-teacher / shared view (ONLY when provided by URL)
-if (urlOwner) {
-  OWNER_EMAIL_FOR_VIEW = String(urlOwner || "").trim().toLowerCase();
-  OWNER_EMAIL_FROM_URL = true;
-  try {
-    localStorage.setItem("rp_lastOwnerEmail", OWNER_EMAIL_FOR_VIEW);
-  } catch (e) {}
-}
+    // ✅ Co-teacher link should NOT switch the whole dashboard into "owner view".
+    // Instead, store ownerEmail ONLY for this linked session load.
+    if (urlOwner) {
+      CURRENT_SESSION_OWNER_OVERRIDE = String(urlOwner || "").trim().toLowerCase();
+
+      // Do NOT persist this globally (prevents "stuck in co-teacher mode")
+      OWNER_EMAIL_FROM_URL = false;
+    }
 
 
     // Prefill session + pill
@@ -3492,7 +3499,16 @@ if (urlOwner) {
     // Auto-load if a session or class was provided
     if ((urlSession) && typeof loadAttempts === "function") {
       loadAttempts();
-    }
+          // Remove owner/session params so refresh doesn't re-trigger link behavior
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("owner");
+      url.searchParams.delete("ownerEmail");
+      url.searchParams.delete("session");
+      url.searchParams.delete("sessionCode");
+      window.history.replaceState({}, "", url.pathname + url.search);
+    } catch (e) {}
+        }
 
     // Keep monitor button & view summary aligned after URL-prefill
     const session = (sessionInput?.value || "").trim();
