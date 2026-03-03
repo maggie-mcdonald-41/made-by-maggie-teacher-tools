@@ -286,6 +286,7 @@ function formatAnsweredLabel(attempt) {
 }
 
 function updateViewSummary() {
+
   if (!currentViewSummaryEl) return;
 
   const sessionCodeRaw = sessionInput.value.trim();
@@ -786,8 +787,21 @@ const idx = history.findIndex(
     uniqueStudentsCount,
     practiceSet: getSelectedPracticeSet(),          // full | mini1 | mini2
     practiceLevel: currentLevelParam || "on",       // below | on | above
-    ownerEmail: CURRENT_SESSION_OWNER_OVERRIDE || null   //  Persist session-specific ownerEmail ONLY when we loaded via override
-  };
+    // Persist ownerEmail so history restores correct links later (owner OR co-teacher)
+    ownerEmail: (function () {
+      let owner =
+        CURRENT_SESSION_OWNER_OVERRIDE ||
+        (teacherUser && teacherUser.email) ||
+        OWNER_EMAIL_FOR_VIEW ||
+        "";
+
+      if (!owner) {
+        try {
+          owner = window.localStorage.getItem("rp_lastOwnerEmail") || "";
+        } catch (e) {}
+      }
+      return owner || null;
+    })()  };
 
   if (idx >= 0) {
     history[idx] = { ...history[idx], ...entry };
@@ -986,9 +1000,10 @@ attempts.forEach((a) => {
             // keep the entry with the newer lastLoadedAt
             const existingTime = (existing.lastLoadedAt || "").toString();
             const newTime = (h.lastLoadedAt || "").toString();
-            if (newTime > existingTime) {
-              mergedByKey.set(key, h);
-            }
+          if (newTime > existingTime) {
+            // Keep local-only fields (like ownerEmail, label, color) if server doesn’t have them
+            mergedByKey.set(key, { ...existing, ...h });
+          }
           }
         });
       };
@@ -1144,9 +1159,15 @@ if (entry.practiceLevel && levelSelect) {
   }
 }
 
+// Rebuild links + monitor button for THIS historical session context
+if (sessionLinkInput) sessionLinkInput.value = buildStudentLink(entry.sessionCode);
+if (coTeacherLinkInput) coTeacherLinkInput.value = buildCoTeacherLink(entry.sessionCode);
+enableMonitorButton(entry.sessionCode);
+if (typeof updateCurrentViewSummary === "function") updateCurrentViewSummary();
+
 loadAttempts();
 
-      window.scrollTo({ top: 0, behavior: "smooth" });
+window.scrollTo({ top: 0, behavior: "smooth" });
     });
 
     historyListEl.appendChild(btn);
@@ -2779,7 +2800,9 @@ async function loadAttempts() {
     // Filters (may be too strict for co-teacher links if set/level mismatch)
     const setVal = getSelectedPracticeSet();
     const levelVal = currentLevelParam || "";
-    const hasFilters = !!setVal || !!levelVal;
+    const hasFilters =
+      (setVal && setVal !== "full") ||
+      (levelVal && levelVal !== "on");
 
     if (setVal) params.set("set", setVal);
     if (levelVal) params.set("level", levelVal);
@@ -2991,13 +3014,19 @@ function buildStudentLink(sessionCode) {
   const level = (levelSelect?.value || currentLevelParam || "").trim();
   if (level) params.set("level", level);
 
-  // tie this student link to the signed-in teacher (owner of attempts)
-  let ownerEmail = null;
-  if (teacherUser && teacherUser.email) {
-    ownerEmail = teacherUser.email;
-  } else if (OWNER_EMAIL_FOR_VIEW) {
-    ownerEmail = OWNER_EMAIL_FOR_VIEW;
+  // tie this student link to the correct owner (prefer session-scoped override)
+  let ownerEmail =
+    CURRENT_SESSION_OWNER_OVERRIDE ||
+    (teacherUser && teacherUser.email) ||
+    OWNER_EMAIL_FOR_VIEW ||
+    "";
+
+  if (!ownerEmail) {
+    try {
+      ownerEmail = window.localStorage.getItem("rp_lastOwnerEmail") || "";
+    } catch (e) {}
   }
+
   if (ownerEmail) params.set("owner", ownerEmail);
 
   const link = `${baseUrl}?${params.toString()}`;
@@ -3036,21 +3065,20 @@ function buildCoTeacherLink(sessionCode) {
   if (level) params.set("level", level);
 
   // the teacher who OWNS this data (for co-teacher access)
-  let ownerEmail = null;
+  // Prefer the session-scoped owner override (co-teacher view), then fall back.
+  let ownerEmail =
+    CURRENT_SESSION_OWNER_OVERRIDE ||
+    OWNER_EMAIL_FOR_VIEW ||
+    (teacherUser && teacherUser.email) ||
+    "";
 
-if (teacherUser && teacherUser.email) {
-  ownerEmail = teacherUser.email;
-} else if (OWNER_EMAIL_FOR_VIEW) {
-  ownerEmail = OWNER_EMAIL_FOR_VIEW;
-}
+  // If we still don't know the owner, don't generate a link.
+  if (!ownerEmail) {
+    if (coTeacherLinkInput) coTeacherLinkInput.value = "";
+    return "";
+  }
 
-// If we still don't know the owner, don't generate a link.
-if (!ownerEmail) {
-  if (coTeacherLinkInput) coTeacherLinkInput.value = "";
-  return "";
-}
-
-  if (ownerEmail) params.set("owner", ownerEmail);
+  params.set("owner", ownerEmail);
 
   const link = `${baseUrl}?${params.toString()}`;
 
