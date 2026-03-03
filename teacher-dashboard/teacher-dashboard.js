@@ -1048,11 +1048,8 @@ function renderSessionHistory(history) {
     return;
   }
 
-  const sorted = visibleHistory.slice().sort((a, b) => {
-    const ta = new Date(a.lastLoadedAt).getTime();
-    const tb = new Date(b.lastLoadedAt).getTime();
-    return tb - ta; // newest first
-  });
+  // Keep sessions in their existing order (no jumping on re-render)
+  const sorted = visibleHistory.slice();
 
   const currentKey = CURRENT_HISTORY_KEY;
 
