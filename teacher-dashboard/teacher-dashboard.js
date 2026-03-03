@@ -226,22 +226,22 @@ function formatDate(iso) {
 function formatAttemptStatus(attempt) {
   const total = Number(
     attempt.totalQuestions ??
-    attempt.answeredCount ??
+    attempt.numQuestions ??
     0
   );
 
   const answered = Number(
     attempt.answeredCount != null
       ? attempt.answeredCount
-      : (attempt.totalQuestions ?? 0)
+      : 0
   );
 
+  // Nothing answered
   if (!answered) {
-    // They opened it but haven't checked anything yet
-    return "Not started";
+    return "Not Started";
   }
 
-  // Treat either isComplete=true OR answered >= total as completed
+  // Completed if explicitly marked OR all questions answered
   if (
     attempt.isComplete ||
     (total > 0 && answered >= total)
@@ -249,12 +249,13 @@ function formatAttemptStatus(attempt) {
     return "Completed";
   }
 
+  // Otherwise they started but didn't finish
   if (total > 0 && answered < total) {
-    return "In progress";
+    return "In Progress";
   }
 
-  // Fallback if we can't tell
-  return "Partial";
+  // Safe fallback
+  return "In Progress";
 }
 
 // Answered label: "X of Y" + hint if partial

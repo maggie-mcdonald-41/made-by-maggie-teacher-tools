@@ -99,27 +99,28 @@ exports.handler = async function (event) {
         ? data.questions.length
         : 0;
 
-      const answeredCount = Number(
-        Math.max(
-          Number(data.answeredCount ?? 0),
-          questionResultsLen,
-          Number(data.totalQuestions ?? 0),
-          Number(data.numQuestions ?? 0),
-          0
-        )
-      );
+// answeredCount should reflect how many questions the student actually answered
+const answeredCountRaw =
+  data.answeredCount != null ? Number(data.answeredCount) : questionResultsLen;
 
-      let totalQuestions = Number(
-        Math.max(
-          Number(data.totalQuestions ?? 0),
-          Number(data.numQuestions ?? 0),
-          questionResultsLen,
-          0
-        )
-      );
+const answeredCount = Number.isFinite(answeredCountRaw)
+  ? Math.max(0, answeredCountRaw)
+  : 0;
 
-      if (!totalQuestions && answeredCount) totalQuestions = answeredCount;
+// totalQuestions should reflect how many questions exist in the set (can be > answeredCount)
+const totalQuestionsRaw =
+  data.totalQuestions != null
+    ? Number(data.totalQuestions)
+    : data.numQuestions != null
+    ? Number(data.numQuestions)
+    : 0;
 
+let totalQuestions = Number.isFinite(totalQuestionsRaw)
+  ? Math.max(0, totalQuestionsRaw)
+  : 0;
+
+// If totalQuestions is missing (older data), fall back to what we can infer
+if (!totalQuestions && questionResultsLen) totalQuestions = questionResultsLen;
       const numCorrect = Number(data.numCorrect ?? 0);
       const numIncorrect = Math.max(0, answeredCount - numCorrect);
 
