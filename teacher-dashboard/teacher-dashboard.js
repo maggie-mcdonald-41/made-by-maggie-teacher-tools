@@ -2778,13 +2778,13 @@ async function loadAttempts() {
     const params = new URLSearchParams();
     if (sessionCodeRaw) params.set("sessionCode", sessionCodeRaw);
 
-    // ✅ NEW: leveled practice filters (full|mini1|mini2) + (below|on|above)
-    // Defaults preserve current behavior.
-  const setVal = getSelectedPracticeSet();
-if (setVal) params.set("set", setVal);
+    // Filters (may be too strict for co-teacher links if set/level mismatch)
+    const setVal = getSelectedPracticeSet();
+    const levelVal = currentLevelParam || "";
+    const hasFilters = !!setVal || !!levelVal;
 
-const levelVal = currentLevelParam || "";
-if (levelVal) params.set("level", levelVal);
+    if (setVal) params.set("set", setVal);
+    if (levelVal) params.set("level", levelVal);
 
     // Determine if we're in a co-teacher view:
     // - There is an OWNER_EMAIL_FOR_VIEW from the URL
@@ -2815,9 +2815,45 @@ if (useOwnerScope) {
       throw new Error(`Server error: ${res.status}`);
     }
 
-    const data = await res.json();
-    const rawAttempts = Array.isArray(data.attempts) ? data.attempts : [];
-    const attempts = getFirstAttemptsPerStudent(rawAttempts);
+    let data = await res.json();
+    let rawAttempts = Array.isArray(data.attempts) ? data.attempts : [];
+    let attempts = getFirstAttemptsPerStudent(rawAttempts);
+
+    // ✅ Fallback: if filters produced no results, retry without set/level
+    if (sessionCodeRaw && hasFilters && (!attempts || attempts.length === 0)) {
+      const retryParams = new URLSearchParams();
+      retryParams.set("sessionCode", sessionCodeRaw);
+
+      // keep the SAME owner/viewer scoping as the first request
+      const ownerEmail = (CURRENT_SESSION_OWNER_OVERRIDE || OWNER_EMAIL_FOR_VIEW || "").trim().toLowerCase();
+      const useOwnerScope =
+        !!ownerEmail && (!teacherUser || teacherUser.email.toLowerCase() !== ownerEmail);
+
+      if (useOwnerScope) {
+        retryParams.set("ownerEmail", ownerEmail);
+      } else if (teacherUser && teacherUser.email) {
+        retryParams.set("viewerEmail", teacherUser.email);
+      } else if (ownerEmail) {
+        retryParams.set("ownerEmail", ownerEmail);
+      }
+
+      const retryRes = await fetch(`/.netlify/functions/getReadingAttempts?${retryParams.toString()}`, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      });
+
+      if (retryRes.ok) {
+        const retryData = await retryRes.json();
+        const retryRaw = Array.isArray(retryData.attempts) ? retryData.attempts : [];
+        const retryAttempts = getFirstAttemptsPerStudent(retryRaw);
+
+        if (retryAttempts.length) {
+          attempts = retryAttempts;
+          loadStatusEl.textContent =
+            "No attempts matched the current set/level filters — showing all attempts for this session instead.";
+        }
+      }
+    }
 
     if (!attempts.length) {
       renderDashboard([]);
@@ -2864,7 +2900,7 @@ function enableMonitorButton(sessionCodeRaw) {
 
   monitorSessionBtn.disabled = false;
 
-  monitorSessionBtn.onclick = requireTeacherSignedIn(() => {
+  monitorSessionBtn.onclick = (() => {
     const params = new URLSearchParams();
 
     // Live monitor expects `session`,  `set`
@@ -2882,26 +2918,29 @@ function enableMonitorButton(sessionCodeRaw) {
     // 🔑 Tie the live monitor to the SAME OWNER as the currently loaded session
     let ownerEmail = null;
 
-    // ✅ 1) If this session was loaded via a co-teacher link, use that owner
+    // 1) If this session was loaded via a co-teacher link, use that owner
     if (CURRENT_SESSION_OWNER_OVERRIDE) {
       ownerEmail = CURRENT_SESSION_OWNER_OVERRIDE;
     } else if (teacherUser && teacherUser.email) {
-      // ✅ 2) Otherwise, default to the signed-in teacher (normal owner behavior)
+      // 2) Normal owner behavior
       ownerEmail = teacherUser.email;
     } else if (OWNER_EMAIL_FOR_VIEW) {
+      // 3) URL-based/fallback owner context
       ownerEmail = OWNER_EMAIL_FOR_VIEW;
+    } else {
+      // 4) last-resort fallback (helps owners who didn't "sign in" this visit)
+      try {
+        ownerEmail = window.localStorage.getItem("rp_lastOwnerEmail") || "";
+      } catch (e) {}
     }
 
-    if (ownerEmail) params.set("owner", ownerEmail);
+    if (!ownerEmail) {
+      alert("Missing owner context for Live Monitor. Please sign in or open from a valid session link.");
+      return;
+    }
 
-    // Remember set/level for refresh behavior (non-fatal)
-    try {
-      window.localStorage.setItem("rp_lastSet", setParam);
-      if (level) window.localStorage.setItem("rp_lastLevel", level);
-
-      // ✅ IMPORTANT: do NOT persist ownerEmail globally — prevents "stuck in co-teacher mode"
-      // if (ownerEmail) window.localStorage.setItem("rp_lastOwnerEmail", ownerEmail);
-    } catch (e) {}
+    // ✅ REQUIRED: live-monitor.js reads ?owner=
+    params.set("owner", ownerEmail);
 
     const url = `${window.location.origin}/teacher-dashboard/reading-practice/live-monitor.html?${params.toString()}`;
     window.open(url, "_blank");
