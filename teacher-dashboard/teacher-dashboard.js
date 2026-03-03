@@ -670,62 +670,6 @@ function getHistoryKey(sessionCode) {
   return `${(sessionCode || "").trim()}`;
 }
 
-// ---------- SESSION UNIQUENESS HELPERS ----------
-// We keep a human-friendly label, but make the *actual* sessionCode unique.
-// Format: "MONDAY EVENING__2026-03-03_1407"
-function pad2(n) {
-  return String(n).padStart(2, "0");
-}
-
-function buildSessionStamp(d = new Date()) {
-  const yyyy = d.getFullYear();
-  const mm = pad2(d.getMonth() + 1);
-  const dd = pad2(d.getDate());
-  const hh = pad2(d.getHours());
-  const min = pad2(d.getMinutes());
-  return `${yyyy}-${mm}-${dd}_${hh}${min}`;
-}
-
-function splitSessionLabelAndStamp(sessionCode) {
-  const raw = String(sessionCode || "").trim();
-  const idx = raw.lastIndexOf("__");
-  if (idx === -1) return { label: raw, stamp: "" };
-  return {
-    label: raw.slice(0, idx),
-    stamp: raw.slice(idx + 2)
-  };
-}
-
-function getDisplayLabelFromSessionCode(sessionCode) {
-  return splitSessionLabelAndStamp(sessionCode).label || String(sessionCode || "").trim();
-}
-
-function looksLikeStampedSessionCode(sessionCode) {
-  // Rough check for "__YYYY-MM-DD_HHMM"
-  return /__\d{4}-\d{2}-\d{2}_\d{4}$/.test(String(sessionCode || "").trim());
-}
-
-function makeUniqueSessionCode(baseLabel) {
-  const cleanLabel = String(baseLabel || "").trim().toUpperCase();
-  if (!cleanLabel) return "";
-
-  // If the teacher already pasted/typed a stamped code, keep it.
-  if (looksLikeStampedSessionCode(cleanLabel)) return cleanLabel;
-
-  const stamp = buildSessionStamp(new Date());
-  let candidate = `${cleanLabel}__${stamp}`;
-
-  // Extra guard: if this exact candidate already exists in history, add -2, -3, etc.
-  const history = loadHistoryFromStorage() || [];
-  const existingCodes = new Set(history.map((h) => (h.sessionCode || "").trim()));
-
-  if (!existingCodes.has(candidate)) return candidate;
-
-  let n = 2;
-  while (existingCodes.has(`${candidate}-${n}`)) n++;
-  return `${candidate}-${n}`;
-}
-
 const HISTORY_DELETED_KEY = "rp_teacherSessionHistoryDeleted_v1";
 
 function loadDeletedHistoryKeys() {
@@ -836,23 +780,6 @@ const idx = history.findIndex(
   
   const entry = {
     sessionCode,
-
-    // NEW: keep a human-friendly label separate from the unique code
-    label: (function () {
-      // If a label already exists for this session, keep it
-      const existing = history.find((h) => (h.sessionCode || "").trim() === sessionCode);
-      if (existing && existing.label) return existing.label;
-
-      // Otherwise infer from sessionCode (strip the "__stamp")
-      return getDisplayLabelFromSessionCode(sessionCode);
-    })(),
-
-    // NEW: creation timestamp (only set once)
-    createdAt: (function () {
-      const existing = history.find((h) => (h.sessionCode || "").trim() === sessionCode);
-      return (existing && existing.createdAt) ? existing.createdAt : nowIso;
-    })(),
-
     lastLoadedAt: nowIso,
     attemptsCount,
     totalQuestions,
@@ -2856,21 +2783,7 @@ async function runStudentSearch() {
 
 // ---------- DATA LOADING (real backend + demo fallback) ----------
 async function loadAttempts() {
-  let sessionCodeRaw = sessionInput.value.trim();
-
-  // Optional QoL: if teacher typed a base label (no stamp), try to map to the most recent matching history entry
-  if (sessionCodeRaw && !looksLikeStampedSessionCode(sessionCodeRaw)) {
-    const needle = sessionCodeRaw.trim().toUpperCase();
-    const history = loadHistoryFromStorage() || [];
-    const matches = history
-      .filter((h) => (h.label || "").trim().toUpperCase() === needle)
-      .sort((a, b) => (b.lastLoadedAt || "").toString().localeCompare((a.lastLoadedAt || "").toString()));
-
-    if (matches.length) {
-      sessionCodeRaw = (matches[0].sessionCode || "").trim();
-      sessionInput.value = sessionCodeRaw;
-    }
-  }
+  const sessionCodeRaw = sessionInput.value.trim();
   // Update pill
   sessionPill.textContent = sessionCodeRaw
     ? `Session: ${sessionCodeRaw}`
@@ -3192,16 +3105,9 @@ function startNewSession() {
     return;
   }
 
-  // Build a unique session code (prevents collisions across days)
-  const baseLabel = rawSession.trim().toUpperCase();
-  const uniqueSessionCode = makeUniqueSessionCode(baseLabel);
-
-  // Update the input so everything downstream (links/load/history) uses the unique code
-  sessionInput.value = uniqueSessionCode;
-
   // Build both links: student practice link + co-teacher dashboard link
-  const studentLink = buildStudentLink(uniqueSessionCode);
-  const coLink = buildCoTeacherLink(uniqueSessionCode);
+  const studentLink = buildStudentLink(rawSession);
+  const coLink = buildCoTeacherLink(rawSession);
 
   // Show the student link in its box
   if (sessionLinkInput) {
@@ -3213,7 +3119,8 @@ function startNewSession() {
     coTeacherLinkInput.value = coLink;
   }
 
-  sessionPill.textContent = `Session: ${baseLabel}`;
+  const normalizedSession = rawSession.trim().toUpperCase();
+  sessionPill.textContent = `Session: ${normalizedSession}`;
 
   // Little helper text
   if (copyLinkStatusEl) {
@@ -3239,7 +3146,7 @@ function startNewSession() {
     // non-fatal
   }
 
-  enableMonitorButton(uniqueSessionCode);
+  enableMonitorButton(rawSession);
 }
 (function wireLinkPreviewAutofill() {
   const setSelect = document.getElementById("practice-set");
