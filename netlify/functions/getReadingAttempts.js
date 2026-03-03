@@ -168,20 +168,15 @@ exports.handler = async function (event) {
 
       const ownerEmail =
         data.ownerEmail ||
-        data.owner || // ✅ legacy support
         data.teacherEmail ||
-        (data.sessionInfo && (data.sessionInfo.ownerEmail || data.sessionInfo.owner)) || // ✅ legacy support
+        (data.sessionInfo && data.sessionInfo.ownerEmail) ||
         (data.sessionInfo && data.sessionInfo.teacherEmail) ||
         "";
-        
+
       const sharedWithEmails = Array.isArray(data.sharedWithEmails)
         ? data.sharedWithEmails
-        : Array.isArray(data.sharedWith) // ✅ legacy support
-        ? data.sharedWith
         : Array.isArray(data.sessionInfo && data.sessionInfo.sharedWithEmails)
         ? data.sessionInfo.sharedWithEmails
-        : Array.isArray(data.sessionInfo && data.sessionInfo.sharedWith) // ✅ legacy support
-        ? data.sessionInfo.sharedWith
         : [];
 
     // ✅ Backfill defaults so older attempts still match filters

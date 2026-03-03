@@ -447,23 +447,16 @@ function beginTrainerSession({ studentName, sessionCode }) {
     console.warn("[RP] beginTrainerSession called without a sessionCode.");
   }
 
-  // Resolve ownerEmail for this attempt (match autosave fallback logic)
-  let ownerEmail = (URL_OWNER_EMAIL || window.RP_OWNER_EMAIL || getOwnerEmailFallback() || "").trim();
-
+  // Resolve ownerEmail for this attempt
+  let ownerEmail = URL_OWNER_EMAIL;
   if (!ownerEmail) {
     try {
       // optional fallback if same browser was used to start session
-      ownerEmail = (window.localStorage.getItem("rp_lastOwnerEmail") || "").trim();
+      ownerEmail =
+        window.localStorage.getItem("rp_lastOwnerEmail") || "";
     } catch (e) {
       // ignore
     }
-  }
-
-  // Cache it once we have it (helps owner open trainer without URL param next time)
-  if (ownerEmail) {
-    try {
-      window.localStorage.setItem("rp_lastOwnerEmail", ownerEmail);
-    } catch (e) {}
   }
 
   if (window.RP_REPORT && typeof RP_REPORT.setSessionInfo === "function") {
