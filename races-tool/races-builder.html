@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>RACES Constructed Response Builder</title>
+<!-- ✅ Google API for Docs & Drive -->
+<script async="" defer="" src="https://apis.google.com/js/api.js"></script>
+<!-- ✅ Google Identity Services -->
+<script async="" defer="" src="https://accounts.google.com/gsi/client"></script>
+<style>
+    /* ======= Core theme (pulled from your organizer palette) ======= */
+    html { scroll-behavior: smooth; }
+    :root {
+      --color-blue-dark: #004860;
+      --color-teal: #05C1B8;
+      --color-teal-light: #0AD1CC;
+      --color-aqua: #84EBE6;
+      --color-orange: #FF9900;
+      --color-yellow: #FFB800;
+      --color-yellow-light: #FFD466;
+      --color-red: #FF5D52;
+      --color-peach: #FF8F85;
+      --color-pink: #FFA69E;
+      --card: #ffffff;
+      --bg: #f6fbff;
+      --text: #123;
+      --muted: #4b5b66;
+      --border: rgba(0,0,0,.12);
+      --shadow: 0 8px 20px rgba(0,0,0,.08);
+    }
+body {
+  margin: 0;
+  color: var(--text);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+
+  /* ✨ Colorful "worksheet page" background */
+  background:
+    radial-gradient(900px 520px at 12% 10%, rgba(5,193,184,.18), transparent 55%),
+    radial-gradient(900px 520px at 88% 14%, rgba(255,184,0,.18), transparent 55%),
+    radial-gradient(900px 520px at 20% 88%, rgba(255,93,82,.16), transparent 55%),
+    radial-gradient(900px 520px at 92% 88%, rgba(132,235,230,.18), transparent 55%),
+    linear-gradient(180deg, #f7fbff 0%, #f4fbff 45%, #ffffff 100%);
+  background-attachment: fixed;
+}
+
+body.dark-mode {
+  --bg:#121619; --text:#f1f1f1; --card:#1c242b; --muted:#c9d3db; --border: rgba(255,255,255,.14);
+  background: var(--bg);
+}
+    /* Progress */
+    .progress-wrapper{ position: fixed; top:0; left:0; width:100%; padding:10px 16px; background:#e0f0ff; z-index:1000; box-shadow:0 2px 6px rgba(0,0,0,.1);} 
+    body.dark-mode .progress-wrapper{ background:#2a3b4c; }
+    .progress-bar{ height:12px; width:0%; border-radius:999px; background: linear-gradient(90deg, #00c6ff, #0072ff); transition: width .25s ease; }
+    body.dark-mode .progress-bar{ background: linear-gradient(90deg, #66fcf1, #45a29e); }
+    .progress-message{ text-align:center; margin-top:6px; font-weight:700; color: var(--color-pink); }
+
+    .wrap{ max-width: 980px; margin: 86px auto 80px; padding: 0 16px; }
+    h1{ margin: 10px 0 8px; font-size: 2rem; color: var(--color-blue-dark); }
+    body.dark-mode h1{ color: var(--color-aqua); }
+    .sub{ color: var(--muted); margin: 0 0 16px; line-height:1.35; }
+
+    .utility{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; padding: 12px; border:1px solid var(--border); background: var(--card); border-radius: 16px; box-shadow: var(--shadow); }
+    .toggles{ display:flex; gap:10px; flex-wrap:wrap; }
+    .toggle{ display:flex; align-items:center; gap:8px; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--border); background: rgba(255,255,255,.5); }
+    body.dark-mode .toggle{ background: rgba(0,0,0,.15); }
+
+    .actions{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+    button{ cursor:pointer; border:none; border-radius: 12px; padding: 10px 12px; font-weight: 700; background: var(--color-teal); color:#001b1a; }
+    button.secondary{ background: transparent; border: 1px solid var(--border); color: var(--text); }
+    button:active{ transform: translateY(1px); }
+
+    .grid{ display:grid; grid-template-columns: 1fr; gap: 14px; margin-top: 14px; }
+.card{
+  background: var(--card);
+  border:1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 14px;
+
+  /* ✨ subtle "sheet" depth */
+  position: relative;
+  overflow: hidden;
+}
+
+/* ✨ soft highlight sheen (light mode only) */
+body:not(.dark-mode) .card::before{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  background: radial-gradient(700px 160px at 18% 0%, rgba(255,255,255,.65), transparent 55%);
+  pointer-events:none;
+}
+
+/* ✅ Color-coded RACES cards (no HTML changes needed) */
+.card[data-races]{
+  border-top-width: 6px;
+}
+
+/* Your palette → letter colors */
+.card[data-races="R"]{ border-top-color: var(--color-teal); }
+.card[data-races="A"]{ border-top-color: var(--color-yellow); }
+.card[data-races="C"]{ border-top-color: var(--color-orange); }
+.card[data-races="E"]{ border-top-color: var(--color-peach); }
+.card[data-races="S"]{ border-top-color: var(--color-red); }
+
+/* Make the badge feel more "sticker-y" in light mode */
+body:not(.dark-mode) .badge{
+  background: rgba(255,255,255,.65);
+  border: 1px solid rgba(0,0,0,.08);
+  box-shadow: 0 6px 14px rgba(0,0,0,.06);
+}
+    .row2{ display:grid; grid-template-columns: 1fr 2fr; gap: 12px; }
+    @media (max-width: 760px){ .row2{ grid-template-columns: 1fr; } }
+
+    label{ display:block; font-weight:800; margin-bottom: 6px; }
+    input[type="text"], textarea{ width:100%; box-sizing:border-box; border-radius: 12px; border: 1px solid var(--border); padding: 10px 12px; font-size: 1rem; background: transparent; color: var(--text); }
+    textarea{ min-height: 84px; resize: vertical; }
+
+    .races-graphic{ display:flex; justify-content:center; }
+    .races-graphic svg{ width: min(560px, 100%); height:auto; }
+
+    .section-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .badge{ font-weight:900; padding: 6px 10px; border-radius: 999px; background: rgba(5,193,184,.18); border: 1px solid rgba(5,193,184,.35); }
+
+    .editable{ min-height: 92px; border-radius: 14px; border: 1px dashed rgba(0,0,0,.25); padding: 10px 12px; background: rgba(255,255,255,.55); outline: none; line-height: 1.4; }
+    body.dark-mode .editable{ background: rgba(0,0,0,.18); border-color: rgba(255,255,255,.22); }
+    .editable:focus{ border-style: solid; border-color: var(--color-teal); box-shadow: 0 0 0 3px rgba(5,193,184,.22); }
+
+    details{ border:1px solid var(--border); border-radius: 14px; padding: 10px 12px; margin-top: 10px; }
+    summary{ cursor:pointer; font-weight: 900; }
+
+    .starter-bar{ display:flex; flex-wrap:wrap; gap:8px; margin: 10px 0 8px; }
+    .chip{ padding: 8px 10px; border-radius: 999px; background: rgba(255,184,0,.18); border: 1px solid rgba(255,184,0,.35); color: var(--text); font-weight: 800; }
+
+    .footer-tools{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; }
+    .checklist{ display:grid; gap: 6px; margin-top: 10px; }
+    .checklist label{ font-weight: 700; display:flex; gap:8px; align-items:flex-start; }
+
+    .tiny{ font-size: .9rem; color: var(--muted); }
+
+    /* Teacher log */
+    #teacher-log{ white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: .88rem; background: rgba(0,0,0,.04); padding: 10px; border-radius: 12px; border: 1px solid var(--border); }
+    body.dark-mode #teacher-log{ background: rgba(0,0,0,.25); }
+
+    /* Minimal toast placeholder (google integration uses this id if present) */
+    #loading-msg{ position:fixed; left:50%; top:70px; transform: translateX(-50%); padding: 10px 14px; border-radius: 999px; background: rgba(0,0,0,.75); color:#fff; z-index: 2000; display:block; }
+  
+
+    /* ======= OpenDyslexic font (local file) ======= */
+    @font-face{
+      font-family: "OpenDyslexic";
+      src: url("./fonts/OpenDyslexic-Regular.ttf") format("truetype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+    body.dyslexia-mode, body.dyslexia-mode *{
+      font-family: "OpenDyslexic", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif !important;
+      letter-spacing: 0.2px;
+    }
+
+    details.tips{
+      margin-top: 10px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 14px;
+      padding: 10px 12px;
+    }
+    details.tips summary{
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .section-controls{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top: 12px;
+      justify-content:flex-end;
+    }
+
+    #confetti-canvas{
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 9999;
+      display:block;
+    }
+
+
+    .voice-row{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin-top: 10px;
+      justify-content:flex-start;
+    }
+    .voice-select{
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      box-shadow: 0 2px 6px rgba(0,0,0,.06);
+      min-width: 240px;
+    }
+</style>
+</head>
+<body>
+<div class="progress-wrapper">
+<div class="progress-bar" id="progress-bar"></div>
+<div class="progress-message" id="progress-message"></div>
+</div>
+<div id="loading-msg"></div>
+<div class="wrap">
+<h1>🧩 RACES Constructed Response Builder</h1>
+<p class="sub">Supports student writing without doing it for them. Teachers can use this tool with <strong>any text</strong>. Students can save across days with local autosave and (optional) Google Drive saving + Google Docs export.</p>
+<div class="utility">
+<div class="toggles">
+<label class="toggle"><input id="darkToggle" type="checkbox"/> <span>Dark Mode 🌙</span></label>
+<label class="toggle"><input id="dyslexiaToggle" type="checkbox"/> <span>Dyslexia Font 🔤</span></label>
+</div>
+<div class="actions">
+<button id="googleSignIn">Sign in with Google</button>
+<button class="secondary" id="googleSignOut">Sign out</button>
+<button class="secondary" id="clearAll">Clear</button>
+</div>
+<div class="voice-row">
+<label class="tiny" for="voiceSelect"><strong>Reader Voice:</strong></label>
+<select aria-label="Select a read-aloud voice" class="voice-select" id="voiceSelect"></select>
+</div>
+
+</div>
+<div class="grid">
+<section class="card">
+<div class="row2">
+<div>
+<label for="textTitle">Text title</label>
+<input id="textTitle" placeholder="Ex: Fish Cheeks" type="text"/>
+<p class="tiny">Used in sentence starters like: “In <em>[Title]</em>, the author…”</p>
+</div>
+<div>
+<label for="questionPrompt">Question prompt</label>
+<textarea id="questionPrompt" placeholder="Paste the constructed response question here..."></textarea>
+</div>
+</div>
+<details>
+<summary>👩‍🏫 Teacher Tips (with examples)</summary>
+<div class="tiny" style="margin-top:8px; line-height:1.45;">
+<p><strong>Goal:</strong> Students use the question + text evidence to write a complete response using RACES.</p>
+<p><strong>Tip:</strong> Require evidence to be <em>quoted</em> or accurately paraphrased with a paragraph/line reference.</p>
+<p><strong>Example (Teacher model):</strong> “In <em>Fish Cheeks</em>, the narrator feels embarrassed because she worries about being judged. For example, the text states, ‘…’ which shows… Overall, this demonstrates…”</p>
+<p><strong>Important:</strong> This tool provides structure, starters, and feedback — it does <em>not</em> write answers for students.</p>
+</div>
+</details>
+</section>
+<section class="card">
+<div class="section-head">
+<div class="badge">RACES Strategy</div>
+<div class="tiny">Restate • Answer • Cite • Explain • Summarize</div>
+</div>
+<div class="races-graphic" style="margin-top:10px;">
+  <img 
+    src="/images/races-strategy.png" 
+    alt="RACES Strategy Anchor Chart" 
+    style="width:100%; max-width:760px; border-radius:14px; display:block; margin:auto;">
+</div>
+</section>
+<!-- RACES Sections -->
+<section class="card" data-races="R">
+<div class="section-head"><div class="badge">R — Restate</div></div>
+<p class="tiny">Turn the question into the first sentence of your response.</p><details class="tips"><summary>Teacher Tips (click to expand)</summary><p class="tiny">Model: “In <em>[Text Title]</em>, the author shows that …” Restate the question without copying it word-for-word.</p></details>
+<div class="starter-bar">
+<button class="chip" data-insert="rBox" data-template="In {TITLE}, the author explains that ">In [Title], the author…</button>
+<button class="chip" data-insert="rBox" data-template="The text shows that ">The text shows that…</button>
+<button class="chip" data-insert="rBox" data-template="In the passage, it is clear that ">In the passage, it is clear…</button>
+</div>
+<div class="editable" contenteditable="true" data-label="R — Restate" id="rBox" spellcheck="true"></div>
+<div class="section-controls"><button class="secondary" data-read="rBox" type="button">🔊 Read my writing</button><button class="secondary" data-stop="speech" type="button">⏹ Stop</button><button class="secondary" data-coach="rBox">Writing Coach</button></div></section>
+<section class="card" data-races="A">
+<div class="section-head"><div class="badge">A — Answer</div></div>
+<p class="tiny">Answer the question directly and completely.</p><details class="tips"><summary>Teacher Tips (click to expand)</summary><p class="tiny">Answer in 1–2 clear sentences. Make sure you respond to every part of the question.</p></details>
+<div class="starter-bar">
+<button class="chip" data-insert="aBox" data-template="The answer is ">The answer is…</button>
+<button class="chip" data-insert="aBox" data-template="This is because ">This is because…</button>
+<button class="chip" data-insert="aBox" data-template="The author shows this by ">The author shows this by…</button>
+</div>
+<div class="editable" contenteditable="true" data-label="A — Answer" id="aBox" spellcheck="true"></div>
+<div class="section-controls"><button class="secondary" data-read="aBox" type="button">🔊 Read my writing</button><button class="secondary" data-stop="speech" type="button">⏹ Stop</button><button class="secondary" data-coach="aBox">Writing Coach</button></div></section>
+<section class="card" data-races="C">
+<div class="section-head"><div class="badge">C — Cite Evidence</div></div>
+<p class="tiny">Add a quote or accurate paraphrase from the text. Include paragraph/line if possible.</p><details class="tips"><summary>Teacher Tips (click to expand)</summary><p class="tiny">Use quotation marks and include a paragraph or line reference if your teacher expects it. Choose the strongest evidence (not the longest).</p></details>
+<div class="starter-bar">
+<button "="" \"="" class="chip" data-insert="cBox" data-template="According to {TITLE}, \">According to [Title], “…”</button>
+<button "="" \"="" class="chip" data-insert="cBox" data-template="In paragraph __, the text states, \">In paragraph __, it states…</button>
+<button "="" \"="" class="chip" data-insert="cBox" data-template="The author writes, \">The author writes…</button>
+</div>
+<div class="editable" contenteditable="true" data-label="C — Cite" id="cBox" spellcheck="true"></div>
+<div class="section-controls"><button class="secondary" data-read="cBox" type="button">🔊 Read my writing</button><button class="secondary" data-stop="speech" type="button">⏹ Stop</button><button class="secondary" data-coach="cBox">Writing Coach</button></div></section>
+<section class="card" data-races="E">
+<div class="section-head"><div class="badge">E — Explain</div></div>
+<p class="tiny">Explain how your evidence proves your answer. Connect it back to the question.</p><details class="tips"><summary>Teacher Tips (click to expand)</summary><p class="tiny">Explain how the quote proves your answer. Try: <em>This shows… because…</em> Connect evidence → reasoning.</p></details>
+<div class="starter-bar">
+<button class="chip" data-insert="eBox" data-template="This evidence shows that ">This evidence shows that…</button>
+<button class="chip" data-insert="eBox" data-template="This matters because ">This matters because…</button>
+<button class="chip" data-insert="eBox" data-template="Therefore, ">Therefore,…</button>
+</div>
+<div class="editable" contenteditable="true" data-label="E — Explain" id="eBox" spellcheck="true"></div>
+<div class="section-controls"><button class="secondary" data-read="eBox" type="button">🔊 Read my writing</button><button class="secondary" data-stop="speech" type="button">⏹ Stop</button><button class="secondary" data-coach="eBox">Writing Coach</button></div></section>
+<section class="card" data-races="S">
+<div class="section-head"><div class="badge">S — Summarize</div></div>
+<p class="tiny">Wrap up in one sentence. Do not add new evidence.</p><details class="tips"><summary>Teacher Tips (click to expand)</summary><p class="tiny">Wrap up without repeating your whole answer. Try: <em>Overall, this demonstrates…</em></p></details>
+<div class="starter-bar">
+<button class="chip" data-insert="sBox" data-template="Overall, ">Overall,…</button>
+<button class="chip" data-insert="sBox" data-template="In conclusion, ">In conclusion,…</button>
+<button class="chip" data-insert="sBox" data-template="This demonstrates that ">This demonstrates that…</button>
+</div>
+<div class="editable" contenteditable="true" data-label="S — Summarize" id="sBox" spellcheck="true"></div>
+<div class="section-controls"><button class="secondary" data-read="sBox" type="button">🔊 Read my writing</button><button class="secondary" data-stop="speech" type="button">⏹ Stop</button><button class="secondary" data-coach="sBox">Writing Coach</button></div></section>
+<section class="card">
+<div class="footer-tools">
+<div>
+<div class="badge">📝 Final Response Preview</div>
+<p class="tiny">This combines your R+A+C+E+S into one response (you can still edit each box above).</p>
+</div>
+<button class="secondary" data-stop="speech" type="button">⏹ Stop</button><button class="secondary" data-read="finalPreview" type="button">🔊 Read final response</button><button class="secondary" id="copyFinal">Copy Final Response</button>
+</div>
+<div class="editable" contenteditable="true" data-label="Final Response" id="finalPreview" style="min-height:110px;"></div>
+</section><section class="card">
+<div class="section-head">
+<div class="badge">✅ Writer’s Checklist</div>
+<button class="secondary" id="runChecklist">Run Checklist</button>
+</div>
+<div class="checklist" id="checklist">
+<label><input data-check="restate" type="checkbox"/> Restated the question in the first sentence</label>
+<label><input data-check="answer" type="checkbox"/> Answered all parts of the question</label>
+<label><input data-check="evidence" type="checkbox"/> Included text evidence (quote/paraphrase)</label>
+<label><input data-check="explain" type="checkbox"/> Explained how the evidence supports the answer</label>
+<label><input data-check="summary" type="checkbox"/> Summarized without adding new evidence</label>
+<label><input data-check="conventions" type="checkbox"/> Checked capitals + punctuation</label>
+</div>
+<p class="tiny" id="checklistMsg" style="margin-top:10px;"></p>
+</section><section class="card"><div class="section-head"><div class="badge">📤 Export</div></div><p class="tiny">Export your finished response to Google Docs (includes a teacher-only editing log at the bottom of the Doc).</p><div class="actions" style="justify-content:flex-start; gap:10px; flex-wrap:wrap;"><button class="secondary primary-export" id="exportDoc">Export to Google Docs</button></div></section>
+</div>
+</div>
+<footer class="footer">
+<p><strong>© 2025 Maggie McDonald | Built for teachers, by a teacher | All rights reserved. Licensed for individual teacher use only</strong></p>
+</footer>
+<canvas id="confetti-canvas"></canvas>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<script src="./js/races-main.js"></script><script src="./js/races-google.js"></script></body>
+</html>
