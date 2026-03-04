@@ -149,13 +149,14 @@ body:not(.dark-mode) .badge{
   
 
     /* ======= OpenDyslexic font (local file) ======= */
-    @font-face{
-      font-family: "OpenDyslexic";
-      src: url("./fonts/OpenDyslexic-Regular.ttf") format("truetype");
-      font-weight: 400;
-      font-style: normal;
-      font-display: swap;
-    }
+@font-face{
+  font-family: "OpenDyslexic";
+  src: url("./OpenDyslexic-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
     body.dyslexia-mode, body.dyslexia-mode *{
       font-family: "OpenDyslexic", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif !important;
       letter-spacing: 0.2px;
@@ -210,6 +211,15 @@ body:not(.dark-mode) .badge{
       box-shadow: 0 2px 6px rgba(0,0,0,.06);
       min-width: 240px;
     }
+
+    .footer {
+  text-align: center;
+  padding: 2rem 1rem;
+  font-size: 1.25rem;
+  background-color: var(--color-blue-dark);
+  color: #fff;
+  font-weight: bold;
+}
 </style>
 </head>
 <body>
@@ -219,9 +229,10 @@ body:not(.dark-mode) .badge{
 </div>
 <div id="loading-msg"></div>
 <div class="wrap">
-<h1>🧩 RACES Constructed Response Builder</h1>
-<p class="sub">Supports student writing without doing it for them. Teachers can use this tool with <strong>any text</strong>. Students can save across days with local autosave and (optional) Google Drive saving + Google Docs export.</p>
-<div class="utility">
+<h1> 🏁RACES Constructed Response Builder 🏁</h1>
+<p class="sub">
+✨Supports student writing without generating answers for them. This scaffolded tool guides students step by step through the RACES strategy so they can practice turning reading into clear written responses. Teachers can use it with <strong>any text</strong> or passage, making it flexible for classroom instruction, test preparation, or independent practice. Student work automatically saves locally so they can continue writing across multiple days. Optional Google Drive saving and Google Docs export make it easy to store, review, and track student writing over time.
+</p><div class="utility">
 <div class="toggles">
 <label class="toggle"><input id="darkToggle" type="checkbox"/> <span>Dark Mode 🌙</span></label>
 <label class="toggle"><input id="dyslexiaToggle" type="checkbox"/> <span>Dyslexia Font 🔤</span></label>
@@ -251,12 +262,11 @@ body:not(.dark-mode) .badge{
 </div>
 </div>
 <details>
-<summary>👩‍🏫 Teacher Tips (with examples)</summary>
+<summary>👩‍🏫 Teacher Tips</summary>
 <div class="tiny" style="margin-top:8px; line-height:1.45;">
 <p><strong>Goal:</strong> Students use the question + text evidence to write a complete response using RACES.</p>
 <p><strong>Tip:</strong> Require evidence to be <em>quoted</em> or accurately paraphrased with a paragraph/line reference.</p>
-<p><strong>Example (Teacher model):</strong> “In <em>Fish Cheeks</em>, the narrator feels embarrassed because she worries about being judged. For example, the text states, ‘…’ which shows… Overall, this demonstrates…”</p>
-<p><strong>Important:</strong> This tool provides structure, starters, and feedback — it does <em>not</em> write answers for students.</p>
+<p><strong>Example (Teacher model):</strong> In <em>Fish Cheeks</em>, the narrator feels embarrassed because she worries about how Robert will judge her family. For example, in paragraph 6 the text states, “I was stunned into silence for the rest of the night.” This shows that she feels deeply uncomfortable and ashamed during the dinner. Overall, this moment demonstrates how strongly she wants to fit in with American culture.</p><p><strong>Important:</strong> This tool provides structure, starters, and feedback — it does <em>not</em> write answers for students.</p>
 </div>
 </details>
 </section>
@@ -275,7 +285,8 @@ body:not(.dark-mode) .badge{
 <!-- RACES Sections -->
 <section class="card" data-races="R">
 <div class="section-head"><div class="badge">R — Restate</div></div>
-<p class="tiny">Turn the question into the first sentence of your response.</p><details class="tips"><summary>Teacher Tips (click to expand)</summary><p class="tiny">Model: “In <em>[Text Title]</em>, the author shows that …” Restate the question without copying it word-for-word.</p></details>
+<p class="tiny">Turn the question into the first sentence of your response.</p><details class="tips">
+  <summary>Teacher Tips (click to expand)</summary><p class="tiny"><strong>Example (Teacher model):</strong> If the question asks, “Why does the narrator feel embarrassed in <em>Fish Cheeks</em>?” you could start with: “In <em>Fish Cheeks</em>, the narrator feels embarrassed because she worries about how Robert will judge her family.”</p></details>
 <div class="starter-bar">
 <button class="chip" data-insert="rBox" data-template="In {TITLE}, the author explains that ">In [Title], the author…</button>
 <button class="chip" data-insert="rBox" data-template="The text shows that ">The text shows that…</button>
@@ -285,7 +296,8 @@ body:not(.dark-mode) .badge{
 <div class="section-controls"><button class="secondary" data-read="rBox" type="button">🔊 Read my writing</button><button class="secondary" data-stop="speech" type="button">⏹ Stop</button><button class="secondary" data-coach="rBox">Writing Coach</button></div></section>
 <section class="card" data-races="A">
 <div class="section-head"><div class="badge">A — Answer</div></div>
-<p class="tiny">Answer the question directly and completely.</p><details class="tips"><summary>Teacher Tips (click to expand)</summary><p class="tiny">Answer in 1–2 clear sentences. Make sure you respond to every part of the question.</p></details>
+<p class="tiny">Answer the question directly and completely. Write 1–2 clear sentences that respond to every part of the question.</p>
+<details class="tips"><summary>Teacher Tips (click to expand)</summary>  <p class="tiny"><strong>Example (Teacher model):</strong> This is because the narrator feels embarrassed and she worries that Robert will judge her family's traditions and food. She wants to fit in with American culture and fears that Robert will think her family is strange.</p></details>
 <div class="starter-bar">
 <button class="chip" data-insert="aBox" data-template="The answer is ">The answer is…</button>
 <button class="chip" data-insert="aBox" data-template="This is because ">This is because…</button>
@@ -295,17 +307,18 @@ body:not(.dark-mode) .badge{
 <div class="section-controls"><button class="secondary" data-read="aBox" type="button">🔊 Read my writing</button><button class="secondary" data-stop="speech" type="button">⏹ Stop</button><button class="secondary" data-coach="aBox">Writing Coach</button></div></section>
 <section class="card" data-races="C">
 <div class="section-head"><div class="badge">C — Cite Evidence</div></div>
-<p class="tiny">Add a quote or accurate paraphrase from the text. Include paragraph/line if possible.</p><details class="tips"><summary>Teacher Tips (click to expand)</summary><p class="tiny">Use quotation marks and include a paragraph or line reference if your teacher expects it. Choose the strongest evidence (not the longest).</p></details>
+<p class="tiny">Add a quote or accurate paraphrase from the text. Include paragraph/line if possible.</p><details class="tips"><summary>Teacher Tips (click to expand)</summary><p class="tiny"><strong>Example (Teacher model):</strong></p><p class="tiny">According to <em>Fish Cheeks</em>, “I was stunned into silence for the rest of the night.”</p></details>
 <div class="starter-bar">
-<button "="" \"="" class="chip" data-insert="cBox" data-template="According to {TITLE}, \">According to [Title], “…”</button>
-<button "="" \"="" class="chip" data-insert="cBox" data-template="In paragraph __, the text states, \">In paragraph __, it states…</button>
-<button "="" \"="" class="chip" data-insert="cBox" data-template="The author writes, \">The author writes…</button>
+<button "="" \"="" class="chip" data-insert="cBox" data-template="According to {TITLE}, ">According to [Title], “…”</button>
+<button "="" \"="" class="chip" data-insert="cBox" data-template="In paragraph __, the text states, ">In paragraph __, it states…</button>
+<button "="" \"="" class="chip" data-insert="cBox" data-template="The author writes, ">The author writes…</button>
 </div>
 <div class="editable" contenteditable="true" data-label="C — Cite" id="cBox" spellcheck="true"></div>
 <div class="section-controls"><button class="secondary" data-read="cBox" type="button">🔊 Read my writing</button><button class="secondary" data-stop="speech" type="button">⏹ Stop</button><button class="secondary" data-coach="cBox">Writing Coach</button></div></section>
 <section class="card" data-races="E">
 <div class="section-head"><div class="badge">E — Explain</div></div>
-<p class="tiny">Explain how your evidence proves your answer. Connect it back to the question.</p><details class="tips"><summary>Teacher Tips (click to expand)</summary><p class="tiny">Explain how the quote proves your answer. Try: <em>This shows… because…</em> Connect evidence → reasoning.</p></details>
+<p class="tiny">Explain how your evidence proves your answer. Connect it back to the question.</p><details class="tips">  <p class="tiny"><strong>Example (Teacher model):</strong></p>
+  <p class="tiny">This evidence shows that the narrator feels deeply embarrassed because she becomes completely silent during the dinner. Her reaction reveals that she is worried about how Robert will judge her family and their traditions.</p></details>
 <div class="starter-bar">
 <button class="chip" data-insert="eBox" data-template="This evidence shows that ">This evidence shows that…</button>
 <button class="chip" data-insert="eBox" data-template="This matters because ">This matters because…</button>
@@ -315,7 +328,7 @@ body:not(.dark-mode) .badge{
 <div class="section-controls"><button class="secondary" data-read="eBox" type="button">🔊 Read my writing</button><button class="secondary" data-stop="speech" type="button">⏹ Stop</button><button class="secondary" data-coach="eBox">Writing Coach</button></div></section>
 <section class="card" data-races="S">
 <div class="section-head"><div class="badge">S — Summarize</div></div>
-<p class="tiny">Wrap up in one sentence. Do not add new evidence.</p><details class="tips"><summary>Teacher Tips (click to expand)</summary><p class="tiny">Wrap up without repeating your whole answer. Try: <em>Overall, this demonstrates…</em></p></details>
+<p class="tiny">Wrap up in one sentence. Do not add new evidence.</p><details class="tips"><summary>Teacher Tips (click to expand)</summary><p class="tiny">Overall, this demonstrates that the narrator feels embarrassed because she worries about how others will judge her family's traditions.</p></details>
 <div class="starter-bar">
 <button class="chip" data-insert="sBox" data-template="Overall, ">Overall,…</button>
 <button class="chip" data-insert="sBox" data-template="In conclusion, ">In conclusion,…</button>

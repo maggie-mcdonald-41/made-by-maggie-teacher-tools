@@ -28,6 +28,38 @@ let fileId      = localStorage.getItem(`fileId-${toolType}`) || null;
 let folderId    = null;
 let autosaveTimer = null;
 
+// ---- Google Sign-In UI (pill) ----
+function updateGoogleAuthButtonsUI(){
+  const signInBtn  = document.getElementById('googleSignIn');
+  const signOutBtn = document.getElementById('googleSignOut');
+
+  // Re-hydrate from storage in case something changed
+  accessToken = localStorage.getItem(TOKEN_KEY);
+  userEmail   = localStorage.getItem(EMAIL_KEY);
+  isSignedIn  = !!accessToken;
+
+  if (signInBtn) {
+    if (isSignedIn) {
+      const emailText = userEmail ? ` (${userEmail})` : '';
+      signInBtn.textContent = `✅ Signed in${emailText}`;
+      signInBtn.title = userEmail ? `Signed in as ${userEmail}` : 'Signed in';
+      signInBtn.classList.add('signed-in');
+      signInBtn.classList.remove('signed-out');
+      signInBtn.setAttribute('aria-label', signInBtn.textContent);
+    } else {
+      signInBtn.textContent = 'Sign in with Google';
+      signInBtn.title = 'Sign in to enable Drive autosave and Docs export';
+      signInBtn.classList.add('signed-out');
+      signInBtn.classList.remove('signed-in');
+      signInBtn.setAttribute('aria-label', signInBtn.textContent);
+    }
+  }
+
+  if (signOutBtn) {
+    signOutBtn.style.display = isSignedIn ? '' : 'none';
+  }
+}
+
 // ---- editing log ----
 const writingLog = []
 ;
@@ -370,12 +402,16 @@ function buildExportHtml(finalText, log){
 async function restoreGoogleAuthIfPossible(){
   // If token exists in localStorage, try to load Drive silently.
   // NOTE: access tokens expire; if expired, Drive calls fail and students click Sign In again.
+  updateGoogleAuthButtonsUI();
+
   if (!accessToken || !userEmail) {
     restoreWritingLogFromStorage();
     return;
   }
 
   isSignedIn = true;
+  updateGoogleAuthButtonsUI();
+
   try {
     showLoadingMessage('🔄 Restoring from Google Drive…');
     await loadFromDrive();
@@ -408,6 +444,7 @@ function startGoogleAuth(){
         localStorage.setItem(EMAIL_KEY, userEmail);
 
         isSignedIn = true;
+        updateGoogleAuthButtonsUI();
         showLoadingMessage('🔄 Loading your saved work…');
         await loadFromDrive();
         hideLoadingMessage();
@@ -431,6 +468,8 @@ function startGoogleAuth(){
 function handleGoogleSignOut(){
   if (!confirm('Sign out of Google for Drive saving/export?')) return;
 
+  const tokenToRevoke = accessToken || localStorage.getItem(TOKEN_KEY) || '';
+
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(EMAIL_KEY);
   localStorage.removeItem(`fileId-${toolType}`);
@@ -440,13 +479,17 @@ function handleGoogleSignOut(){
   userEmail = null;
   isSignedIn = false;
 
-  try { window.google?.accounts?.oauth2?.revoke?.(accessToken || ''); } catch {}
+  try { window.google?.accounts?.oauth2?.revoke?.(tokenToRevoke); } catch {}
 
   if (autosaveTimer) clearInterval(autosaveTimer);
+
+  updateGoogleAuthButtonsUI();
   alert('Signed out. Local autosave is still active.');
 }
 // Wire buttons
 document.addEventListener('DOMContentLoaded', () => {
+  updateGoogleAuthButtonsUI();
+
   document.getElementById('googleSignIn')?.addEventListener('click', startGoogleAuth);
   document.getElementById('googleSignOut')?.addEventListener('click', handleGoogleSignOut);
   document.getElementById('exportDoc')?.addEventListener('click', () => {
