@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <!-- ✅ Page descriptor (TITLE + META DESCRIPTION) -->
+  <title>RACES Constructed Response Builder | Made by Maggie</title>
+  <meta name="description" content="A student-friendly RACES writing tool that supports constructed responses without writing them for students. Includes sentence starters, evidence reminders, read-aloud accessibility, and optional Google Drive saving + Google Docs export." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+
+  <!-- Use your existing site stylesheet -->
+  <link rel="stylesheet" href="/styles.css">
+
+  <style>
+    :root{
+      --deep-teal:#004860; --bright-teal:#05C1B8; --light-teal:#84EBE6;
+      --golden:#FFD466; --peach:#FF8F85; --light-pink:#FFA69E;
+      --chalk:#F5FDFF; --violet:#2a1933;
+    }
+
+    *{box-sizing:border-box}
+
+    body{
+      margin:0;
+      font-family:"Nunito", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:#fff;
+      color:#333;
+    }
+
+    /* Simple top nav */
+    .topbar{
+      background:var(--deep-teal); color:#fff; padding:.75rem 1rem;
+      display:flex; justify-content:space-between; align-items:center;
+    }
+    .topbar a{color:#fff; text-decoration:none; font-weight:600}
+    .topbar a:hover{color:var(--golden)}
+
+    /* HERO */
+    .hero{
+      padding:3rem 1rem 2.5rem;
+      background: linear-gradient(90deg, var(--light-teal), var(--golden), var(--light-pink));
+      text-align:center;
+      color:#111;
+    }
+    .hero h1{
+      margin:0 0 .5rem;
+      font-size:clamp(1.8rem, 4.5vw, 2.6rem);
+      color:#222;
+      text-shadow:0 1px 0 rgba(255,255,255,.6);
+    }
+    .hero p{
+      margin:.5rem auto 0;
+      max-width:900px;
+      font-size:clamp(1rem, 2.2vw, 1.25rem);
+      line-height:1.6;
+    }
+
+    .cta-row{
+      margin-top:1.25rem;
+      display:flex;
+      gap:.75rem;
+      justify-content:center;
+      flex-wrap:wrap;
+    }
+
+    /* BUTTONS */
+    .btn{
+      display:inline-block;
+      padding:.75rem 1.1rem;
+      border-radius:12px;
+      font-weight:700;
+      text-decoration:none;
+      box-shadow:0 4px 10px rgba(0,0,0,.08);
+      transition:.2s transform, .2s background;
+    }
+    .btn-primary{background:#9c6ded; color:#fff}
+    .btn-primary:hover{background:#0AD1CC; transform:translateY(-2px)}
+    .btn-ghost{background:#fff; color:#3d3d3d; border:2px solid #3d3d3d}
+    .btn-ghost:hover{background:#3d3d3d; color:#fff}
+
+    /* Sections */
+    .section{
+      padding:2.25rem 1rem;
+      max-width:1200px;
+      margin:0 auto;
+    }
+    .section h2{
+      text-align:center;
+      color:var(--deep-teal);
+      font-size:clamp(1.4rem, 3.5vw, 2rem);
+      margin:0 0 1rem;
+    }
+
+    /* Screenshots grid & card styles */
+    .features { padding:2rem 1rem; }
+    #screenshots { scroll-margin-top:90px; }
+    .screenshot-grid{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:1rem;
+      max-width:1100px;
+      margin:1rem auto 0;
+    }
+    .screenshot-grid figure{
+      margin:0;
+      background:#fff;
+      border-left:6px solid var(--bright-teal);
+      border-radius:16px;
+      padding:12px;
+      box-shadow:0 6px 18px rgba(0,0,0,.06);
+    }
+    .screenshot-grid img{
+      width:100%;
+      height:auto;
+      aspect-ratio: 4 / 3;
+      object-fit:contain;
+      background:#eee;
+      border-radius:10px;
+      display:block;
+    }
+    .screenshot-grid figcaption{
+      margin:.5rem .25rem 0;
+      font-weight:700;
+      text-align:center;
+      color:#222;
+    }
+    @media (max-width: 900px){
+      .screenshot-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 600px){
+      .screenshot-grid{ grid-template-columns: 1fr; }
+    }
+
+    /* FEATURES anchor target */
+    #features{scroll-margin-top:90px}
+
+    /* INFO BOX */
+    .verify{
+      background:#f9f9f9;
+      border-left:6px solid var(--bright-teal);
+      border-radius:14px;
+      padding:1.25rem;
+      margin-top:1.5rem;
+      max-width:1100px;
+      margin-inline:auto;
+    }
+    .verify h3{margin:.2rem 0 .6rem; color:#222; font-size:1.15rem}
+    .verify ul{margin:.25rem 0 0 1.25rem}
+    .verify li{margin:.35rem 0}
+
+    /* Force all lists to align left */
+    ul,
+    ol {
+      text-align: left;
+      padding-left: 1.5rem;
+      margin: 1rem 0;
+    }
+
+    ul li,
+    ol li {
+      text-align: left;
+      margin-bottom: 0.75rem;
+      line-height: 1.6;
+    }
+
+    /* Footer-ish helper */
+    .foot{
+      width: 100vw;
+      margin-left: 50%;
+      transform: translateX(-50%);
+    }
+
+    /* Helper to make big images shrink nicely */
+    .contain img{object-fit:contain}
+
+    /* Lightbox */
+    .media-lightbox{
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      background: rgba(0,0,0,0.85);
+      z-index: 9999;
+      padding: 24px;
+    }
+    .media-lightbox.is-open{ display: grid; }
+
+    .media-lightbox .mlb-img{
+      max-width: min(1200px, 96vw);
+      max-height: 90vh;
+      width: auto;
+      height: auto;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+      background: #111;
+    }
+
+    .media-lightbox .mlb-close{
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      border: none;
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 18px;
+    }
+
+    figure { margin-bottom: 2rem; }
+    figcaption { margin-top: 0.5rem; font-weight: 600; text-align: center; }
+
+    /* Small meta block (matches your pattern) */
+    .doc-meta{
+      max-width:900px;
+      margin:1.75rem auto 0;
+      text-align:left;
+      font-size:0.98rem;
+      line-height:1.6;
+    }
+
+    /* Optional: nicer “two-column” bullets on wide screens */
+    .two-col{
+      columns: 2;
+      column-gap: 2.25rem;
+    }
+    @media (max-width: 900px){
+      .two-col{ columns: 1; }
+    }
+  </style>
+
+  <script>
+    (function initMediaLightbox(){
+      const lb = document.getElementById("mediaLightbox");
+      if (!lb) return;
+
+      const img = lb.querySelector(".mlb-img");
+      const closeBtn = lb.querySelector(".mlb-close");
+
+      function open(src, alt = "") {
+        const cacheBust = (src.includes("?") ? "&" : "?") + "v=" + Date.now();
+        img.src = src + cacheBust;
+        img.alt = alt;
+
+        lb.classList.add("is-open");
+        lb.setAttribute("aria-hidden", "false");
+        document.body.style.overflow = "hidden";
+      }
+
+      function close() {
+        lb.classList.remove("is-open");
+        lb.setAttribute("aria-hidden", "true");
+        document.body.style.overflow = "";
+        img.src = "";
+        img.alt = "";
+      }
+
+      closeBtn.addEventListener("click", close);
+      lb.addEventListener("click", (e) => { if (e.target === lb) close(); });
+      document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+
+      document.addEventListener("click", (e) => {
+        const el = e.target.closest("img[data-fullsrc], img.click-to-fullscreen");
+        if (!el) return;
+        const full = el.getAttribute("data-fullsrc") || el.src;
+        open(full, el.alt || "");
+      });
+    })();
+  </script>
+
+</head>
+<body>
+
+  <!-- Navigation (matches your current site nav structure) -->
+  <nav class="main-nav">
+    <div class="nav-container">
+      <a href="https://madebymaggie.org" class="nav-logo">📘 Made by Maggie</a>
+      <button class="nav-toggle" onclick="toggleNav()">☰</button>
+
+      <ul class="nav-links">
+        <li><a href="#screenshots">Preview</a></li>
+        <li><a href="#features">What It Does</a></li>
+        <li><a href="#how">How It Works</a></li>
+        <li><a href="#standards">Standards</a></li>
+        <li><a href="#privacy">Privacy</a></li>
+        <li><a href="#purchase">Pricing</a></li>
+        <li><a href="#contact">Support</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <header class="hero" style="background: linear-gradient(90deg, #84EBE6, #FFD466, #FFA69E);">
+    <h1>RACES Constructed Response Builder</h1>
+
+    <p class="hero-subtext">
+      A student-friendly writing tool that supports constructed responses without doing the writing for students.
+      Students build step-by-step using the RACES strategy: Restate, Answer, Cite, Explain, Summarize — with sentence starters,
+      evidence reminders, and read-aloud accessibility.
+    </p>
+
+    <div class="cta-row">
+      <a class="btn btn-primary" href="#purchase">✅ Get Access</a>
+      <a class="btn btn-ghost" href="#features">👀 See Features</a>
+    </div>
+
+    <!-- Screenshots -->
+    <section class="features" id="screenshots">
+      <h2>Tool Preview</h2>
+
+      <div class="screenshot-grid">
+        <!-- ✅ Swap these image paths to your real screenshots -->
+        <figure>
+          <img class="click-to-fullscreen" src="/images/races-preview-01.png" alt="RACES Builder step-by-step sections">
+          <figcaption>Step-by-Step RACES Builder</figcaption>
+        </figure>
+
+        <figure>
+          <img class="click-to-fullscreen" src="/images/races-preview-02.png" alt="Sentence starters and teacher tips panel">
+          <figcaption>Sentence Starters + Teacher Tips</figcaption>
+        </figure>
+
+        <figure>
+          <img class="click-to-fullscreen" src="/images/races-preview-03.png" alt="Final response view with checklist">
+          <figcaption>Final Response + Checklist</figcaption>
+        </figure>
+      </div>
+
+      <div class="doc-meta">
+        <br/>
+        <strong>What it is:</strong> A step-by-step RACES writing builder for constructed responses (Restate, Answer, Cite, Explain, Summarize).<br/>
+        <strong>Best for:</strong> reading responses, evidence-based writing, intervention, test prep, centers, and progress monitoring.<br/>
+        <strong>Student tools:</strong> sentence starters, evidence reminders, read-aloud support, and an organized final response view.<br/>
+        <strong>Teacher use:</strong> works with any passage, prompt, or question — use it for modeling, independent practice, or small groups.<br/>
+        <strong>Saving:</strong> local autosave for multi-day writing, with optional Google Drive saving + Google Docs export (if enabled).
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features" id="features">
+      <h2>What This Tool Supports</h2>
+
+      <div class="verify">
+        <h3>Built for strong constructed responses, without giving students the answer:</h3>
+
+        <ul class="two-col">
+          <li><strong>RACES step-by-step flow:</strong> Restate → Answer → Cite → Explain → Summarize.</li>
+          <li><strong>Sentence starter support:</strong> Helps students begin each section confidently.</li>
+          <li><strong>Evidence reminders:</strong> Prompts students to pull the strongest quote, not the longest.</li>
+          <li><strong>Explanation scaffolds:</strong> Reinforces evidence → reasoning connections.</li>
+          <li><strong>Editable final response view:</strong> Students can revise while keeping structure.</li>
+          <li><strong>Read-aloud accessibility:</strong> Supports struggling readers and writers.</li>
+          <li><strong>Optional voice selection:</strong> Lets students choose a comfortable reader voice (if enabled).</li>
+          <li><strong>Dyslexia-friendly font option:</strong> Improves readability.</li>
+          <li><strong>Dark mode:</strong> Reduces eye strain.</li>
+          <li><strong>Confetti celebrations:</strong> Motivates students through progress milestones.</li>
+          <li><strong>Local autosave:</strong> Students can safely work across days.</li>
+          <li><strong>Optional Drive + Docs export:</strong> Save to Google Drive and export to Google Docs (if enabled).</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="features" id="how">
+      <h2>How It Works in Class</h2>
+
+      <div class="verify">
+        <h3>Simple routine teachers can use with any text:</h3>
+        <ul>
+          <li><strong>Choose any passage + question:</strong> Use your curriculum text, an assessment passage, or a short article.</li>
+          <li><strong>Model once, then release:</strong> Complete one response together, then students work independently.</li>
+          <li><strong>Coach without giving answers:</strong> Sentence starters guide structure while students supply ideas and evidence.</li>
+          <li><strong>Revise with the checklist:</strong> Students review their final response and strengthen clarity and evidence.</li>
+          <li><strong>Save + continue later:</strong> Local autosave supports multi-day writing without lost work.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Standards -->
+    <section class="features" id="standards">
+      <h2>Standards Alignment</h2>
+
+      <p style="max-width:900px; margin:0 auto; line-height:1.6;">
+        Designed to reinforce evidence-based writing and reading response routines aligned to common ELA expectations.
+        Works across grade levels because teachers supply the text and prompt.
+      </p>
+
+      <div class="verify">
+        <h3>Common alignment targets:</h3>
+        <ul>
+          <li><strong>Text evidence:</strong> Cite relevant evidence to support analysis and responses.</li>
+          <li><strong>Written response structure:</strong> Clear restatement, direct answer, explanation, and wrap-up.</li>
+          <li><strong>Language and conventions:</strong> Clarity, grammar, and academic tone during revision.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Privacy -->
+    <section class="features" id="privacy">
+      <h2>Data Use &amp; Student Privacy</h2>
+
+      <p style="max-width:900px; margin:0 auto; line-height:1.6;">
+        This tool is designed for classroom writing support. If enabled, saving features may store student work
+        locally in the browser and optionally in Google Drive / Google Docs (teacher-controlled).
+      </p>
+
+      <p style="max-width:900px; margin:0.75rem auto 0; line-height:1.6;">
+        For more, see our <a href="/privacy.html">Privacy Policy</a> and <a href="/terms.html">Terms of Service</a>.
+      </p>
+    </section>
+
+    <!-- Support -->
+    <section class="features" id="contact">
+      <h2>Support</h2>
+      <p style="max-width:900px; margin:0 auto; line-height:1.6;">
+        Have questions about using the RACES Builder with your students, or interested in a school/district license?
+        Reach out through the <a href="/#contact">Made by Maggie contact form</a> and I’ll be happy to help.
+      </p>
+    </section>
+
+    <!-- Purchase -->
+    <section class="features" id="purchase">
+      <h2>Classroom &amp; School Access</h2>
+
+      <div style="text-align:center; margin:2.5rem 0; max-width:700px; margin-inline:auto;">
+        <p style="font-size:1.05rem; margin-bottom:0.75rem; color:#333;">
+          <strong>Individual Teacher License:</strong> $49/year<br/>
+          Includes 1 year of access for one teacher and all students on that teacher’s roster, plus updates added during your active subscription.
+        </p>
+
+        <div class="cta-row" style="margin-top:1rem;">
+          <!-- ✅ Replace with your real Payhip link -->
+          <a class="btn btn-primary" href="https://payhip.com/b/4Pghs">
+            ✅ Get 1-School-Year Teacher License – $12
+          </a>
+          <a class="btn btn-ghost" href="/#contact">
+            🏫 Request School/District Pricing
+          </a>
+        </div>
+
+        <p style="font-size:0.95rem; margin-top:0.9rem; color:#555;">
+          Future tool expansions are included during active subscription.
+        </p>
+      </div>
+    </section>
+
+  </header>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div style="text-align:center; margin:3rem 0 2rem;">
+      <img
+        src="/images/logo-3.png"
+        alt="Made by Maggie Teacher Tools logo"
+        style="max-width:180px; width:100%; height:auto; opacity:0.95;"
+      />
+    </div>
+    © <span id="y"></span> Made by Maggie | RACES Constructed Response Builder | Built for teachers, by a teacher
+  </footer>
+
+  <script>
+    document.getElementById('y').textContent = new Date().getFullYear();
+  </script>
+
+  <!-- Fullscreen Image Viewer -->
+  <div id="mediaLightbox" class="media-lightbox" aria-hidden="true">
+    <button class="mlb-close" type="button" aria-label="Close viewer">✕</button>
+    <img class="mlb-img" alt="" />
+  </div>
+
+</body>
+</html>

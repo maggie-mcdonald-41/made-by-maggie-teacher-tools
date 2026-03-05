@@ -170,8 +170,14 @@ function initCoachButtons(){
       const el = $(targetId);
       if (!el) return;
       const tips = simpleCoachFeedback(el.innerText || '');
-      alert('Writing Coach (support only)\n\n' + tips.map(t => '• ' + t).join('\n'));
-      try { window.logActivity?.('ai', targetId); } catch {}
+const prompt = getPrompt();
+
+alert(
+  'Writing Coach (support only)\n\n' +
+  'Check that your response clearly answers the question.\n\n' +
+  (prompt ? 'Question:\n' + prompt + '\n\n' : '') +
+  tips.map(t => '• ' + t).join('\n')
+);      try { window.logActivity?.('ai', targetId); } catch {}
     });
   });
 }
