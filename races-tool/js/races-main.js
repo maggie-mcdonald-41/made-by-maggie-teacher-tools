@@ -66,7 +66,7 @@ function buildFinalResponse(){
     $('eBox')?.innerText?.trim(),
     $('sBox')?.innerText?.trim(),
   ].filter(Boolean);
-  return parts.join('\n\n');
+return parts.join(' ');
 }
 
 function renderFinalPreview(){
