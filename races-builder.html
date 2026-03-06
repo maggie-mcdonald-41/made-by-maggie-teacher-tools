@@ -138,6 +138,35 @@
     /* FEATURES anchor target */
     #features{scroll-margin-top:90px}
 
+    /* Video walkthrough */
+    #walkthrough{scroll-margin-top:90px}
+
+    .video-wrap{
+      max-width: 1000px;
+      margin: 1rem auto 0;
+      background: #fff;
+      border-left: 6px solid var(--peach);
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 6px 18px rgba(0,0,0,.06);
+    }
+
+    .video-frame{
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #000;
+    }
+
+    .video-frame iframe{
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+    }
+
     /* INFO BOX */
     .verify{
       background:#f9f9f9;
@@ -284,6 +313,7 @@
 
       <ul class="nav-links">
         <li><a href="#screenshots">Preview</a></li>
+        <li><a href="#walkthrough">Walkthrough</a></li>
         <li><a href="#features">What It Does</a></li>
         <li><a href="#how">How It Works</a></li>
         <li><a href="#standards">Standards</a></li>
@@ -314,7 +344,6 @@
       <h2>Tool Preview</h2>
 
       <div class="screenshot-grid">
-        <!-- ✅ Swap these image paths to your real screenshots -->
         <figure>
           <img class="click-to-fullscreen" src="/images/races-preview-01.png" alt="RACES Builder step-by-step sections">
           <figcaption>Step-by-Step RACES Builder</figcaption>
@@ -338,6 +367,26 @@
         <strong>Student tools:</strong> sentence starters, evidence reminders, read-aloud support, and an organized final response view.<br/>
         <strong>Teacher use:</strong> works with any passage, prompt, or question — use it for modeling, independent practice, or small groups.<br/>
         <strong>Saving:</strong> local autosave for multi-day writing, with optional Google Drive saving + Google Docs export (if enabled).
+      </div>
+    </section>
+
+    <!-- Video Walkthrough -->
+    <section class="features" id="walkthrough">
+      <h2>Video Walkthrough</h2>
+
+      <div class="video-wrap">
+        <div class="video-frame">
+          <iframe
+            src="https://www.youtube.com/embed/GS933u53QRo?si=Ye1hDrHBQ4ZuAOHX"
+            title="RACES Constructed Response Builder Video Walkthrough"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen>
+          </iframe>
+        </div>
+      </div>
+
+      <div class="doc-meta">
+        <strong>See it in action:</strong> Watch a quick walkthrough of the RACES Constructed Response Builder to see how students move through each part of the strategy, use supports like sentence starters and evidence reminders, and build a clear final response step by step.
       </div>
     </section>
 
@@ -429,12 +478,11 @@
 
       <div style="text-align:center; margin:2.5rem 0; max-width:700px; margin-inline:auto;">
         <p style="font-size:1.05rem; margin-bottom:0.75rem; color:#333;">
-          <strong>Individual Teacher License:</strong> $49/year<br/>
+          <strong>Individual Teacher License:</strong> $12/school-year<br/>
           Includes 1 year of access for one teacher and all students on that teacher’s roster, plus updates added during your active subscription.
         </p>
 
         <div class="cta-row" style="margin-top:1rem;">
-          <!-- ✅ Replace with your real Payhip link -->
           <a class="btn btn-primary" href="https://payhip.com/b/4Pghs">
             ✅ Get 1-School-Year Teacher License – $12
           </a>
