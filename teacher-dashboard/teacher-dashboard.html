@@ -780,7 +780,63 @@ body.dashboard-dark .dashboard-subtitle {
   }
 }
 
+.session-duplicate-helper {
+  margin-top: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 12px;
+  background: rgba(246, 196, 83, 0.18);
+  border: 1px solid rgba(246, 196, 83, 0.5);
+}
 
+.session-duplicate-message {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #7c4a03;
+  margin-bottom: 0.5rem;
+  line-height: 1.35;
+}
+
+.session-duplicate-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.session-suggestion-chip {
+  border: 1px solid rgba(0, 72, 96, 0.16);
+  background: #ffffff;
+  color: #0f172a;
+  border-radius: 999px;
+  padding: 0.45rem 0.75rem;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+
+.session-suggestion-chip:hover,
+.session-suggestion-chip:focus {
+  transform: translateY(-1px);
+  border-color: rgba(0, 72, 96, 0.35);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+  outline: none;
+}
+
+:root[data-theme="dark"] .session-duplicate-helper {
+  background: rgba(246, 196, 83, 0.14);
+  border-color: rgba(246, 196, 83, 0.35);
+}
+
+:root[data-theme="dark"] .session-duplicate-message {
+  color: #fcd34d;
+}
+
+:root[data-theme="dark"] .session-suggestion-chip {
+  background: #0f172a;
+  color: #e5e7eb;
+  border-color: rgba(255, 255, 255, 0.12);
+}
   /* ===== RIGHT MAIN DASHBOARD CONTENT ===== */
   .dashboard-main {
     background: var(--bg-card);
@@ -2324,15 +2380,21 @@ body.dashboard-dark .filter-help {
             <label for="filter-session" class="filter-label">
               Name this Practice Session
             </label>
-            <input
-              id="filter-session"
-              type="text"
-              class="filter-input"
-              placeholder="e.g. 6A-STARTTIME-DEC2"
-            />
-            <span class="muted" style="margin-top: 0.25rem;">
-              Use something you’ll recognize later (class + topic + date).
-            </span>
+          <input
+            id="filter-session"
+            type="text"
+            class="filter-input"
+            placeholder="e.g. 6A-STARTTIME-DEC2"
+          />
+
+          <div id="session-duplicate-helper" class="session-duplicate-helper" hidden>
+            <div id="session-duplicate-message" class="session-duplicate-message"></div>
+            <div id="session-duplicate-suggestions" class="session-duplicate-suggestions"></div>
+          </div>
+
+          <span class="muted" style="margin-top: 0.25rem;">
+            Use something you’ll recognize later (class + topic + date).
+          </span>
           </div>
 
 

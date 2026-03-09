@@ -26,6 +26,9 @@ const sessionInput = document.getElementById("filter-session");
 const loadBtn = document.getElementById("load-attempts-btn");
 const loadStatusEl = document.getElementById("load-status");
 const sessionPill = document.getElementById("current-session-pill");
+const sessionDuplicateHelper = document.getElementById("session-duplicate-helper");
+const sessionDuplicateMessage = document.getElementById("session-duplicate-message");
+const sessionDuplicateSuggestions = document.getElementById("session-duplicate-suggestions");
 
 // New: starting sessions + link & copy
 const sessionLinkInput = document.getElementById("current-session-link");
@@ -691,6 +694,119 @@ function saveDeletedHistoryKeys(keys) {
   }
 }
 
+function normalizeSessionNameForComparison(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toUpperCase();
+}
+
+function getSessionDateSuffix() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getExistingNormalizedSessionNames() {
+  const history = loadHistoryFromStorage() || [];
+  const existing = new Set();
+
+  history.forEach((entry) => {
+    const normalized = normalizeSessionNameForComparison(entry?.sessionCode || "");
+    if (normalized) existing.add(normalized);
+  });
+
+  return existing;
+}
+
+function generateUniqueSessionSuggestions(baseSessionName, count = 3) {
+  const normalizedBase = normalizeSessionNameForComparison(baseSessionName);
+  if (!normalizedBase) return [];
+
+  const existing = getExistingNormalizedSessionNames();
+  const dateSuffix = getSessionDateSuffix();
+  const suggestions = [];
+
+  let nextNumber = 1;
+  while (suggestions.length < count) {
+    const candidate =
+      nextNumber === 1
+        ? `${normalizedBase} - ${dateSuffix}`
+        : `${normalizedBase} - ${dateSuffix} - ${nextNumber}`;
+
+    if (!existing.has(candidate)) {
+      suggestions.push(candidate);
+      existing.add(candidate);
+    }
+
+    nextNumber += 1;
+  }
+
+  return suggestions;
+}
+
+function clearDuplicateSessionUI() {
+  if (sessionDuplicateHelper) sessionDuplicateHelper.hidden = true;
+  if (sessionDuplicateMessage) sessionDuplicateMessage.textContent = "";
+  if (sessionDuplicateSuggestions) sessionDuplicateSuggestions.innerHTML = "";
+}
+
+function showDuplicateSessionUI(rawSessionName) {
+  if (!sessionDuplicateHelper || !sessionDuplicateMessage || !sessionDuplicateSuggestions) {
+    return;
+  }
+
+  const suggestions = generateUniqueSessionSuggestions(rawSessionName, 3);
+
+  sessionDuplicateMessage.innerHTML = `
+    ⚠️ That session name already exists.<br>
+    Choose a unique option below, or edit the name manually.
+    After selecting a new name, click <strong>Start New Session</strong> again.
+  `;
+
+  sessionDuplicateSuggestions.innerHTML = "";
+
+  suggestions.forEach((suggestion) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "session-suggestion-chip";
+    btn.textContent = suggestion;
+
+    btn.addEventListener("click", () => {
+      sessionInput.value = suggestion;
+      sessionInput.focus();
+      sessionInput.setSelectionRange(sessionInput.value.length, sessionInput.value.length);
+
+      if (sessionDuplicateMessage) {
+        sessionDuplicateMessage.innerHTML =
+          `✔ Session name updated to <strong>${suggestion}</strong>.<br>` +
+          `Now click <strong>Start New Session</strong> to begin.`;
+      }
+
+      if (sessionDuplicateSuggestions) {
+        sessionDuplicateSuggestions.innerHTML = "";
+      }
+
+      if (typeof saveDashboardPrefs === "function") {
+        saveDashboardPrefs();
+      }
+    });
+
+    sessionDuplicateSuggestions.appendChild(btn);
+  });
+
+  sessionDuplicateHelper.hidden = false;
+}
+
+function isDuplicateSessionName(rawSessionName) {
+  const normalized = normalizeSessionNameForComparison(rawSessionName);
+  if (!normalized) return false;
+
+  const existing = getExistingNormalizedSessionNames();
+  return existing.has(normalized);
+}
 function updateHistoryActionButtonsState() {
   const disabled = !CURRENT_HISTORY_KEY;
   if (historyRenameBtn) historyRenameBtn.disabled = disabled;
@@ -3105,9 +3221,23 @@ function startNewSession() {
     return;
   }
 
+  const normalizedSession = normalizeSessionNameForComparison(rawSession);
+
+  // Block duplicates before creating links / monitor state
+  if (isDuplicateSessionName(normalizedSession)) {
+    showDuplicateSessionUI(normalizedSession);
+    sessionInput.focus();
+    return;
+  }
+
+  clearDuplicateSessionUI();
+
+  // Keep the field normalized so everything stays consistent
+  sessionInput.value = normalizedSession;
+
   // Build both links: student practice link + co-teacher dashboard link
-  const studentLink = buildStudentLink(rawSession);
-  const coLink = buildCoTeacherLink(rawSession);
+  const studentLink = buildStudentLink(normalizedSession);
+  const coLink = buildCoTeacherLink(normalizedSession);
 
   // Show the student link in its box
   if (sessionLinkInput) {
@@ -3119,7 +3249,6 @@ function startNewSession() {
     coTeacherLinkInput.value = coLink;
   }
 
-  const normalizedSession = rawSession.trim().toUpperCase();
   sessionPill.textContent = `Session: ${normalizedSession}`;
 
   // Little helper text
@@ -3133,7 +3262,6 @@ function startNewSession() {
   try {
     window.localStorage.setItem("rp_lastSessionCode", normalizedSession);
     window.localStorage.setItem("rp_lastSessionLink", studentLink);
-    // Note: rp_lastCoTeacherLink is already saved inside buildCoTeacherLink()
 
     const ownerEmail =
       OWNER_EMAIL_FOR_VIEW ||
@@ -3146,8 +3274,9 @@ function startNewSession() {
     // non-fatal
   }
 
-  enableMonitorButton(rawSession);
+  enableMonitorButton(normalizedSession);
 }
+
 (function wireLinkPreviewAutofill() {
   const setSelect = document.getElementById("practice-set");
   const levelSelect = document.getElementById("practice-level"); // only if you’re using level
@@ -3331,7 +3460,10 @@ if (clearFiltersBtn) {
 }
 
 // Save prefs when filters change
-sessionInput.addEventListener("input", () => saveDashboardPrefs());
+sessionInput.addEventListener("input", () => {
+  clearDuplicateSessionUI();
+  saveDashboardPrefs();
+});
 
 // Clear student overlay button
 if (clearStudentOverlayBtn) {
