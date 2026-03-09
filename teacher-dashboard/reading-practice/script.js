@@ -3,7 +3,7 @@
 // ====== HIGHLIGHTING STATE ======
 let currentHighlightColor = "yellow"; // default color
 // ====== ASSESSMENT LABEL ======
-//const ASSESSMENT_NAME = "School Start Time";
+const ASSESSMENT_NAME = "Reading Practice";
 
 // ---- Read Aloud: allow app to stop speech from anywhere (safe no-op if unsupported) ----
 window.RP_TTS_STOP = function RP_TTS_STOP() {
