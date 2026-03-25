@@ -5,6 +5,7 @@ let selectedBodyCount = 2;
 let isEvidenceFirst = false;
 let hasCelebrated = false;
 const activeEdits = new Set();
+window.isReconfiguringStructure = false;
 
 // === Debounce Utility ===
 function debounce(func, wait = 300) {
@@ -128,7 +129,10 @@ document.getElementById('googleSignOut')?.addEventListener('click', handleGoogle
 document.getElementById('clearFormOnly')?.addEventListener('click', handleClearFormOnly);
  
   document.querySelectorAll('[contenteditable="true"]').forEach(box => {
-    box.addEventListener('focus', () => activeEdits.add(box.id));
+box.addEventListener('focus', () => {
+  activeEdits.add(box.id);
+  box.setAttribute('data-source', 'manual'); // 👈 explicit ownership
+});
     box.addEventListener('blur', () => {
       activeEdits.delete(box.id);
       if (box.id.startsWith('bp') && (box.id.endsWith('-reason') || box.id.endsWith('-evidence'))) {
@@ -136,11 +140,10 @@ document.getElementById('clearFormOnly')?.addEventListener('click', handleClearF
       }
     });
   
-    if (box.getAttribute('data-source') === 'sync') {
-      box.addEventListener('input', () => {
-        box.removeAttribute('data-source'); // 🧠 Also stops syncing if typed in
-      });
-    }
+box.addEventListener('input', () => {
+  activeEdits.add(box.id);
+  box.setAttribute('data-source', 'manual'); // 👈 always enforce manual on edit
+});
   });
   
 
@@ -169,7 +172,9 @@ window.addEventListener('load', () => {
   // c) initial UI render
   updateEvidenceFirstVisibility();
   updateBodyParagraphVisibility(selectedBodyCount);
+setTimeout(() => {
   syncData();
+}, 50);
   setupEnhancedMonitoring();
   
 
@@ -191,13 +196,27 @@ window.addEventListener('load', () => {
           document.getElementById('paragraphCount').value = selectedBodyCount;
           return;
         }
-        selectedBodyCount = newCount;
-        localStorage.setItem('bodyParagraphs', selectedBodyCount);
-        clearThesis();
-        clearBodyParagraphs();
-        updateEvidenceFirstVisibility();
-        updateBodyParagraphVisibility(selectedBodyCount);
-        syncData();
+// 🛑 Prevent sync during structure change
+window.isReconfiguringStructure = true;
+
+// 💾 OPTIONAL: snapshot (recommended later)
+// createSnapshot?.();
+
+selectedBodyCount = newCount;
+localStorage.setItem('bodyParagraphs', selectedBodyCount);
+
+// ❌ REMOVE destructive clears
+// clearThesis();
+// clearBodyParagraphs();
+
+updateEvidenceFirstVisibility();
+updateBodyParagraphVisibility(selectedBodyCount);
+
+// ✅ Resume sync AFTER layout stabilizes
+setTimeout(() => {
+  window.isReconfiguringStructure = false;
+  syncData();
+}, 0);
       }
     });
 
@@ -269,9 +288,7 @@ window.addEventListener('load', () => {
       syncData();
     });
 // d) Wire up re-syncs
-document.querySelectorAll('[contenteditable="true"]')
-  .forEach(el => el.addEventListener('input', debouncedSyncData));
-
+// ❌ Removed duplicate sync binding (handled above)
 document.getElementById('evidenceFirstToggle')
   .addEventListener('change', (e) => {
     isEvidenceFirst = e.target.checked;

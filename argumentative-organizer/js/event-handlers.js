@@ -14,6 +14,10 @@ function initEventHandlers() {
 
     let debounce;
     el.addEventListener('input', () => {
+      // Model A: once a student types in an editable box, that box becomes manual
+      activeEdits.add(el.id);
+      el.setAttribute('data-source', 'manual');
+
       clearTimeout(debounce);
       debounce = setTimeout(syncData, 300);
     });
@@ -36,12 +40,19 @@ function initEventHandlers() {
         );
         if (!confirmRefresh) return;
       }
-    // 🔧 Handle final essay box separately
-    if (id === 'essay-final') {
-      activeEdits.delete('essay-final');
-      updateEssay();
-      return; // ⛔ skip regenerateBoxContent for essay-final
-    }
+
+      // Model A: refresh gives sync/generators permission to take over again
+      if (box) {
+        activeEdits.delete(id);
+        box.setAttribute('data-source', 'sync');
+      }
+
+      // 🔧 Handle final essay box separately
+      if (id === 'essay-final') {
+        updateEssay();
+        return; // ⛔ skip regenerateBoxContent for essay-final
+      }
+
       regenerateBoxContent(id);
     });
   });
@@ -224,7 +235,12 @@ function confirmReverseSync() {
 
   // Update claim
   if (claim) {
-    document.getElementById('claim-box').innerText = claim;
+    const claimBox = document.getElementById('claim-box');
+    if (claimBox) {
+      claimBox.innerText = claim;
+      claimBox.setAttribute('data-source', 'sync');
+      activeEdits.delete('claim-box');
+    }
   }
 
   // Update each reason box dynamically
@@ -232,6 +248,8 @@ function confirmReverseSync() {
     const box = document.getElementById(`reason${index + 1}-box`);
     if (box) {
       box.innerText = reason;
+      box.setAttribute('data-source', 'sync');
+      activeEdits.delete(box.id);
     }
   });
 

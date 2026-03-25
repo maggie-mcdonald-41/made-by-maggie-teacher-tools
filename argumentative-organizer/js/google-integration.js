@@ -8,8 +8,12 @@ const SCOPES      = [
   'https://www.googleapis.com/auth/userinfo.email'
 ].join(' ');
 
+
 const essayType = 'argument'; // or 'opinion'
 let autosaveTimer = null;
+const APP_NAME = 'madebymaggie-organizer';
+const RECOVERY_KEY = `lastKnownGoodEssayData-${essayType}`;
+const RECOVERY_META_KEY = `lastKnownGoodEssayMeta-${essayType}`;
 
 let tokenClient;
 let accessToken = localStorage.getItem('accessToken');
@@ -68,6 +72,80 @@ function ensureStructuredLog(arr) {
 }
 
 const LOG_SOFT_LIMIT = 2500; // entries
+function isMeaningfulValue(value) {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function countMeaningfulFields(data = {}) {
+  let count = 0;
+  for (const [key, value] of Object.entries(data)) {
+    if (key.startsWith('_')) continue;
+    if (isMeaningfulValue(value)) count++;
+  }
+  return count;
+}
+
+function isDriveDataMeaningful(data = {}) {
+  if (!data || typeof data !== 'object') return false;
+  return countMeaningfulFields(data) > 0;
+}
+
+function buildCurrentEssaySnapshot() {
+  const data = {
+    _writingLog: writingLog,
+    _revisionCounts: revisionCounts
+  };
+
+  document.querySelectorAll('[contenteditable="true"]').forEach(el => {
+    const id = el.id;
+    if (!id) return;
+    data[id] = el.innerText || '';
+  });
+
+  document.querySelectorAll('input, textarea, select').forEach(el => {
+    const id = el.id;
+    if (!id || id in data) return;
+
+    if (el.type === 'checkbox' || el.type === 'radio') {
+      data[id] = !!el.checked;
+    } else {
+      data[id] = el.value ?? '';
+    }
+  });
+
+  return data;
+}
+
+function saveRecoverySnapshot(data) {
+  if (!isDriveDataMeaningful(data)) return;
+
+  try {
+    localStorage.setItem(RECOVERY_KEY, JSON.stringify(data));
+    localStorage.setItem(RECOVERY_META_KEY, JSON.stringify({
+      savedAt: Date.now(),
+      essayType,
+      fieldCount: countMeaningfulFields(data)
+    }));
+  } catch (e) {
+    console.warn('⚠️ Could not save recovery snapshot:', e);
+  }
+}
+
+function restoreRecoverySnapshot() {
+  try {
+    const raw = localStorage.getItem(RECOVERY_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    if (!isDriveDataMeaningful(data)) return false;
+
+    populateFieldsFromJSON(data);
+    console.log('[Recovery] Restored local recovery snapshot');
+    return true;
+  } catch (e) {
+    console.warn('⚠️ Recovery snapshot restore failed:', e);
+    return false;
+  }
+}
 
 function safePersistLog() {
   try {
@@ -398,46 +476,87 @@ function restoreWritingLogFromStorage() {
 async function loadFromDrive() {
   await getOrCreateFolder();
 
+  let selectedFile = null;
+
   if (fileId) {
     console.log('[Drive] Using stored fileId:', fileId);
-  } else {
-    // only query if we don’t have fileId yet
-    const query = `
-      appProperties has { key='app' and value='madebymaggie-organizer' }
-      and appProperties has { key='owner' and value='${userEmail}' }
-      and trashed = false
-      and '${folderId}' in parents
-    `;
-    const res = await gapiRequest(
-      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,appProperties)`
+
+    const checkRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${fileId}?fields=id,name,modifiedTime,appProperties`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
     );
-    if (res.files?.length) {
-      fileId = res.files[0].id;
-      localStorage.setItem(`fileId-${essayType}`, fileId);
-      console.log('[Drive] Found existing file:', fileId);
+
+    if (checkRes.ok) {
+      selectedFile = await checkRes.json();
     } else {
-      console.log('[Drive] No matching file — creating one');
-      await createDriveFile();
+      console.warn('[Drive] Stored fileId is no longer valid:', fileId);
+      localStorage.removeItem(`fileId-${essayType}`);
+      fileId = null;
     }
   }
 
-const resp = await fetch(
-  `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
-  { headers: { Authorization: `Bearer ${accessToken}` } }
-);
-let content = {};
-try { content = await resp.json(); } catch { content = {}; }
-populateFieldsFromJSON(content);
+  if (!selectedFile) {
+    const query = `
+      appProperties has { key='app' and value='${APP_NAME}' }
+      and appProperties has { key='owner' and value='${userEmail}' }
+      and appProperties has { key='type' and value='${essayType}' }
+      and trashed = false
+      and '${folderId}' in parents
+    `;
 
+    const res = await gapiRequest(
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,modifiedTime,appProperties)&orderBy=modifiedTime desc`
+    );
+
+    if (res.files?.length) {
+      selectedFile = res.files[0];
+      fileId = selectedFile.id;
+      localStorage.setItem(`fileId-${essayType}`, fileId);
+      console.log('[Drive] Found matching file:', fileId);
+    } else {
+      console.log('[Drive] No matching typed file — creating one');
+      await createDriveFile();
+      selectedFile = { id: fileId };
+    }
+  }
+
+  const resp = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+    { headers: { Authorization: `Bearer ${accessToken}` } }
+  );
+
+  let content = {};
+  try {
+    content = await resp.json();
+  } catch {
+    content = {};
+  }
+
+  if (isDriveDataMeaningful(content)) {
+    console.log('[Drive] Meaningful content found. Restoring fields.');
+    populateFieldsFromJSON(content);
+    saveRecoverySnapshot(content);
+    return;
+  }
+
+  console.warn('[Drive] File exists but content is empty or not meaningful.');
+
+  const restoredRecovery = restoreRecoverySnapshot();
+  if (restoredRecovery) {
+    showSaveStatus('Recovered local work ✓', 3500);
+  } else {
+    console.log('[Drive] No meaningful Drive data or recovery snapshot found.');
+  }
 }
 
 
 function populateFieldsFromJSON(data) {
   console.log('[Populate] Received data:', data);
 
+  if (!data || typeof data !== 'object') return;
+
   const defaultClaim = "Make a clear statement that shows your position on the topic. This is not a full sentence.";
 
-  // ✅ Restore writingLog and revisionCounts
   if (Array.isArray(data._writingLog)) {
     writingLog.length = 0;
     writingLog.push(...data._writingLog);
@@ -445,28 +564,45 @@ function populateFieldsFromJSON(data) {
   }
 
   if (typeof data._revisionCounts === 'object' && data._revisionCounts !== null) {
+    Object.keys(revisionCounts).forEach(k => delete revisionCounts[k]);
     Object.assign(revisionCounts, data._revisionCounts);
   }
 
-  // ✅ Restore contenteditable + form fields
   Object.entries(data).forEach(([id, value]) => {
-    if (id.startsWith('_')) return; // Skip meta entries like _writingLog
+    if (id.startsWith('_')) return;
+    if (typeof value !== 'string' && typeof value !== 'boolean') return;
 
     const el = document.getElementById(id);
     if (!el || !id) return;
 
-    if (id === 'claim-box' && value.includes(defaultClaim)) {
+    if (id === 'claim-box' && typeof value === 'string' && value.includes(defaultClaim)) {
       localStorage.removeItem('claim-box');
       return;
     }
 
     if (el.isContentEditable) {
-      el.innerText = value;
+      el.innerText = typeof value === 'string' ? value : '';
+
+      // 🧠 Model A: protect restored final/composed boxes
+      if (
+        id === 'essay-final' ||
+        id.startsWith('bp') ||
+        id.includes('final')
+      ) {
+        el.setAttribute('data-source', 'manual');
+        activeEdits.add(id);
+      } else {
+        el.setAttribute('data-source', 'sync');
+      }
+    }else if (el.type === 'checkbox' || el.type === 'radio') {
+      el.checked = !!value;
     } else if ('value' in el) {
-      el.value = value;
+      el.value = typeof value === 'string' ? value : '';
     }
 
-    localStorage.setItem(id, value);
+    try {
+      localStorage.setItem(id, typeof value === 'string' ? value : JSON.stringify(value));
+    } catch {}
   });
 }
 
@@ -483,7 +619,7 @@ async function createDriveFile() {
     name: `EssayToolSave-${essayType}.json`,
     mimeType: 'application/json',
     parents: [folderId],
-    appProperties: { app: 'madebymaggie-organizer', type: essayType, owner: userEmail }
+    appProperties: { app: APP_NAME, type: essayType, owner: userEmail }
   };
 
   try {
@@ -506,7 +642,12 @@ async function createDriveFile() {
     await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ _writingLog: [], _revisionCounts: {} })
+      body: JSON.stringify({
+        _writingLog: [],
+        _revisionCounts: {},
+        _createdAt: Date.now(),
+        _essayType: essayType
+      })
     });
   } catch (error) {
     console.error('[Drive] Error creating file:', error);
@@ -535,7 +676,9 @@ function saveToDriveNow() {
 
   const data = {
     _writingLog: writingLog,
-    _revisionCounts: revisionCounts
+    _revisionCounts: revisionCounts,
+    _essayType: essayType,
+    _lastSavedAt: Date.now()
   };
 
   let hasContent = false;
@@ -548,10 +691,28 @@ function saveToDriveNow() {
     data[id] = value;
   });
 
+  document.querySelectorAll('input, textarea, select').forEach(el => {
+    const id = el.id;
+    if (!id || id in data) return;
+
+    let value;
+    if (el.type === 'checkbox' || el.type === 'radio') {
+      value = !!el.checked;
+      if (value) hasContent = true;
+    } else {
+      value = (el.value ?? '').trim();
+      if (value) hasContent = true;
+    }
+
+    data[id] = value;
+  });
+
   if (!hasContent) {
     console.warn('⚠️ Skipping save — no user content yet');
     return;
   }
+
+  saveRecoverySnapshot(data);
 
   console.log('[Drive Save] Payload:', data);
 
@@ -570,11 +731,9 @@ function saveToDriveNow() {
   .then(async res => {
     if (res.status === 404) {
       console.warn('📁 File not found on Drive — creating a new one.');
-      // clear the bad ID so we fall back to creating
       localStorage.removeItem(`fileId-${essayType}`);
       fileId = null;
       await createDriveFile();
-      // retry the save with the new file
       return saveToDriveNow();
     }
     if (!res.ok) throw new Error(`Drive save failed: ${res.status}`);
@@ -1089,7 +1248,7 @@ localStorage.removeItem('writingLog');
 
 // ✅ Clear the essayType-specific fileId to avoid reusing a blank file after clear
 localStorage.removeItem(`fileId-${essayType}`);
-
+fileId = null;
 
 document.querySelectorAll('[contenteditable="true"]').forEach(el => {
   const id = el.id;
@@ -1122,6 +1281,14 @@ document.querySelectorAll('[contenteditable="true"]').forEach(el => {
   }, 150);
 }
 
+function handleRecoverWork() {
+  const restored = restoreRecoverySnapshot();
+  if (restored) {
+    showSaveStatus('Recovered saved local snapshot ✓', 4000);
+  } else {
+    alert('No recovery snapshot was found on this device.');
+  }
+}
 
 // 8) Expose globals
 window.startGoogleAuth             = startGoogleAuth;
@@ -1130,5 +1297,6 @@ window.handleGoogleDocsExport      = handleGoogleDocsExport;
 window.handleGoogleSignOut         = handleGoogleSignOut;
 window.setupEnhancedMonitoring     = setupEnhancedMonitoring;
 window.logActivity                 = logActivity;
+window.handleRecoverWork           = handleRecoverWork;
 /* === end google-integration.js === */
 

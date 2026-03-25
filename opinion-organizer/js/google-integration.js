@@ -8,7 +8,12 @@ const SCOPES      = [
   'https://www.googleapis.com/auth/userinfo.email'
 ].join(' ');
 
-const essayType = 'opinion'; 
+
+const essayType = 'opinion'; // or 'opinion'
+let autosaveTimer = null;
+const APP_NAME = 'madebymaggie-organizer';
+const RECOVERY_KEY = `lastKnownGoodEssayData-${essayType}`;
+const RECOVERY_META_KEY = `lastKnownGoodEssayMeta-${essayType}`;
 
 let tokenClient;
 let accessToken = localStorage.getItem('accessToken');
@@ -25,6 +30,166 @@ const writingLog = [];
 const revisionCounts = {};
 const editStartTimes = {};
 
+// --- Logging config ---
+const LOG_MAX_DETAILED = 100; // show last N in detail; older entries summarized
+const LOG_TIMEZONE = 'America/New_York';
+
+// --- Types (doc note):
+// entry = {
+//   ts: number (epoch ms),
+//   action: 'start'|'finish'|'paste'|'ai'|'export'|'note',
+//   sectionId?: string,
+//   sectionLabel?: string,
+//   durationMs?: number,
+//   revision?: number,
+//   pasteChars?: number,
+//   text?: string // legacy
+// }
+
+function fmtTs(ts) {
+  try {
+    return new Date(ts).toLocaleString(undefined, { hour12: true, timeZone: LOG_TIMEZONE });
+  } catch { 
+    return new Date(ts).toLocaleString();
+  }
+}
+function fmtDuration(ms=0) {
+  const s = Math.max(0, Math.round(ms/1000));
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), ss = s%60;
+  if (h) return `${h}h ${m}m ${ss}s`;
+  if (m) return `${m}m ${ss}s`;
+  return `${ss}s`;
+}
+function ensureStructuredLog(arr) {
+  // Convert any legacy string entries to structured notes once (idempotent)
+  for (let i=0;i<arr.length;i++) {
+    const e = arr[i];
+    if (typeof e === 'string') {
+      arr[i] = { ts: Date.now(), action: 'note', text: e };
+    }
+  }
+  return arr;
+}
+
+const LOG_SOFT_LIMIT = 2500; // entries
+function isMeaningfulValue(value) {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function countMeaningfulFields(data = {}) {
+  let count = 0;
+  for (const [key, value] of Object.entries(data)) {
+    if (key.startsWith('_')) continue;
+    if (isMeaningfulValue(value)) count++;
+  }
+  return count;
+}
+
+function isDriveDataMeaningful(data = {}) {
+  if (!data || typeof data !== 'object') return false;
+  return countMeaningfulFields(data) > 0;
+}
+
+function buildCurrentEssaySnapshot() {
+  const data = {
+    _writingLog: writingLog,
+    _revisionCounts: revisionCounts
+  };
+
+  document.querySelectorAll('[contenteditable="true"]').forEach(el => {
+    const id = el.id;
+    if (!id) return;
+    data[id] = el.innerText || '';
+  });
+
+  document.querySelectorAll('input, textarea, select').forEach(el => {
+    const id = el.id;
+    if (!id || id in data) return;
+
+    if (el.type === 'checkbox' || el.type === 'radio') {
+      data[id] = !!el.checked;
+    } else {
+      data[id] = el.value ?? '';
+    }
+  });
+
+  return data;
+}
+
+function saveRecoverySnapshot(data) {
+  if (!isDriveDataMeaningful(data)) return;
+
+  try {
+    localStorage.setItem(RECOVERY_KEY, JSON.stringify(data));
+    localStorage.setItem(RECOVERY_META_KEY, JSON.stringify({
+      savedAt: Date.now(),
+      essayType,
+      fieldCount: countMeaningfulFields(data)
+    }));
+  } catch (e) {
+    console.warn('⚠️ Could not save recovery snapshot:', e);
+  }
+}
+
+function restoreRecoverySnapshot() {
+  try {
+    const raw = localStorage.getItem(RECOVERY_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    if (!isDriveDataMeaningful(data)) return false;
+
+    populateFieldsFromJSON(data);
+    console.log('[Recovery] Restored local recovery snapshot');
+    return true;
+  } catch (e) {
+    console.warn('⚠️ Recovery snapshot restore failed:', e);
+    return false;
+  }
+}
+
+function safePersistLog() {
+  try {
+    localStorage.setItem('writingLog', JSON.stringify(writingLog));
+  } catch (e) {
+    if (e && (e.name === 'QuotaExceededError' || e.code === 22)) {
+      // Compact older entries into summaries
+      const recentCount = LOG_MAX_DETAILED; // keep same as your detail view count
+      const cutoff = Math.max(0, writingLog.length - recentCount);
+      const older = writingLog.slice(0, cutoff);
+      const recent = writingLog.slice(cutoff);
+
+      const summary = summarizeEntries(older).map(s => ({
+        ts: Date.now(),
+        action: 'note',
+        sectionId: s.sectionId,
+        sectionLabel: s.sectionLabel,
+        text:
+          `Summary: time ${fmtDuration(s.timeMs)}`
+          + (s.revisions ? ` · ${s.revisions} rev` : '')
+          + (s.pasteCount ? ` · ${s.pasteCount} paste${s.pasteChars ? `/${s.pasteChars} chars` : ''}` : '')
+          + (s.aiCount ? ` · ${s.aiCount} coach` : '')
+      }));
+
+      writingLog.length = 0;
+      writingLog.push(...summary, ...recent);
+
+      // Try again silently
+      try { localStorage.setItem('writingLog', JSON.stringify(writingLog)); } catch {}
+    }
+  }
+}
+
+
+const debouncedSave = (() => {
+  const make = (fn, delay=500) => {
+    let t;
+    return (...args) => {
+      clearTimeout(t);
+      t = setTimeout(() => fn(...args), delay);
+    };
+  };
+  return make(saveToDriveNow, 700); // 500–1000ms feels good
+})();
 
 const sectionLabels = {
   'claim-box': '🎯 Claim',
@@ -41,33 +206,132 @@ const sectionLabels = {
   'essay-final': '📝 Final Essay'
   // Add more as needed
 };
+const MAX_PASTE_LEN = 10000; // top-level is fine
 
-// Collect editable IDs for sign-out
-const observedIds = Array.from(
-  document.querySelectorAll('[contenteditable="true"]')
-).map(el => el.id);
 
 // 2) Helpers
-function logActivity(action, id = null) {
-  const now = new Date();
-  const timestamp = now.toLocaleString();
-  const label = id && sectionLabels[id] ? sectionLabels[id] : id;
-  const entry = label ? `[${timestamp}] ${action} (${label})` : `[${timestamp}] ${action}`;
+function logActivity(action, sectionId = null, extra = {}) {
+  const ts = Date.now();
+  const sectionLabel = sectionId && sectionLabels[sectionId] ? sectionLabels[sectionId] : sectionId || undefined;
 
-  // ✅ Prevent exact duplicates in a row
-  if (writingLog[writingLog.length - 1] === entry) return;
+  const entry = { ts, action, ...(sectionId ? { sectionId, sectionLabel } : {}), ...extra };
+
+  const last = writingLog[writingLog.length - 1];
+  if (last && last.action === entry.action && last.sectionId === entry.sectionId && (ts - last.ts) < 2000) return;
 
   writingLog.push(entry);
-  localStorage.setItem('writingLog', JSON.stringify(writingLog));
+
+  // Soft cap to prevent quota blowups
+  if (writingLog.length > LOG_SOFT_LIMIT) {
+    safePersistLog();
+  }
+
+  // Only persist to localStorage if not explicitly skipped
+  if (!extra.noLocal) safePersistLog();
+
   renderWritingLog();
+}
+
+
+function summarizeEntries(entries) {
+  const bySection = new Map();
+  for (const e of entries) {
+    const key = e.sectionId || '(global)';
+    const s = bySection.get(key) || {
+      sectionId: key,
+      sectionLabel: e.sectionLabel || key,
+      timeMs: 0,
+      revisions: 0,
+      pasteCount: 0,
+      pasteChars: 0,
+      aiCount: 0,
+      sessions: 0
+    };
+    if (e.action === 'finish') {
+      s.timeMs += (e.durationMs || 0);
+      s.revisions += 1;
+      s.sessions += 1;
+    } else if (e.action === 'paste') {
+      s.pasteCount += 1;
+      s.pasteChars += (e.pasteChars || 0);
+    } else if (e.action === 'ai') {
+      s.aiCount += 1;
+    }
+    bySection.set(key, s);
+  }
+  // Only keep sections with any signal
+  return [...bySection.values()].filter(s => (s.timeMs || s.revisions || s.pasteCount || s.aiCount));
+}
+
+function formatEntryForTeacher(e) {
+  if (e.action === 'start') {
+    return `[${fmtTs(e.ts)}] Started editing (${e.sectionLabel})`;
+  }
+  if (e.action === 'finish') {
+    return `[${fmtTs(e.ts)}] Finished editing after ${fmtDuration(e.durationMs)} (revision ${e.revision}) (${e.sectionLabel})`;
+  }
+  if (e.action === 'paste') {
+    const n = (e.pasteChars ?? 0);
+    return `[${fmtTs(e.ts)}] Pasted into (${e.sectionLabel})${n?` — ${n} chars`:''}`;
+  }
+  if (e.action === 'ai') {
+    return `[${fmtTs(e.ts)}] Used Writing Coach in (${e.sectionLabel})`;
+  }
+  if (e.action === 'export') {
+    return `[${fmtTs(e.ts)}] ✅ Exported to Google Docs`;
+  }
+  // legacy / note
+  if (e.action === 'note') {
+    return `[${fmtTs(e.ts)}] ${e.text || '(note)'}`;
+  }
+  return `[${fmtTs(e.ts)}] ${e.action}${e.sectionLabel?` (${e.sectionLabel})`:''}`;
 }
 
 function renderWritingLog() {
   const container = document.getElementById('teacher-log');
-  if (container) {
-    container.innerText = writingLog.join('\n');
+  if (!container) return;
+
+  ensureStructuredLog(writingLog);
+
+  if (!writingLog.length) {
+    container.innerText = '';
+    return;
   }
+
+  // Split older vs recent
+  const cutoff = Math.max(0, writingLog.length - LOG_MAX_DETAILED);
+  const older = writingLog.slice(0, cutoff);
+  const recent = writingLog.slice(cutoff);
+
+  const parts = [];
+
+  if (older.length) {
+    const summary = summarizeEntries(older);
+    parts.push('— Older activity summary (before the last ' + LOG_MAX_DETAILED + ' entries) —');
+    if (!summary.length) {
+      parts.push('No significant activity to summarize.');
+    } else {
+      for (const s of summary) {
+        const chunk = [
+          s.sectionLabel,
+          s.timeMs ? `time ${fmtDuration(s.timeMs)}` : null,
+          s.revisions ? `${s.revisions} revisions` : null,
+          s.pasteCount ? `${s.pasteCount} paste(s)${s.pasteChars?` / ${s.pasteChars} chars`:''}` : null,
+          s.aiCount ? `${s.aiCount} coach use(s)` : null
+        ].filter(Boolean).join(' · ');
+        parts.push('• ' + chunk);
+      }
+    }
+    parts.push('— Detailed recent activity —');
+  }
+
+  for (const e of recent) {
+    parts.push(formatEntryForTeacher(e));
+  }
+
+  container.innerText = parts.join('\n');
 }
+
 
 function showLoadingMessage(text) {
   let msg = document.getElementById('loading-msg');
@@ -129,11 +393,12 @@ async function restoreGoogleAuthIfPossible() {
     }
   }
   try {
-    await loadFromDrive();
-    hideLoadingMessage();
+await loadFromDrive();
+hideLoadingMessage();
 
-    // if you still want your old localStorage log fallback:
-    restoreWritingLogFromStorage();
+// Fallback only if Drive didn’t have a log
+if (!writingLog.length) restoreWritingLogFromStorage();
+
 
     // *then* start autosave + monitoring
     startAutoSave();
@@ -211,45 +476,87 @@ function restoreWritingLogFromStorage() {
 async function loadFromDrive() {
   await getOrCreateFolder();
 
+  let selectedFile = null;
+
   if (fileId) {
     console.log('[Drive] Using stored fileId:', fileId);
-  } else {
-    // only query if we don’t have fileId yet
-    const query = `
-      appProperties has { key='app' and value='madebymaggie-organizer' }
-      and appProperties has { key='owner' and value='${userEmail}' }
-      and trashed = false
-      and '${folderId}' in parents
-    `;
-    const res = await gapiRequest(
-      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,appProperties)`
+
+    const checkRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${fileId}?fields=id,name,modifiedTime,appProperties`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
     );
-    if (res.files?.length) {
-      fileId = res.files[0].id;
-      localStorage.setItem(`fileId-${essayType}`, fileId);
-      console.log('[Drive] Found existing file:', fileId);
+
+    if (checkRes.ok) {
+      selectedFile = await checkRes.json();
     } else {
-      console.log('[Drive] No matching file — creating one');
-      await createDriveFile();
+      console.warn('[Drive] Stored fileId is no longer valid:', fileId);
+      localStorage.removeItem(`fileId-${essayType}`);
+      fileId = null;
     }
   }
 
-  // now fetch the JSON payload
-  const content = await fetch(
+  if (!selectedFile) {
+    const query = `
+      appProperties has { key='app' and value='${APP_NAME}' }
+      and appProperties has { key='owner' and value='${userEmail}' }
+      and appProperties has { key='type' and value='${essayType}' }
+      and trashed = false
+      and '${folderId}' in parents
+    `;
+
+    const res = await gapiRequest(
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,modifiedTime,appProperties)&orderBy=modifiedTime desc`
+    );
+
+    if (res.files?.length) {
+      selectedFile = res.files[0];
+      fileId = selectedFile.id;
+      localStorage.setItem(`fileId-${essayType}`, fileId);
+      console.log('[Drive] Found matching file:', fileId);
+    } else {
+      console.log('[Drive] No matching typed file — creating one');
+      await createDriveFile();
+      selectedFile = { id: fileId };
+    }
+  }
+
+  const resp = await fetch(
     `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
     { headers: { Authorization: `Bearer ${accessToken}` } }
-  ).then(r => r.json());
+  );
 
-  populateFieldsFromJSON(content);
+  let content = {};
+  try {
+    content = await resp.json();
+  } catch {
+    content = {};
+  }
+
+  if (isDriveDataMeaningful(content)) {
+    console.log('[Drive] Meaningful content found. Restoring fields.');
+    populateFieldsFromJSON(content);
+    saveRecoverySnapshot(content);
+    return;
+  }
+
+  console.warn('[Drive] File exists but content is empty or not meaningful.');
+
+  const restoredRecovery = restoreRecoverySnapshot();
+  if (restoredRecovery) {
+    showSaveStatus('Recovered local work ✓', 3500);
+  } else {
+    console.log('[Drive] No meaningful Drive data or recovery snapshot found.');
+  }
 }
 
 
 function populateFieldsFromJSON(data) {
   console.log('[Populate] Received data:', data);
 
+  if (!data || typeof data !== 'object') return;
+
   const defaultClaim = "Make a clear statement that shows your position on the topic. This is not a full sentence.";
 
-  // ✅ Restore writingLog and revisionCounts
   if (Array.isArray(data._writingLog)) {
     writingLog.length = 0;
     writingLog.push(...data._writingLog);
@@ -257,28 +564,45 @@ function populateFieldsFromJSON(data) {
   }
 
   if (typeof data._revisionCounts === 'object' && data._revisionCounts !== null) {
+    Object.keys(revisionCounts).forEach(k => delete revisionCounts[k]);
     Object.assign(revisionCounts, data._revisionCounts);
   }
 
-  // ✅ Restore contenteditable + form fields
   Object.entries(data).forEach(([id, value]) => {
-    if (id.startsWith('_')) return; // Skip meta entries like _writingLog
+    if (id.startsWith('_')) return;
+    if (typeof value !== 'string' && typeof value !== 'boolean') return;
 
     const el = document.getElementById(id);
     if (!el || !id) return;
 
-    if (id === 'claim-box' && value.includes(defaultClaim)) {
+    if (id === 'claim-box' && typeof value === 'string' && value.includes(defaultClaim)) {
       localStorage.removeItem('claim-box');
       return;
     }
 
     if (el.isContentEditable) {
-      el.innerText = value;
+      el.innerText = typeof value === 'string' ? value : '';
+
+      // 🧠 Model A: protect restored final/composed boxes
+      if (
+        id === 'essay-final' ||
+        id.startsWith('bp') ||
+        id.includes('final')
+      ) {
+        el.setAttribute('data-source', 'manual');
+        activeEdits.add(id);
+      } else {
+        el.setAttribute('data-source', 'sync');
+      }
+    }else if (el.type === 'checkbox' || el.type === 'radio') {
+      el.checked = !!value;
     } else if ('value' in el) {
-      el.value = value;
+      el.value = typeof value === 'string' ? value : '';
     }
 
-    localStorage.setItem(id, value);
+    try {
+      localStorage.setItem(id, typeof value === 'string' ? value : JSON.stringify(value));
+    } catch {}
   });
 }
 
@@ -289,38 +613,42 @@ async function createDriveFile() {
     return;
   }
 
-  await getOrCreateFolder(); // Ensure folder exists before file creation
+  await getOrCreateFolder();
 
   const metadata = {
     name: `EssayToolSave-${essayType}.json`,
     mimeType: 'application/json',
     parents: [folderId],
-    appProperties: {
-      app: 'madebymaggie-organizer',
-      type: essayType,
-      owner: userEmail 
-    }
+    appProperties: { app: APP_NAME, type: essayType, owner: userEmail }
   };
 
   try {
-    const res = await fetch(
-      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json; charset=UTF-8'
-        },
-        body: JSON.stringify(metadata)
-      }
-    ).then(r => r.json());
+    const res = await fetch('https://www.googleapis.com/drive/v3/files', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json; charset=UTF-8'
+      },
+      body: JSON.stringify(metadata)
+    });
+    const json = await res.json();
+    if (!res.ok || !json.id) throw new Error(`Create failed: ${res.status} ${JSON.stringify(json)}`);
 
-    if (!res.id) throw new Error('❌ Failed to create Drive file — no ID returned.');
-
-    fileId = res.id;
-    localStorage.setItem(`fileId-${essayType}`, fileId); // ✅ <--- Add this line right here
+    fileId = json.id;
+    localStorage.setItem(`fileId-${essayType}`, fileId);
     console.log('[Drive] Created new file:', fileId);
 
+    // (Optional) write initial empty JSON so subsequent PATCH media is consistent
+    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        _writingLog: [],
+        _revisionCounts: {},
+        _createdAt: Date.now(),
+        _essayType: essayType
+      })
+    });
   } catch (error) {
     console.error('[Drive] Error creating file:', error);
     alert('❌ Failed to create Drive file. Please try again or check your connection.');
@@ -328,7 +656,10 @@ async function createDriveFile() {
 }
 
 
-const startAutoSave=()=>setInterval(saveToDriveNow,15000);
+function startAutoSave() {
+  if (autosaveTimer) clearInterval(autosaveTimer);
+  autosaveTimer = setInterval(saveToDriveNow, 15000);
+}
 
 
 // 6) Auto-save & debounce
@@ -345,7 +676,9 @@ function saveToDriveNow() {
 
   const data = {
     _writingLog: writingLog,
-    _revisionCounts: revisionCounts
+    _revisionCounts: revisionCounts,
+    _essayType: essayType,
+    _lastSavedAt: Date.now()
   };
 
   let hasContent = false;
@@ -358,10 +691,28 @@ function saveToDriveNow() {
     data[id] = value;
   });
 
+  document.querySelectorAll('input, textarea, select').forEach(el => {
+    const id = el.id;
+    if (!id || id in data) return;
+
+    let value;
+    if (el.type === 'checkbox' || el.type === 'radio') {
+      value = !!el.checked;
+      if (value) hasContent = true;
+    } else {
+      value = (el.value ?? '').trim();
+      if (value) hasContent = true;
+    }
+
+    data[id] = value;
+  });
+
   if (!hasContent) {
     console.warn('⚠️ Skipping save — no user content yet');
     return;
   }
+
+  saveRecoverySnapshot(data);
 
   console.log('[Drive Save] Payload:', data);
 
@@ -380,11 +731,9 @@ function saveToDriveNow() {
   .then(async res => {
     if (res.status === 404) {
       console.warn('📁 File not found on Drive — creating a new one.');
-      // clear the bad ID so we fall back to creating
       localStorage.removeItem(`fileId-${essayType}`);
       fileId = null;
       await createDriveFile();
-      // retry the save with the new file
       return saveToDriveNow();
     }
     if (!res.ok) throw new Error(`Drive save failed: ${res.status}`);
@@ -393,13 +742,9 @@ function saveToDriveNow() {
   })
   .catch(err => {
     console.error('❌ Autosave failed:', err);
-    logActivity('❌ Autosave failed');
     showSaveStatus('❌ Save failed', 4000);
   });
 }
-
-
-const debouncedSaveToDrive = (fn,delay=500)=>(...a)=>{clearTimeout(fn._t);fn._t=setTimeout(()=>fn(...a),delay)};
 
 
 async function getOrCreateFolder() {
@@ -473,15 +818,13 @@ function indicateSavingNow() {
 function setupEnhancedMonitoring() {
   const startedSections = new Set();
 
-  // === Grammarly Detection ===
+  // Optional: Grammarly detection stays out of teacher log; keep UI banner only
   function isGrammarlyActive() {
     return !!document.querySelector('[data-gramm_editor]') ||
            !!document.querySelector('[class*="grammarly"]');
   }
-
   function showGrammarlyWarning() {
     if (document.getElementById('grammarly-warning')) return;
-
     const banner = document.createElement('div');
     banner.id = 'grammarly-warning';
     banner.innerHTML = `
@@ -501,57 +844,49 @@ function setupEnhancedMonitoring() {
     });
     document.body.appendChild(banner);
   }
+  if (isGrammarlyActive()) showGrammarlyWarning();
+  setTimeout(() => { if (isGrammarlyActive()) showGrammarlyWarning(); }, 3000);
 
-  function detectAndWarnGrammarly() {
-    if (isGrammarlyActive()) {
-      logActivity("⚠️ Grammarly detected on page");
-      showGrammarlyWarning();
-    }
-  }
+  document.querySelectorAll('[contenteditable="true"]').forEach(el => {
+    const id = el.id;
+    if (!id || el.dataset.monitored === 'true') return;
+    el.dataset.monitored = 'true';
 
-  detectAndWarnGrammarly();
-  setTimeout(detectAndWarnGrammarly, 3000); // Extra check after Grammarly loads
+    el.addEventListener('input', () => {
+      if (!startedSections.has(id)) {
+        startedSections.add(id);
+        editStartTimes[id] = Date.now();
+        logActivity('start', id);
+      }
+  debouncedSave();
+    });
 
-document.querySelectorAll('[contenteditable="true"]').forEach(el => {
-  const id = el.id;
-
-  if (el.dataset.monitored === 'true') return; // ✅ Skip if already wired
-  el.dataset.monitored = 'true'; // ✅ Mark as wired
-
-  el.addEventListener('input', () => {
-    if (!startedSections.has(id)) {
-      startedSections.add(id);
-      editStartTimes[id] = Date.now();
-      logActivity("Started editing", id);
-    }
-    debouncedSaveToDrive(saveToDriveNow)();
-  });
-
-  el.addEventListener('blur', () => {
-    if (startedSections.has(id)) {
+    el.addEventListener('blur', () => {
+      if (!startedSections.has(id)) return;
       startedSections.delete(id);
-
-      const duration = Date.now() - (editStartTimes[id] || Date.now());
-      const minutes = Math.round(duration / 60000);
+      const started = editStartTimes[id] || Date.now();
+      const durationMs = Date.now() - started;
       revisionCounts[id] = (revisionCounts[id] || 0) + 1;
-
-      logActivity(`Finished editing after ${minutes} min (revision ${revisionCounts[id]})`, id);
+      logActivity('finish', id, { durationMs, revision: revisionCounts[id] });
       delete editStartTimes[id];
-    }
-  });
+      debouncedSave();
+    });
 
-  el.addEventListener('paste', () => {
-    logActivity("Pasted into", id);
-    debouncedSaveToDrive(saveToDriveNow)();
-  });
-
-  el.addEventListener('ai-edit', () => {
-    logActivity("Used AI Help in", id);
-    delete el.dataset.aiInserted;
-  });
+el.addEventListener('paste', (evt) => {
+  let n = 0;
+  try { n = (evt.clipboardData?.getData('text/plain') || '').length; } catch {}
+  n = Math.min(n, MAX_PASTE_LEN); // cap it
+  logActivity('paste', id, { pasteChars: n });
+  debouncedSave();
 });
 
+
+    el.addEventListener('ai-edit', () => {
+      logActivity('ai', id);
+    });
+  });
 }
+
 
 // --- helpers for safe HTML + proper paragraphs ---
 function escapeHtml(s) {
@@ -569,13 +904,43 @@ function textToParagraphHtml(txt) {
     .join('');
 }
 
-// Helper: build clean HTML for conversion
-function buildExportHtml(finalText, writingLog = []) {
+function buildExportHtml(finalText, rawLog = []) {
+  ensureStructuredLog(rawLog);
+
+  // Split + summarize same as UI
+  const cutoff = Math.max(0, rawLog.length - LOG_MAX_DETAILED);
+  const older = rawLog.slice(0, cutoff);
+  const recent = rawLog.slice(cutoff);
+  const olderSummary = summarizeEntries(older);
+
   const essayHtml = textToParagraphHtml(finalText);
 
-  const logItems = (writingLog && writingLog.length)
-    ? writingLog.map(item => `<li>${escapeHtml(item)}</li>`).join('')
-    : '<li>No entries recorded.</li>';
+  const olderHtml = older.length ? `
+    <h3>Older activity summary (before the last ${LOG_MAX_DETAILED} entries)</h3>
+    <ul>
+      ${
+        olderSummary.length
+          ? olderSummary.map(s => {
+              const bits = [
+                escapeHtml(s.sectionLabel),
+                s.timeMs ? `time ${escapeHtml(fmtDuration(s.timeMs))}` : null,
+                s.revisions ? `${s.revisions} revisions` : null,
+                s.pasteCount ? `${s.pasteCount} paste(s)${s.pasteChars?` / ${s.pasteChars} chars`:''}` : null,
+                s.aiCount ? `${s.aiCount} coach use(s)` : null
+              ].filter(Boolean).join(' · ');
+              return `<li>${bits}</li>`;
+            }).join('')
+          : '<li>No significant activity to summarize.</li>'
+      }
+    </ul>
+  ` : '';
+
+  const recentHtml = `
+    <h3>Detailed recent activity</h3>
+    <ul>
+      ${recent.map(e => `<li>${escapeHtml(formatEntryForTeacher(e))}</li>`).join('')}
+    </ul>
+  `;
 
   return `
 <!DOCTYPE html>
@@ -585,18 +950,14 @@ function buildExportHtml(finalText, writingLog = []) {
   <title>Final Essay</title>
 <style>
   body { font-family: Arial, Helvetica, sans-serif; line-height: 1.5; }
-  h1, h2 { margin: 0 0 10pt; }
-  p { 
-    margin: 0 0 12pt; 
-    text-indent: 0.5in; /* First-line indent */
-  }
+  h1, h2, h3 { margin: 0 0 10pt; }
+  p { margin: 0 0 12pt; text-indent: 0.5in; }
   ul { margin: 8pt 0 0 18pt; }
   .section { margin: 16pt 0; }
   .divider { border: 0; border-top: 1px solid #ccc; margin: 20pt 0; }
   .meta { color: #666; font-size: 11px; margin-top: 18pt; }
   .badge { display:inline-block; background:#eef5ff; padding:4px 8px; border-radius:999px; }
 </style>
-
 </head>
 <body>
   <h1>Final Essay</h1>
@@ -609,7 +970,8 @@ function buildExportHtml(finalText, writingLog = []) {
 
   <div class="section">
     <h2>Teacher View: Writing Log</h2>
-    <ul>${logItems}</ul>
+    ${olderHtml}
+    ${recentHtml}
   </div>
 
   <div class="meta">
@@ -618,6 +980,7 @@ function buildExportHtml(finalText, writingLog = []) {
 </body>
 </html>`;
 }
+
 
 /* =======================
    Toast + Sparkles + Confetti
@@ -838,7 +1201,7 @@ async function exportToGoogleDocs() {
     }
 
     const file = await res.json();
-    logActivity?.('✅ Exported to Google Docs (via Drive conversion)');
+logActivity('export', null, { noLocal: true });
 
     // Burst, then open tab with a tiny delay so they see it
     toast.setText('✅ Export complete — opening Google Doc…');
@@ -867,15 +1230,11 @@ function handleGoogleDocsExport() {
 function handleGoogleSignOut() {
   if (!confirm('👋 Sign out of Google?')) return;
 
-  // Clear saved credentials
   localStorage.removeItem('accessToken');
   localStorage.removeItem('userEmail');
+  localStorage.removeItem(`fileId-${essayType}`); // ← add this
 
-
-  // Reload the page after a short delay
-  setTimeout(() => {
-    location.reload();
-  }, 300);
+  setTimeout(() => { location.reload(); }, 300);
 }
 
 function handleClearFormOnly() {
@@ -886,16 +1245,16 @@ function handleClearFormOnly() {
   // Remove saved Drive file reference and auth
 // Just clear local session, not Drive file
 localStorage.removeItem('writingLog');
-observedIds.forEach(id => localStorage.removeItem(id));
 
 // ✅ Clear the essayType-specific fileId to avoid reusing a blank file after clear
 localStorage.removeItem(`fileId-${essayType}`);
+fileId = null;
 
-  // Clear all contenteditable boxes
-  observedIds.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.innerText = '';
-  });
+document.querySelectorAll('[contenteditable="true"]').forEach(el => {
+  const id = el.id;
+  if (id) localStorage.removeItem(id);
+  el.innerText = '';
+});
 
   // Also clear any form elements (inputs, selects, etc.)
   document.querySelectorAll('input, textarea, select').forEach(el => {
@@ -922,6 +1281,14 @@ localStorage.removeItem(`fileId-${essayType}`);
   }, 150);
 }
 
+function handleRecoverWork() {
+  const restored = restoreRecoverySnapshot();
+  if (restored) {
+    showSaveStatus('Recovered saved local snapshot ✓', 4000);
+  } else {
+    alert('No recovery snapshot was found on this device.');
+  }
+}
 
 // 8) Expose globals
 window.startGoogleAuth             = startGoogleAuth;
@@ -930,5 +1297,6 @@ window.handleGoogleDocsExport      = handleGoogleDocsExport;
 window.handleGoogleSignOut         = handleGoogleSignOut;
 window.setupEnhancedMonitoring     = setupEnhancedMonitoring;
 window.logActivity                 = logActivity;
+window.handleRecoverWork           = handleRecoverWork;
 /* === end google-integration.js === */
 

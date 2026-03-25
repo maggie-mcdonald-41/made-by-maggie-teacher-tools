@@ -2,7 +2,25 @@
 console.log('syncData =', typeof syncData);
 
 function syncData() {
+  if (window.isReconfiguringStructure) {
+    console.log("⏸️ syncData skipped during structure reconfiguration");
+    return;
+  }
+
   const defaultClaimText = "Make a clear statement that shows your position on the topic. This is not a full sentence.";
+
+  function canSyncInto(el) {
+    if (!el || !el.id) return false;
+
+    const currentText = el.innerText.trim();
+    const source = el.getAttribute('data-source');
+
+    // Model A: once a student has manually taken over, do not overwrite
+    if (source === 'manual') return false;
+    if (activeEdits.has(el.id)) return false;
+
+    return currentText === '' || source === 'sync';
+  }
 
   // === 1) Persist all contenteditable fields ===
   document.querySelectorAll('[contenteditable="true"]').forEach(el => {
@@ -24,15 +42,13 @@ function syncData() {
   const efClaim = document.getElementById('ef-claim-box')?.innerText.trim();
   const claimBox = document.getElementById('claim-box');
   const claimContent = claimBox?.innerText.trim();
-  const existing = localStorage.getItem('claim-box');
 
   if (
     isEvidenceFirst &&
     efClaim &&
     !efClaim.includes("Make a clear statement") &&
     claimBox &&
-    (claimContent === '' || claimBox.getAttribute('data-source') === 'sync') &&
-    !activeEdits.has('claim-box')
+    canSyncInto(claimBox)
   ) {
     claimBox.innerText = efClaim;
     claimBox.setAttribute('data-source', 'sync');
@@ -42,6 +58,8 @@ function syncData() {
 
   // === 3) Sync EF reasons/evidence → standard ===
   [1, 2, 3].forEach(n => {
+    if (n > selectedBodyCount) return;
+
     const efReason = document.getElementById(`ef-reason-bp${n}`)?.innerText.trim();
     const efEvidence = document.getElementById(`ef-evidence-bp${n}`)?.innerText.trim();
 
@@ -51,8 +69,7 @@ function syncData() {
     if (
       efReason &&
       stdReasonBox &&
-      !activeEdits.has(stdReasonBox.id) &&
-      (stdReasonBox.innerText.trim() === '' || stdReasonBox.getAttribute('data-source') === 'sync')
+      canSyncInto(stdReasonBox)
     ) {
       stdReasonBox.innerText = efReason;
       stdReasonBox.setAttribute('data-source', 'sync');
@@ -63,10 +80,10 @@ function syncData() {
     if (
       efEvidence &&
       stdEvidenceBox &&
-      !activeEdits.has(stdEvidenceBox.id) &&
-      (stdEvidenceBox.innerText.trim() === '' || stdEvidenceBox.getAttribute('data-source') === 'sync')
+      canSyncInto(stdEvidenceBox)
     ) {
-      stdEvidenceBox.innerHTML = efEvidence;      stdEvidenceBox.setAttribute('data-source', 'sync');
+      stdEvidenceBox.innerText = efEvidence;
+      stdEvidenceBox.setAttribute('data-source', 'sync');
       localStorage.setItem(stdEvidenceBox.id, efEvidence);
       console.log(`🔁 Synced EF evidence${n} to standard`);
     }
@@ -74,6 +91,8 @@ function syncData() {
 
   // === 4) Sync reasons → evidence planner ===
   [1, 2, 3].forEach(n => {
+    if (n > selectedBodyCount) return;
+
     const reasonText = document.getElementById(`reason${n}-box`)?.innerText.trim() || '';
     const plannerEl = document.getElementById(`reason${n}-evidence`);
     if (plannerEl) plannerEl.innerText = reasonText;
@@ -81,8 +100,7 @@ function syncData() {
     const finalReasonEl = document.getElementById(`bp${n}-reason`);
     if (
       finalReasonEl &&
-      !activeEdits.has(finalReasonEl.id) &&
-      (finalReasonEl.innerText.trim() === '' || finalReasonEl.getAttribute('data-source') === 'sync')
+      canSyncInto(finalReasonEl)
     ) {
       finalReasonEl.innerText = reasonText;
       finalReasonEl.setAttribute('data-source', 'sync');
@@ -100,8 +118,7 @@ function syncData() {
 
     if (
       finalEvEl &&
-      !activeEdits.has(finalEvEl.id) &&
-      (finalEvEl.innerText.trim() === '' || finalEvEl.getAttribute('data-source') === 'sync')
+      canSyncInto(finalEvEl)
     ) {
       finalEvEl.innerText = evText;
       finalEvEl.setAttribute('data-source', 'sync');
