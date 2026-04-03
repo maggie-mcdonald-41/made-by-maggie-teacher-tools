@@ -279,24 +279,18 @@ setTimeout(() => {
   document.getElementById('run-final-checklist')?.addEventListener('click', runFinalChecklist);
 
   // f) Evidence-First toggle listener
-  document.getElementById('evidenceFirstToggle')
-    .addEventListener('change', (e) => {
-      isEvidenceFirst = e.target.checked;
-      updateBodyParagraphVisibility(selectedBodyCount);
-      localStorage.setItem('isEvidenceFirst', isEvidenceFirst);
-      updateEvidenceFirstVisibility();
-      syncData();
-    });
-// d) Wire up re-syncs
-// ❌ Removed duplicate sync binding (handled above)
 document.getElementById('evidenceFirstToggle')
   .addEventListener('change', (e) => {
     isEvidenceFirst = e.target.checked;
-    updateBodyParagraphVisibility(selectedBodyCount);
+
     localStorage.setItem('isEvidenceFirst', isEvidenceFirst);
+
     updateEvidenceFirstVisibility();
+    updateBodyParagraphVisibility(selectedBodyCount);
+
     syncData();
   });
+// duplicate listener removed
 
     const thesisBox = document.getElementById('thesis-box');
 const syncWarning = document.getElementById('sync-warning');

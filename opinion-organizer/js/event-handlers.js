@@ -58,23 +58,48 @@ function initEventHandlers() {
   });
 
   // “Next” buttons → completion messages
-  [
-    ['thesis-box',        'thesis-complete-message',        'thesis-next-btn'],
-    ['evidence1-box',     'evidence-complete-message',      'evidence-next-btn'],
-    ['ef-evidence-bp1',   'evidence-first-complete-message','evidence-first-next-btn'],
-    ['intro-final',       'intro-complete-message',         'intro-next-btn'],
-    ['bp1-final',         'bp1-complete-message',           'bp1-next-btn'],
-    ['bp2-final',         'bp2-complete-message',           'bp2-next-btn'],
-    ['bp3-final',         'bp3-complete-message',           'bp3-next-btn'],
-    ['conclusion-final',  'conclusion-complete-message',    'conclusion-next-btn'],
-    ['essay-final',       'final-celebration-message',      'all-done-btn']
-  ].forEach(([boxId, msgId, btnId]) => {
-    document.getElementById(btnId)?.addEventListener('click', () => {
-      if (document.getElementById(boxId)?.innerText.trim()) {
-        showCompletionMessage(msgId, btnId);
+[
+  ['thesis-box', 'thesis-complete-message', 'thesis-next-btn', 'thesis'],
+  ['evidence1-box', 'evidence-complete-message', 'evidence-next-btn', 'evidence'],
+  ['evidence-first-section', 'evidence-first-complete-message', 'evidence-first-next-btn', 'evidenceFirst'],
+  ['intro-final', 'intro-complete-message', 'intro-next-btn', 'intro'],
+  ['bp1-final', 'bp1-complete-message', 'bp1-next-btn', 'bp1'],
+  ['bp2-final', 'bp2-complete-message', 'bp2-next-btn', 'bp2'],
+  ['bp3-final', 'bp3-complete-message', 'bp3-next-btn', 'bp3'],
+  ['conclusion-final', 'conclusion-complete-message', 'conclusion-next-btn', 'conclusion'],
+  ['essay-final', 'final-celebration-message', 'all-done-btn', 'final']
+].forEach(([boxId, msgId, btnId, stepKey]) => {
+  document.getElementById(btnId)?.addEventListener('click', () => {
+    if (stepKey === 'evidenceFirst') {
+      const requiredIds = ['ef-evidence-bp1', 'ef-reason-bp1'];
+
+      if (selectedBodyCount >= 2) {
+        requiredIds.push('ef-evidence-bp2', 'ef-reason-bp2');
       }
-    });
+
+      if (selectedBodyCount >= 3) {
+        requiredIds.push('ef-evidence-bp3', 'ef-reason-bp3');
+      }
+
+      const isReady = requiredIds.every(id => {
+        const el = document.getElementById(id);
+        return el && el.innerText.trim() !== '';
+      });
+
+      if (isReady) {
+        showCompletionMessage(msgId, btnId, stepKey);
+      } else {
+        alert('Please complete each visible evidence and reason box before moving on.');
+      }
+
+      return;
+    }
+
+    if (document.getElementById(boxId)?.innerText.trim()) {
+      showCompletionMessage(msgId, btnId, stepKey);
+    }
   });
+});
 
   // Checklist checkboxes → save state + confetti
   document.querySelectorAll('.section-checklist input[type="checkbox"]').forEach(box => {
@@ -125,35 +150,35 @@ function initEventHandlers() {
     });
   });
 
-  function showCompletionMessage(messageId, buttonId) {
-    const message = document.getElementById(messageId);
-    const button  = document.getElementById(buttonId);
-  
-    if (!message) return;
-    message.classList.remove('hidden');
-    button?.classList.add('hidden');
-  
-    // apply dark-mode styling if needed
-    message.classList.toggle('dark-mode', document.body.classList.contains('dark-mode'));
-  
-    // 🎉 confetti burst
-    const end = Date.now() + 4000;
-    if (typeof confetti === 'function') {
-      (function frame() {
-        confetti({
-          particleCount: 10,
-          spread: 70,
-          origin: { x: Math.random(), y: Math.random() * 0.6 }
-        });
-        if (Date.now() < end) requestAnimationFrame(frame);
-      })();
-    }
-  
-    // 🧭 Scroll to the message after a slight delay
-    setTimeout(() => {
-      message.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 600);
+function showCompletionMessage(messageId, buttonId, stepKey) {
+  const message = document.getElementById(messageId);
+  const button  = document.getElementById(buttonId);
+
+  if (!message) return;
+
+  renderCompletionMessage(messageId, stepKey);
+
+  message.classList.remove('hidden');
+  button?.classList.add('hidden');
+
+  message.classList.toggle('dark-mode', document.body.classList.contains('dark-mode'));
+
+  const end = Date.now() + 4000;
+  if (typeof confetti === 'function') {
+    (function frame() {
+      confetti({
+        particleCount: 10,
+        spread: 70,
+        origin: { x: Math.random(), y: Math.random() * 0.6 }
+      });
+      if (Date.now() < end) requestAnimationFrame(frame);
+    })();
   }
+
+  setTimeout(() => {
+    message.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 600);
+}
   
 
 // Evidence-First visibility toggles
