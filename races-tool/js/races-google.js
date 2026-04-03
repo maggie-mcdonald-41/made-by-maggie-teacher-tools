@@ -118,7 +118,7 @@ function restoreWritingLogFromStorage(){
 
 function renderWritingLog(){
   // UI is hidden from students; log is kept for Google Docs export only.
-  try{ localStorage.setItem('races_writingLog', JSON.stringify(writingLog)); }catch(e){}
+  try { localStorage.setItem(`writingLog-${toolType}`, JSON.stringify(writingLog)); } catch {}
 }
 
 function setupEnhancedMonitoring(){
@@ -205,13 +205,17 @@ async function getOrCreateFolder(){
 }
 
 function gatherToolState(){
-  const ids = ['textTitle','questionPrompt','rBox','aBox','cBox','eBox','sBox'];
+  const ids = ['textTitle','questionPrompt','rBox','aBox','cBox','eBox','sBox','finalPreview'];
   const data = {};
   ids.forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     data[id] = el.isContentEditable ? (el.innerText || '') : (el.value || '');
   });
+
+  const finalPreviewEl = document.getElementById('finalPreview');
+  data._finalPreviewGenerated = finalPreviewEl?.getAttribute('data-generated') || 'true';
+
   data._writingLog = writingLog;
   data._revisionCounts = revisionCounts;
   data._tool = toolType;
@@ -229,6 +233,7 @@ function applyState(data){
     renderWritingLog();
   }
   if (data._revisionCounts && typeof data._revisionCounts === 'object') {
+    Object.keys(revisionCounts).forEach(k => delete revisionCounts[k]);
     Object.assign(revisionCounts, data._revisionCounts);
   }
 
@@ -240,11 +245,19 @@ function applyState(data){
     if (el.isContentEditable) el.innerText = value;
     else if ('value' in el) el.value = value;
 
-    // mirror to local autosave keys used in races-main
     try { localStorage.setItem(`races_${id}`, value); } catch {}
   });
 
-  // refresh preview/progress if races-main is loaded
+  const fp = document.getElementById('finalPreview');
+  if (fp){
+    const generated = data._finalPreviewGenerated || 'true';
+    fp.setAttribute('data-generated', generated);
+    try { localStorage.setItem('races_finalPreview_generated', generated); } catch {}
+  }
+
+  if (data._updatedAt) {
+    try { localStorage.setItem('races_lastUpdatedAt', String(data._updatedAt)); } catch {}
+  }
   try { window.dispatchEvent(new Event('races:restored')); } catch {}
 }
 
@@ -295,9 +308,19 @@ async function loadFromDrive(){
   const resp = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
     headers:{ Authorization:`Bearer ${accessToken}` }
   });
+
   let data = {};
   try { data = await resp.json(); } catch { data = {}; }
-  applyState(data);
+
+  const localUpdatedAt = Number(localStorage.getItem(`races_lastUpdatedAt`) || 0);
+  const driveUpdatedAt = Number(data?._updatedAt || 0);
+
+  // Only apply Drive state if it is newer than local, or if local has no timestamp.
+  if (!localUpdatedAt || driveUpdatedAt >= localUpdatedAt) {
+    applyState(data);
+  } else {
+    console.info('[Restore] Kept newer local work instead of older Drive data.');
+  }
 }
 
 async function saveToDriveNow(){

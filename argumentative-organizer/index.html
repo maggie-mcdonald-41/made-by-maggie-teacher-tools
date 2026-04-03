@@ -337,25 +337,25 @@
         <div class="section" id="ef-evidence3">
             <h3>📚 Evidence # 3 💬</h3>
             <div class="button-group">
-            <div class="button-row">  
-            <button class="small-btn play-directions-btn" data-section-id="ef-evidence3">🔊 Play Directions</button>
-            <button class="tip-btn" data-tip-id="ef-tip-bp3">💡Teacher Tips</button>
-                <div id="ef-tip-bp3" class="teacher-tip">
-                    <strong>💡 Teacher Tip:</strong> In Body Paragraph 3, you can either give a third reason or
-                    include a counterclaim.
+                <div class="button-row">
+                    <button class="small-btn play-directions-btn" data-section-id="ef-evidence3">🔊 Play Directions</button>
+                    <button class="tip-btn" data-tip-id="ef-tip-bp3">💡Teacher Tips</button>
+                    <div id="ef-tip-bp3" class="teacher-tip">
+                        <strong>💡 Teacher Tip:</strong> In Body Paragraph 3, you can either give a third reason or
+                        include a counterclaim.
 
-                    <br><br><strong>What’s a counterclaim?</strong><br>
-                    A counterclaim is the other side of the argument — what someone who disagrees with you might
-                    say.
+                        <br><br><strong>What’s a counterclaim?</strong><br>
+                        A counterclaim is the other side of the argument — what someone who disagrees with you might
+                        say.
 
-                    <br><br><strong>Why use it?</strong><br>
-                    Addressing a counterclaim shows that you've thought carefully about both sides. It actually
-                    makes your argument stronger.
+                        <br><br><strong>Why use it?</strong><br>
+                        Addressing a counterclaim shows that you've thought carefully about both sides. It actually
+                        makes your argument stronger.
 
-                    <br><br><strong>Example:</strong><br>
-                    <em>Some people say homework teaches responsibility but students learn it through classwork and other activities instead.</em>
+                        <br><br><strong>Example:</strong><br>
+                        <em>Some people say homework teaches responsibility but students learn it through classwork and other activities instead.</em>
+                    </div>
                 </div>
-            </div>
             </div>
             <p class="h3-instruction">🔎 Choose a third piece of evidence from the text that supports your claim.</p>
             <div class="coach-button-wrapper">
@@ -372,19 +372,15 @@
                 reason.</p>
             <div class="drop-box" contenteditable="true" id="ef-reason-bp3" data-placeholder="Type your reason here...">
             </div>
-
-            <!-- Next Section Button for Evidence-First -->
-            <button id="evidence-first-next-btn" class="next-section-btn">
-                <span>Next Section<br>➡️</span>
-            </button>
-            <div id="evidence-first-complete-message" class="completion-message hidden">
-                <h2>📚 Great Job!</h2>
-                <p>You’ve found powerful evidence and reasons to support your claim.</p>
-                <p>Next, you’ll put your ideas together into a thesis sentence!</p>
-            </div>
         </div>
-    </div>
 
+        <!-- Next Section Button for Evidence-First -->
+        <button id="evidence-first-next-btn" class="next-section-btn">
+            <span>Next Section<br>➡️</span>
+        </button>
+
+        <div id="evidence-first-complete-message" class="completion-message hidden" data-step="evidenceFirst"></div>
+    </div>
     <!-- Normal Mode Thesis Section Begins -->
     <div class="section-thesis" id="thesis">
         <h2 class="page-title">
@@ -489,14 +485,9 @@
         </div>
         <!--Next section button-->
         <button id="thesis-next-btn" class="next-section-btn"><span>Next Section<br>➡️</span></button>
-        <div id="thesis-complete-message" class="completion-message hidden">
-            <h2>✨ Great Job! ✨</h2>
-            <p>You just completed your thesis statement. This thesis directs your paper and tells you where to go
-                next.</p>
-            <p>Next, we will find evidence from the text to support the reasons you picked in your thesis. We will
-                do this by finding <strong>direct quotations</strong> from the text!</p>
-        </div>
+<div id="thesis-complete-message" class="completion-message hidden" data-step="thesis"></div>
     </div>
+
     <!-- Normal Mode Page 2: Evidence gathering section -->
     <div class="section-evidence" id="evidence">
         <h2 class="page-title">🔍 Evidence 🔎</h2>
@@ -581,11 +572,7 @@
 
         <!-- Next Section Button -->
         <button id="evidence-next-btn" class="next-section-btn"><span>Next Section<br>➡️</span></button>
-        <div id="evidence-complete-message" class="completion-message hidden">
-            <h2>🔍 Evidence Gathered! 🔍</h2>
-            <p>You’ve found strong, direct quotations that support your reasons.</p>
-            <p>Next, we’ll put your ideas into an introduction that hooks your reader!</p>
-        </div>
+<div id="evidence-complete-message" class="completion-message hidden" data-step="evidence"></div>
     </div>
 
     <!-- Page 3: Introduction -->
@@ -728,11 +715,7 @@
 
         <!--Next Section Button -->
         <button id="intro-next-btn" class="next-section-btn"><span>Next Section<br>➡️</span></button>
-        <div id="intro-complete-message" class="completion-message hidden">
-            <h2>🎉 Excellent Introduction! 🎉</h2>
-            <p>You’ve created a strong opening that draws the reader in and sets the stage for your essay.</p>
-            <p>Next up: We’ll begin building your first body paragraph to support your ideas!</p>
-        </div>
+<div id="intro-complete-message" class="completion-message hidden" data-step="intro"></div>
     </div>
 
     <!-- Page 4: Body Paragraph 1 -->
@@ -869,12 +852,7 @@
         </div>
         <!--Next Section Button -->
         <button id="bp1-next-btn" class="next-section-btn"><span>Next Section<br>➡️</span></button>
-        <div id="bp1-complete-message" class="completion-message hidden">
-            <h2>💪 Body Paragraph 1 Complete! 💪</h2>
-            <p>You explained your first reason from your thesis clearly and backed it up with strong evidence from your
-                text.</p>
-            <p>Next, you’ll repeat the process for your second reason in Body Paragraph 2!</p>
-        </div>
+<div id="bp1-complete-message" class="completion-message hidden" data-step="bp1"></div>
     </div>
 
     <!-- Page 5: Body Paragraph 2 -->
@@ -999,11 +977,7 @@
         </div>
         <!--Next Section Button -->
         <button id="bp2-next-btn" class="next-section-btn"><span>Next Section<br>➡️</span></button>
-        <div id="bp2-complete-message" class="completion-message hidden">
-            <h2>📝 Body Paragraph 2 Complete! 📝</h2>
-            <p>You now have both reasons supported with explanations and transitions.</p>
-            <p>Let’s wrap it all up with a strong conclusion!</p>
-        </div>
+<div id="bp2-complete-message" class="completion-message hidden" data-step="bp2"></div>
     </div>
 
     <!-- Body Paragraph 3 -->
@@ -1130,10 +1104,7 @@
         </div>
         <!--Next Section Button -->
         <button id="bp3-next-btn" class="next-section-btn"><span>Next Section<br>➡️</span></button>
-        <div id="bp3-complete-message" class="completion-message hidden">
-            <h2>🧠 Body Paragraph 3 Complete! 🧠</h2>
-            <p>You've supported all three of your reasons with strong evidence and explanation.</p>
-        </div>
+<div id="bp3-complete-message" class="completion-message hidden" data-step="bp3"></div>
     </div>
 
     <!-- Page 6: Conclusion -->
@@ -1254,11 +1225,7 @@
 
         <!--Next Section Button -->
         <button id="conclusion-next-btn" class="next-section-btn"><span>Next Section<br>➡️</span></button>
-        <div id="conclusion-complete-message" class="completion-message hidden">
-            <h2>✨💪 Conclusion Done! 💪✨</h2>
-            <p>You wrapped up your ideas effectively and left your reader with something to think about.</p>
-            <p>Time to pull everything together into your final essay!</p>
-        </div>
+<div id="conclusion-complete-message" class="completion-message hidden" data-step="conclusion"></div>
     </div>
     <!-- Page 7: Final Essay -->
     <div class="section-final" id="final">
@@ -1331,12 +1298,7 @@
         <!--Complete message-->
         <!-- ✅ All Done Button (moved outside hidden div) -->
         <button id="all-done-btn" class="next-section-btn"><span>All Done 🎉</span></button>
-        <div id="final-celebration-message" class="completion-message hidden">
-            <h2>🏁🏁 You Did It! 🏁🏁</h2>
-            <p>You’ve written a complete, organized, and thoughtful essay. That’s something to be proud of!</p>
-            <p><strong>GO SUBMIT YOUR ASSIGNMENT NOW!</strong> 🎊</p>
-            <p>After that, take a moment to celebrate your hard work—you’re officially done! 🎊</p>
-        </div>
+<div id="final-celebration-message" class="completion-message hidden" data-step="final"></div>
 
         <style>
             .completion-message {
@@ -1388,6 +1350,7 @@
   <script src="js/progress.js" defer></script>
   <script src="js/content-generators.js" defer></script>
   <script src="js/google-integration.js" defer></script>
+  <script src="js/completion-messages.js" defer></script>
   <script src="js/event-handlers.js" defer></script>
   <script src="js/main.js" defer></script>
 </body>

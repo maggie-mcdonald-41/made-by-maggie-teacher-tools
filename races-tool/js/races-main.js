@@ -29,8 +29,14 @@ function saveLocal(){
     const v = (f.type === 'value') ? (el.value ?? '') : (el.innerText ?? '');
     localStorage.setItem(`races_${f.id}`, v);
   }
-}
 
+  const fp = $('finalPreview');
+  if (fp){
+    localStorage.setItem('races_finalPreview_generated', fp.getAttribute('data-generated') || 'true');
+  }
+
+  localStorage.setItem('races_lastUpdatedAt', String(Date.now()));
+}
 function restoreLocal(){
   for (const f of FIELDS){
     const el = $(f.id);
@@ -40,8 +46,13 @@ function restoreLocal(){
     if (f.type === 'value') el.value = v;
     else el.innerText = v;
   }
-}
 
+  const fp = $('finalPreview');
+  if (fp){
+    const generated = localStorage.getItem('races_finalPreview_generated');
+    if (generated != null) fp.setAttribute('data-generated', generated);
+  }
+}
 function updateProgress(){
   const total = FIELDS.length;
   let filled = 0;
@@ -267,6 +278,12 @@ function initClear(){
       else el.innerText = '';
       localStorage.removeItem(`races_${f.id}`);
     }
+
+    localStorage.removeItem('races_finalPreview_generated');
+
+    const fp = $('finalPreview');
+    if (fp) fp.setAttribute('data-generated', 'true');
+
     renderFinalPreview();
     updateProgress();
   });
@@ -332,7 +349,11 @@ document.addEventListener('DOMContentLoaded', () => {
   initClear();
   // Mark final preview as user-edited when they type
   const fp = $('finalPreview');
-  fp?.addEventListener('input', () => fp.setAttribute('data-generated', 'false'));
+  fp?.addEventListener('input', () => {
+    fp.setAttribute('data-generated', 'false');
+    saveLocal();
+    updateProgress();
+  });
   attachAutosaveListeners();
   updateProgress();
   renderFinalPreview();

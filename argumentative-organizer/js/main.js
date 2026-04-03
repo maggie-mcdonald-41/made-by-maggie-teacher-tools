@@ -18,6 +18,12 @@ function debounce(func, wait = 300) {
 
 const debouncedSyncData = debounce(syncData, 300);
 
+function getAppState() {
+  return {
+    isEvidenceFirst,
+    selectedBodyCount
+  };
+} 
 
 // === List of IDs That Trigger Syncing ===
 const syncTriggerIds = [
@@ -279,26 +285,21 @@ setTimeout(() => {
   document.getElementById('run-final-checklist')?.addEventListener('click', runFinalChecklist);
 
   // f) Evidence-First toggle listener
-  document.getElementById('evidenceFirstToggle')
-    .addEventListener('change', (e) => {
-      isEvidenceFirst = e.target.checked;
-      updateBodyParagraphVisibility(selectedBodyCount);
-      localStorage.setItem('isEvidenceFirst', isEvidenceFirst);
-      updateEvidenceFirstVisibility();
-      syncData();
-    });
-// d) Wire up re-syncs
-// ❌ Removed duplicate sync binding (handled above)
 document.getElementById('evidenceFirstToggle')
   .addEventListener('change', (e) => {
     isEvidenceFirst = e.target.checked;
-    updateBodyParagraphVisibility(selectedBodyCount);
+
     localStorage.setItem('isEvidenceFirst', isEvidenceFirst);
+
+    // ✅ Order matters for correct UI + completion flow
     updateEvidenceFirstVisibility();
+    updateBodyParagraphVisibility(selectedBodyCount);
+
     syncData();
   });
 
-    const thesisBox = document.getElementById('thesis-box');
+
+const thesisBox = document.getElementById('thesis-box');
 const syncWarning = document.getElementById('sync-warning');
 const syncButton = document.getElementById('sync-thesis');
 
