@@ -47,16 +47,19 @@ function updateBodyParagraphVisibility(count) {
   for (let i = 1; i <= 3; i++) {
     const shouldShow = i <= count;
 
-    // wrapper sections
-    const wrapper = document.getElementById(`body${i}`);
-    if (wrapper) {
-      wrapper.style.display = shouldShow ? 'block' : 'none';
-    }
+const wrapper = document.getElementById(`body${i}`);
+if (wrapper) {
+  const showStandard = shouldShow;
+  wrapper.classList.toggle('hidden', !showStandard);
+  wrapper.style.display = showStandard ? 'block' : 'none';
+}
 
-    const ef = document.getElementById(`ef-evidence${i}`);
-    if (ef) {
-      ef.style.display = (isEvidenceFirst && shouldShow) ? 'block' : 'none';
-    }
+ const ef = document.getElementById(`ef-evidence${i}`);
+if (ef) {
+  const showEF = isEvidenceFirst && shouldShow;
+  ef.classList.toggle('hidden', !showEF);
+  ef.style.display = showEF ? 'block' : 'none';
+}
 
     // navigation links
     const link = document.getElementById(`link-body${i}`);
