@@ -1119,7 +1119,7 @@ attempts.forEach((a) => {
           uniqueStudentsCount,
           practiceSet: inferredSet || undefined,
           practiceLevel: inferredLevel || undefined,
-
+          ownerEmail: email || null
         };
       });
 
