@@ -669,8 +669,13 @@ function saveHistoryToStorage(history) {
   }
 }
 // Helper for consistent keys
-function getHistoryKey(sessionCode) {
-  return `${(sessionCode || "").trim()}`;
+function getHistoryKey(sessionCode, practiceSet = "", practiceLevel = "", ownerEmail = "") {
+  return [
+    (sessionCode || "").trim(),
+    normalizeSetParam(practiceSet || ""),
+    String(practiceLevel || "").trim().toLowerCase(),
+    String(ownerEmail || "").trim().toLowerCase()
+  ].join("__");
 }
 
 const HISTORY_DELETED_KEY = "rp_teacherSessionHistoryDeleted_v1";
@@ -819,20 +824,45 @@ function updateHistoryActionButtonsState() {
  * Update history based on the latest loaded attempts.
  */
 function updateSessionHistory(sessionCodeRaw, attempts) {
-    if (!sessionCodeRaw) return;
+  if (!sessionCodeRaw) return;
 
   const sessionCode = sessionCodeRaw.trim();
   const nowIso = new Date().toISOString();
 
   const history = loadHistoryFromStorage() || [];
 
-// if this session was previously deleted, clear its tombstone
-const key = getHistoryKey(sessionCode);
-let deletedKeys = loadDeletedHistoryKeys();
-if (deletedKeys.includes(key)) {
-  deletedKeys = deletedKeys.filter((k) => k !== key);
-  saveDeletedHistoryKeys(deletedKeys);
-}
+  const selectedSet = getSelectedPracticeSet();
+  const selectedLevel = currentLevelParam || "on";
+
+  const selectedOwnerEmail = (() => {
+    let owner =
+      CURRENT_SESSION_OWNER_OVERRIDE ||
+      (teacherUser && teacherUser.email) ||
+      OWNER_EMAIL_FOR_VIEW ||
+      "";
+
+    if (!owner) {
+      try {
+        owner = window.localStorage.getItem("rp_lastOwnerEmail") || "";
+      } catch (e) {}
+    }
+
+    return String(owner || "").trim().toLowerCase();
+  })();
+
+  // if this session was previously deleted, clear its tombstone
+  const historyKey = getHistoryKey(
+    sessionCode,
+    selectedSet,
+    selectedLevel,
+    selectedOwnerEmail
+  );
+  let deletedKeys = loadDeletedHistoryKeys();
+  if (deletedKeys.includes(historyKey)) {
+    deletedKeys = deletedKeys.filter((k) => k !== historyKey);
+    saveDeletedHistoryKeys(deletedKeys);
+  }
+
   // ---------- DEDUPE ATTEMPTS BY STUDENT (FIRST ATTEMPT ONLY) ----------
   let dedupedAttempts = [];
 
@@ -845,17 +875,17 @@ if (deletedKeys.includes(key)) {
       const rawName = (a.studentName || "").trim();
 
       // Build a stable key: prefer id, fallback to name
-      const key = (rawId || rawName).toLowerCase();
+      const studentKey = (rawId || rawName).toLowerCase();
 
-      if (!key) {
+      if (!studentKey) {
         // No reliable identity → include, but don't dedupe
         noKeyAttempts.push(a);
         continue;
       }
 
       // Only keep the FIRST attempt we see for this student
-      if (!perStudent.has(key)) {
-        perStudent.set(key, a);
+      if (!perStudent.has(studentKey)) {
+        perStudent.set(studentKey, a);
       }
     }
 
@@ -889,11 +919,15 @@ if (deletedKeys.includes(key)) {
   const uniqueStudentsCount = uniqueStudentNames.size || attemptsCount;
 
   // ---------- MERGE INTO HISTORY ----------
-const idx = history.findIndex(
-  (entry) => entry.sessionCode === sessionCode
-);
+  const idx = history.findIndex((entry) =>
+    getHistoryKey(
+      entry.sessionCode,
+      entry.practiceSet,
+      entry.practiceLevel,
+      entry.ownerEmail
+    ) === historyKey
+  );
 
-  
   const entry = {
     sessionCode,
     lastLoadedAt: nowIso,
@@ -901,23 +935,11 @@ const idx = history.findIndex(
     totalQuestions,
     totalCorrect,
     uniqueStudentsCount,
-    practiceSet: getSelectedPracticeSet(),          // full | mini1 | mini2
-    practiceLevel: currentLevelParam || "on",       // below | on | above
+    practiceSet: selectedSet,     // full | mini1 | mini2
+    practiceLevel: selectedLevel, // below | on | above
     // Persist ownerEmail so history restores correct links later (owner OR co-teacher)
-    ownerEmail: (function () {
-      let owner =
-        CURRENT_SESSION_OWNER_OVERRIDE ||
-        (teacherUser && teacherUser.email) ||
-        OWNER_EMAIL_FOR_VIEW ||
-        "";
-
-      if (!owner) {
-        try {
-          owner = window.localStorage.getItem("rp_lastOwnerEmail") || "";
-        } catch (e) {}
-      }
-      return owner || null;
-    })()  };
+    ownerEmail: selectedOwnerEmail || null
+  };
 
   if (idx >= 0) {
     history[idx] = { ...history[idx], ...entry };
@@ -1107,7 +1129,12 @@ attempts.forEach((a) => {
 
       const addEntries = (entries) => {
         entries.forEach((h) => {
-          const key = `${h.sessionCode}`;
+          const key = getHistoryKey(
+            h.sessionCode,
+            h.practiceSet,
+            h.practiceLevel,
+            h.ownerEmail
+          );
           const existing = mergedByKey.get(key);
 
           if (!existing) {
@@ -1116,10 +1143,11 @@ attempts.forEach((a) => {
             // keep the entry with the newer lastLoadedAt
             const existingTime = (existing.lastLoadedAt || "").toString();
             const newTime = (h.lastLoadedAt || "").toString();
-          if (newTime > existingTime) {
-            // Keep local-only fields (like ownerEmail, label, color) if server doesn’t have them
-            mergedByKey.set(key, { ...existing, ...h });
-          }
+
+            if (newTime > existingTime) {
+              // Keep local-only fields (like ownerEmail, label, color) if server doesn’t have them
+              mergedByKey.set(key, { ...existing, ...h });
+            }
           }
         });
       };
@@ -1136,7 +1164,12 @@ attempts.forEach((a) => {
       // NEW: respect deleted sessions on this device
       const deletedKeys = loadDeletedHistoryKeys();
       const filteredMerged = mergedHistory.filter((h) => {
-        const key = getHistoryKey(h.sessionCode);
+        const key = getHistoryKey(
+          h.sessionCode,
+          h.practiceSet,
+          h.practiceLevel,
+          h.ownerEmail
+        );
         return !deletedKeys.includes(key);
       });
 
@@ -1164,8 +1197,12 @@ function renderSessionHistory(history) {
 
   const deletedKeys = loadDeletedHistoryKeys();
   const visibleHistory = (history || []).filter((entry) => {
-    const key = getHistoryKey(entry.sessionCode);
-    return !deletedKeys.includes(key);
+    const key = getHistoryKey(
+      entry.sessionCode,
+      entry.practiceSet,
+      entry.practiceLevel,
+      entry.ownerEmail
+    );    return !deletedKeys.includes(key);
   });
 
   if (!visibleHistory || !visibleHistory.length) {
@@ -1193,7 +1230,12 @@ function renderSessionHistory(history) {
     btn.type = "button";
     btn.className = "history-item";
 
-    const key = getHistoryKey(entry.sessionCode);
+  const key = getHistoryKey(
+  entry.sessionCode,
+  entry.practiceSet,
+  entry.practiceLevel,
+  entry.ownerEmail
+);
     btn.dataset.key = key;
 
     // Apply any saved color
@@ -1283,7 +1325,7 @@ if (typeof updateCurrentViewSummary === "function") updateCurrentViewSummary();
 
 loadAttempts();
 
-window.scrollTo({ top: 0, behavior: "smooth" });
+
     });
 
     historyListEl.appendChild(btn);
@@ -1295,7 +1337,13 @@ function findHistoryEntryByKey(key) {
   if (!key) return { history: [], index: -1 };
   const history = loadHistoryFromStorage() || [];
   const index = history.findIndex(
-    (h) => getHistoryKey(h.sessionCode) === key
+    (h) =>
+      getHistoryKey(
+        h.sessionCode,
+        h.practiceSet,
+        h.practiceLevel,
+        h.ownerEmail
+      ) === key
   );
   return { history, index };
 }
@@ -3668,8 +3716,9 @@ renderSessionHistory(loadHistoryFromStorage());
     if (urlOwner) {
       CURRENT_SESSION_OWNER_OVERRIDE = String(urlOwner || "").trim().toLowerCase();
 
-      // Do NOT persist this globally (prevents "stuck in co-teacher mode")
-      OWNER_EMAIL_FROM_URL = false;
+      // Keep owner context for linked co-teacher sessions/history hydration
+      OWNER_EMAIL_FOR_VIEW = CURRENT_SESSION_OWNER_OVERRIDE;
+      OWNER_EMAIL_FROM_URL = true;
     }
 
 

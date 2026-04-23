@@ -112,6 +112,11 @@
     url.searchParams.set("sessionCode", SESSION_CODE);
     if (CLASS_FILTER) url.searchParams.set("classCode", CLASS_FILTER);
 
+    // ✅ keep live monitor scoped to the exact set in the URL
+    if (SET_PARAM) {
+      url.searchParams.set("set", SET_PARAM);
+    }
+
     // 🔑 scope progress to the correct teacher (if function expects it)
     if (OWNER_EMAIL) {
       url.searchParams.set("ownerEmail", OWNER_EMAIL);

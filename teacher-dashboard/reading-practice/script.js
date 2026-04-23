@@ -2876,6 +2876,12 @@ async function autosaveProgress() {
     assessmentName: info.assessmentName || "",
     ownerEmail,
 
+    // ✅ preserve the exact practice context for autosave / live monitor / history
+    practiceSet: info.practiceSet || window.CURRENT_PRACTICE_SET || "full",
+    practiceLevel: info.practiceLevel || window.CURRENT_PRACTICE_LEVEL || "on",
+    set: info.practiceSet || window.CURRENT_PRACTICE_SET || "full",
+    level: info.practiceLevel || window.CURRENT_PRACTICE_LEVEL || "on",
+
     // progress
     startedAt: state.startedAt,
     lastSavedAt: new Date().toISOString(),
