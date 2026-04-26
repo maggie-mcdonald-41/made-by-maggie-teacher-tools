@@ -32,13 +32,13 @@
     const v = cleanString(raw).toLowerCase();
     if (!v) return "full";
     if (v === "mini") return "mini1";
-    if (["full", "mini1", "mini2"].includes(v)) return v;
+    if (["full", "mini1", "mini2", "benchmark"].includes(v)) return v;
     return "full";
   }
 
   function normalizeLevelParam(raw) {
     const v = cleanString(raw).toLowerCase();
-    if (["below", "on", "above"].includes(v)) return v;
+    if (["below", "on", "above", "benchmark"].includes(v)) return v;
     return "on";
   }
 
@@ -110,6 +110,8 @@ function buildSummary() {
     accuracy,        // 0–1, you can format as % on the teacher side
     perType,
     perSkill,
+    startedAt: state.startedAt || null,
+    finishedAt: new Date().toISOString(),
   };
 }
 
@@ -270,11 +272,12 @@ async function sendFinalReport() {
   }
 
   // Attach to window so script.js can use it
-  window.RP_REPORT = {
+window.RP_REPORT = {
     setSessionInfo,
     recordQuestionResult,
     sendFinalReport,
-      //  Back-compat alias (script.js may still call this)
+    getSummary: buildSummary,
+    // Back-compat alias
     finalizeAndSend: sendFinalReport,
     _debugGetState
   };

@@ -61,15 +61,15 @@
     color: #0f172a;
   }
 
-  body.dashboard-dark {
-    background: radial-gradient(
-      circle at top left,
-      #09141c 0,
-      #101b26 45%,
-      #020611 100%
-    );
-    color: #004860; /* 💡 LIGHT text in dark mode */
-  }
+body.dashboard-dark {
+  background: radial-gradient(
+    circle at top left,
+    #09141c 0,
+    #101b26 45%,
+    #020611 100%
+  );
+  color: #e5e7eb;
+}
 
   /* ===== OUTER SHELL ===== */
   .dashboard-shell {
@@ -558,7 +558,7 @@ body.dashboard-dark .pill-button-accent {
   flex-direction: column;
   gap: 0.35rem;
   overflow-y: auto;
-  max-height: calc(100vh - 220px);
+  max-height: calc(200vh - 30px);
   padding-right: 4px;
 }
 
@@ -960,26 +960,77 @@ body.dashboard-dark .dashboard-subtitle {
     color: var(--gray-mid);
   }
 
-  .session-tags-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 0.75rem;
-    font-size: 0.78rem;
-  }
+.session-tags-row {
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
 
-  .session-tag {
-    padding: 0.25rem 0.6rem;
-    border-radius: 999px;
-    background: var(--bg-pill);
-    color: var(--navy);
-    border: 1px solid rgba(0, 0, 0, 0.03);
-    white-space: nowrap;
-  }
+.session-tags-row .tag-pill,
+.session-tags-row .standard-tag,
+.session-tags-row .benchmark-standard-tag {
+  max-width: 100%;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
 
-  .session-tag span {
-    font-weight: 700;
-  }
+.session-tags-row .standard-description,
+.session-tags-row .standard-official-text,
+.session-tags-row .benchmark-standard-description {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+
+  .benchmark-standard-mini {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-top: 0.25rem;
+  margin-right: 0.75rem;
+  font-weight: 600;
+}
+
+.standard-toggle-btn {
+  width: fit-content;
+  border: none;
+  background: transparent;
+  color: var(--teal-dark);
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 0.72rem;
+  padding: 0;
+}
+
+.standard-description {
+  display: block;
+  max-width: 520px;
+  margin-top: 0.2rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 8px;
+  background: rgba(5, 193, 184, 0.08);
+  border: 1px solid rgba(5, 193, 184, 0.2);
+  font-size: 0.75rem;
+  line-height: 1.35;
+  font-weight: 500;
+}
+
+.hidden {
+  display: none !important;
+}
+
+body.dashboard-dark .standard-description {
+  background: rgba(45, 212, 191, 0.12);
+  border-color: rgba(45, 212, 191, 0.25);
+  color: #e5e7eb;
+}
+
+body.dashboard-dark .standard-toggle-btn {
+  color: #5eead4;
+}
 
   .session-actions .session-buttons {
   display: flex;
@@ -1679,6 +1730,17 @@ body.dashboard-dark .student-detail-list .drawer-subheading {
   margin-bottom: 0.75rem;
 }
 
+.student-standard-detail {
+  margin-bottom: 0.75rem;
+}
+
+.student-standard-text {
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  line-height: 1.35;
+  color: var(--text-muted, #64748b);
+}
+
 .filter-help {
   margin: 0.25rem 0 0;
   font-size: 0.78rem;
@@ -2234,6 +2296,340 @@ body.dashboard-dark .filter-help {
   }
 }
 
+/*--NEW TAB MODE STYLES--*/
+.mode-launch-panel {
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, #d9d9e3);
+  border-radius: 20px;
+  padding: 1.25rem;
+  margin: 1.25rem 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.mode-tabs {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.mode-tab {
+  border: 2px solid transparent;
+  background: var(--soft-bg, #f4f6fb);
+  color: var(--text-color, #2c2c34);
+  border-radius: 999px;
+  padding: 0.8rem 1.2rem;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.mode-tab:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+.mode-tab.active {
+  background: linear-gradient(135deg, #4158d0, #6c63ff);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.mode-panels {
+  position: relative;
+}
+
+.mode-panel {
+  background: var(--panel-bg, #fcfcff);
+  border: 1px solid var(--border-color, #e2e5ef);
+  border-radius: 18px;
+  padding: 1rem;
+  animation: fadePanel 0.22s ease;
+}
+
+.mode-panel-header {
+  border-radius: 16px;
+  padding: 0.85rem 1rem 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.mode-panel-header h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.2rem;
+}
+
+.mode-panel-header p {
+  margin: 0;
+  line-height: 1.5;
+  font-size: 0.96rem;
+}
+
+.practice-header {
+  background: linear-gradient(135deg, rgba(65, 88, 208, 0.12), rgba(108, 99, 255, 0.08));
+  border: 1px solid rgba(65, 88, 208, 0.15);
+}
+
+.benchmark-header {
+  background: linear-gradient(135deg, rgba(191, 4, 19, 0.12), rgba(82, 66, 79, 0.08));
+  border: 1px solid rgba(191, 4, 19, 0.15);
+}
+
+.mode-panel-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem 1.25rem;
+  align-items: end;
+}
+.mode-panel .muted {
+  margin-top: 0.2rem;
+  line-height: 1.3;
+}
+
+.mode-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.mode-field-group label {
+  font-size: 0.95rem;
+  color: var(--text-color, #2c2c34);
+}
+
+.mode-select {
+  width: 100%;
+  border: 1px solid var(--border-color, #cfd4e2);
+  border-radius: 14px;
+  padding: 0.8rem 0.95rem;
+  font-size: 0.98rem;
+  background: #fff;
+  color: var(--text-color, #2c2c34);
+}
+
+.mode-select:focus,
+.mode-tab:focus {
+  outline: 3px solid rgba(108, 99, 255, 0.22);
+  outline-offset: 2px;
+}
+
+.benchmark-info-box {
+  background: rgba(191, 4, 19, 0.06);
+  border: 1px solid rgba(191, 4, 19, 0.14);
+  border-radius: 14px;
+  padding: 0.9rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.benchmark-info-box strong {
+  display: block;
+  margin-bottom: 0.3rem;
+}
+
+.benchmark-info-box p {
+  margin: 0;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+@keyframes fadePanel {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Dark mode */
+body.dashboard-dark .mode-launch-panel {
+  background: #1f2230;
+  border-color: #34384b;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
+}
+
+body.dashboard-dark .mode-tab {
+  background: #2b3144;
+  color: #f2f4fa;
+}
+
+body.dashboard-dark .mode-tab.active {
+  background: linear-gradient(135deg, #6c63ff, #4158d0);
+  color: #fff;
+}
+
+body.dashboard-dark .mode-panel {
+  background: #252b3a;
+  border-color: #394056;
+}
+
+body.dashboard-dark .mode-field-group label,
+body.dashboard-dark .mode-panel-header p,
+body.dashboard-dark .benchmark-info-box p,
+body.dashboard-dark .mode-panel-header h2,
+body.dashboard-dark .benchmark-info-box strong,
+body.dashboard-dark .mode-launch-panel .filter-label,
+body.dashboard-dark .mode-launch-panel .control-label,
+body.dashboard-dark .mode-launch-panel .muted {
+  color: #f2f4fa !important;
+}
+
+body.dashboard-dark .mode-select,
+body.dashboard-dark .mode-panel .filter-input,
+body.dashboard-dark .mode-panel .control-select {
+  background: #1c2130;
+  color: #f2f4fa;
+  border-color: #414963;
+}
+
+body.dashboard-dark .mode-panel .filter-input::placeholder {
+  color: #b8c2e3;
+}
+
+body.dashboard-dark .practice-header {
+  background: linear-gradient(135deg, rgba(108, 99, 255, 0.22), rgba(65, 88, 208, 0.18));
+  border-color: rgba(170, 175, 255, 0.28);
+}
+
+body.dashboard-dark .benchmark-header {
+  background: linear-gradient(135deg, rgba(191, 4, 19, 0.20), rgba(82, 66, 79, 0.18));
+  border-color: rgba(255, 185, 190, 0.26);
+}
+
+body.dashboard-dark .benchmark-info-box {
+  background: rgba(191, 4, 19, 0.14);
+  border-color: rgba(255, 185, 190, 0.22);
+}
+.mode-panel .filters-row {
+  display: grid;
+  grid-template-columns:
+    minmax(260px, 1.4fr)   /* session name */
+    minmax(160px, 0.8fr)   /* level */
+    minmax(180px, 0.9fr)   /* set */
+    auto;                  /* buttons */
+  gap: 1rem 1.25rem;
+  align-items: end;
+}
+
+.mode-panel .filters-row .filter-group {
+  min-width: 0 !important;
+}
+
+.mode-panel .filters-row .filter-group:last-child > div {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+.mode-panel .filter-input,
+.mode-panel .control-select {
+  width: 100%;
+  box-sizing: border-box;
+}
+.mode-panel .btn-small,
+.mode-panel .pill-button {
+  min-width: 190px;
+  justify-content: center;
+} 
+
+@media (max-width: 900px) {
+  .mode-panel .filters-row {
+    grid-template-columns: 1fr;
+  }
+
+  .mode-panel .filters-row .filter-group:last-child > div {
+    justify-content: flex-start;
+  }
+}
+/* ===== FORCE MODE PANEL TEXT TO BE READABLE IN DARK MODE ===== */
+body.dark-mode .mode-panel-header,
+body.dark .mode-panel-header,
+body.dark-mode .benchmark-info-box,
+body.dark .benchmark-info-box {
+  color: #f5f7ff !important;
+}
+
+body.dark-mode .mode-panel-header h2,
+body.dark .mode-panel-header h2,
+body.dark-mode .mode-panel-header p,
+body.dark .mode-panel-header p,
+body.dark-mode .benchmark-info-box strong,
+body.dark .benchmark-info-box strong,
+body.dark-mode .benchmark-info-box p,
+body.dark .benchmark-info-box p {
+  color: #f5f7ff !important;
+}
+
+body.dark-mode .practice-header,
+body.dark .practice-header {
+  background: linear-gradient(135deg, rgba(108, 99, 255, 0.22), rgba(65, 88, 208, 0.18)) !important;
+  border-color: rgba(170, 175, 255, 0.28) !important;
+}
+
+body.dark-mode .benchmark-header,
+body.dark .benchmark-header {
+  background: linear-gradient(135deg, rgba(191, 4, 19, 0.20), rgba(82, 66, 79, 0.18)) !important;
+  border-color: rgba(255, 185, 190, 0.26) !important;
+}
+
+body.dark-mode .benchmark-info-box,
+body.dark .benchmark-info-box {
+  background: rgba(191, 4, 19, 0.14) !important;
+  border-color: rgba(255, 185, 190, 0.22) !important;
+}
+
+body.dark-mode .mode-launch-panel .filter-label,
+body.dark .mode-launch-panel .filter-label,
+body.dark-mode .mode-launch-panel .control-label,
+body.dark .mode-launch-panel .control-label {
+  color: #dbe2ff !important;
+}
+
+body.dark-mode .mode-launch-panel .muted,
+body.dark .mode-launch-panel .muted {
+  color: #b8c2e3 !important;
+}
+
+.standard-block {
+  margin-top: 6px;
+}
+
+.standard-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.standard-toggle-btn {
+  font-size: 0.7rem;
+  border: none;
+  background: transparent;
+  color: var(--teal-dark);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.standard-description {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(0, 168, 181, 0.06);
+  border: 1px solid rgba(0, 168, 181, 0.15);
+}
+
+.hidden {
+  display: none;
+}
+
 </style>
 
 </head>
@@ -2375,58 +2771,95 @@ body.dashboard-dark .filter-help {
     <main class="dashboard-main">
       <!-- Filters -->
       <!-- Filters -->
-      <section class="dashboard-filters">
-        <!-- ROW 1: Name + Start/Monitor + Mini Set -->
+       
+   <section class="dashboard-filters">
+  <section class="mode-launch-panel">
+    <div class="mode-tabs" role="tablist" aria-label="Activity Type">
+      <button
+        class="mode-tab active"
+        id="practiceTab"
+        role="tab"
+        aria-selected="true"
+        aria-controls="practicePanel"
+        data-mode="practice"
+        type="button"
+      >
+        📘 Practice Mode
+      </button>
+
+      <button
+        class="mode-tab"
+        id="benchmarkTab"
+        role="tab"
+        aria-selected="false"
+        aria-controls="benchmarkPanel"
+        data-mode="benchmark"
+        type="button"
+      >
+        🧪 Benchmark Mode
+      </button>
+    </div>
+
+    <div class="mode-panels">
+      <!-- PRACTICE PANEL -->
+      <section
+        class="mode-panel active"
+        id="practicePanel"
+        role="tabpanel"
+        aria-labelledby="practiceTab"
+      >
+        <div class="mode-panel-header practice-header">
+          <h2>Practice Mode</h2>
+          <p>
+            Use skill-based practice sets for targeted review, intervention, and repeated practice.
+          </p>
+        </div>
+
         <div class="filters-row">
-          <!-- A. SESSION CODE (TEACHER-TYPED) -->
+          
+          <!-- SESSION NAME -->
           <div class="filter-group" style="min-width: 220px;">
             <label for="filter-session" class="filter-label">
               Name this Practice Session
             </label>
-          <input
-            id="filter-session"
-            type="text"
-            class="filter-input"
-            placeholder="e.g. 6A-STARTTIME-DEC2"
-          />
+            <input
+              id="filter-session"
+              type="text"
+              class="filter-input"
+              placeholder="e.g. 6A-STARTTIME-DEC2"
+            />
 
-          <div id="session-duplicate-helper" class="session-duplicate-helper" hidden>
-            <div id="session-duplicate-message" class="session-duplicate-message"></div>
-            <div id="session-duplicate-suggestions" class="session-duplicate-suggestions"></div>
+            <div id="session-duplicate-helper" class="session-duplicate-helper" hidden>
+              <div id="session-duplicate-message" class="session-duplicate-message"></div>
+              <div id="session-duplicate-suggestions" class="session-duplicate-suggestions"></div>
+            </div>
+
           </div>
 
-          <span class="muted" style="margin-top: 0.25rem;">
-            Use something you’ll recognize later (class + topic + date).
-          </span>
-          </div>
-
-
-<label class="control-label" for="practice-level">
-  Practice level
-</label>
-
-<div class="select-wrap">
-  <select id="practice-level" class="control-select">
-    <option value="on" selected>On Grade</option>
-    <option value="below">Below Grade</option>
-    <option value="above">Enrichment</option>
-  </select>
-</div>
-
-
-          <!-- B2. MINI SET TOGGLE -->
+          <!-- PRACTICE LEVEL -->
           <div class="filter-group" style="min-width: 220px;">
-          <label class="control-label" for="practice-set">Practice set</label>
-          <select id="practice-set" class="control-select">
-            <option value="full" selected>Full set (default)</option>
-            <option value="mini1">Mini set 1-Quick Check</option>
-            <option value="mini2">Mini set 2-Extra Practice</option>
-          </select>
-
+            <label class="control-label" for="practice-level">Practice level</label>
+            <div class="select-wrap">
+              <select id="practice-level" class="control-select">
+                <option value="on" selected>On Grade</option>
+                <option value="below">Below Grade</option>
+                <option value="above">Enrichment</option>
+              </select>
+            </div>
           </div>
-          
-          <!-- B. START + MONITOR BUTTONS -->
-          <div class="filter-group" style="min-width: 240px;">
+
+          <!-- PRACTICE SET -->
+          <div class="filter-group" style="min-width: 220px;">
+            <label class="control-label" for="practice-set">Practice set</label>
+            <select id="practice-set" class="control-select">
+              <option value="full" selected>Full set (default)</option>
+              <option value="mini1">Mini set 1-Quick Check</option>
+              <option value="mini2">Mini set 2-Extra Practice</option>
+            </select>
+          </div>
+
+          <!-- BUTTONS -->
+          <br><div class="filter-group" style="min-width: 240px;">
             <label class="filter-label">&nbsp;</label>
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
               <button
@@ -2434,7 +2867,7 @@ body.dashboard-dark .filter-help {
                 class="btn-small btn-primary-small"
                 type="button"
               >
-                ➕ Start New Session
+                ➕ Start Practice Session
               </button>
 
               <button
@@ -2448,7 +2881,79 @@ body.dashboard-dark .filter-help {
             </div>
           </div>
         </div>
+      </section>
 
+      <!-- BENCHMARK PANEL -->
+      <section
+        class="mode-panel"
+        id="benchmarkPanel"
+        role="tabpanel"
+        aria-labelledby="benchmarkTab"
+        hidden
+      >
+        <div class="mode-panel-header benchmark-header">
+          <h2>Benchmark Mode</h2>
+          <p>
+            Use benchmark assessments to simulate the real test experience and track results by standard.
+          </p>
+        </div>
+
+        <div class="benchmark-info-box">
+          <strong>Benchmark Mode Info</strong>
+          <p>
+            Students will complete a full assessment with multiple passages, mixed question types, and standards-based reporting.
+          </p>
+        </div>
+
+        <div class="filters-row">
+          <!-- SESSION NAME -->
+          <div class="filter-group" style="min-width: 220px;">
+            <label for="benchmark-session" class="filter-label">
+              Name this Benchmark Session
+            </label>
+            <input
+              id="benchmark-session"
+              type="text"
+              class="filter-input"
+              placeholder="e.g. 6A-Q4-BENCHMARK"
+            />
+
+          </div>
+
+          <!-- BENCHMARK SET -->
+          <div class="filter-group" style="min-width: 220px;">
+            <label class="control-label" for="benchmark-set">Benchmark set</label>
+            <select id="benchmark-set" class="control-select">
+              <option value="q4" selected>Quarter 4 Benchmark</option>
+            </select>
+          </div>
+
+          <!-- BUTTONS -->
+          <div class="filter-group" style="min-width: 240px;">
+            <label class="filter-label">&nbsp;</label>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <button
+                id="start-benchmark-btn"
+                class="btn-small btn-primary-small"
+                type="button"
+              >
+                🧪 Start Benchmark
+              </button>
+
+              <button
+                id="monitor-benchmark-btn"
+                class="pill-button pill-button-accent"
+                type="button"
+                disabled
+              >
+                👀 Monitor Live Session
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </section>
         <!-- ROW 2: Links -->
         <div class="filters-row">
           <!-- C. STUDENT LINK (READ-ONLY) -->
@@ -2617,6 +3122,13 @@ body.dashboard-dark .filter-help {
           </div>
           <div class="summary-subtext">
             <span id="summary-avg-correct">0.0 correct on average</span>
+          </div>
+        </article>
+        <article class="summary-card">
+          <div class="summary-label">Benchmark Summary</div>
+          <div class="summary-value" id="summary-benchmark-accuracy">—</div>
+          <div class="summary-subtext" id="summary-benchmark-details">
+            No benchmark attempts loaded
           </div>
         </article>
       </section>
@@ -2845,6 +3357,9 @@ body.dashboard-dark .filter-help {
             <p id="student-detail-attempts">
               Attempts counted: —.
             </p>
+            <p id="student-detail-benchmark">
+              Benchmark: —.
+            </p>
           </div>
 
           <div class="student-detail-columns">
@@ -2901,7 +3416,9 @@ body.dashboard-dark .filter-help {
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <!-- Dashboard + reading trainer scripts -->
+  <script src="standards-catalog.js"></script>
   <script src="teacher-dashboard.js"></script>
+
 
   <!-- Theme toggle (inline IIFE) -->
   <script>

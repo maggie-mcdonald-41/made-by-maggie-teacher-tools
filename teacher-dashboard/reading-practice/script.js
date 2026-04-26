@@ -3,8 +3,7 @@
 // ====== HIGHLIGHTING STATE ======
 let currentHighlightColor = "yellow"; // default color
 // ====== ASSESSMENT LABEL ======
-const ASSESSMENT_NAME = "Reading Practice";
-
+let ASSESSMENT_NAME = "Reading Practice";
 // ---- Read Aloud: allow app to stop speech from anywhere (safe no-op if unsupported) ----
 window.RP_TTS_STOP = function RP_TTS_STOP() {
   try {
@@ -71,7 +70,11 @@ let rpPendingResumeData = null;
 // Finalize LEVEL + questions once the bundle is ready
 function configureLevelAndQuestions(levelObj) {
   LEVEL = levelObj;
-
+  if (LEVEL?.mode === "benchmark") {
+    ASSESSMENT_NAME = LEVEL.label || "Benchmark";
+    window.CURRENT_PRACTICE_SET = "benchmark";
+    window.CURRENT_PRACTICE_LEVEL = "benchmark";
+  }
   if (!LEVEL || typeof LEVEL !== "object") {
     console.error("READING_LEVEL object missing/invalid. Did the level bundle load?", levelObj);
     return;
@@ -89,14 +92,17 @@ function configureLevelAndQuestions(levelObj) {
       // set: full | mini1 | mini2 (legacy: mini -> mini1)
       let setParam = (params.get("set") || "full").toLowerCase();
       if (setParam === "mini") setParam = "mini1";
-      if (!Object.prototype.hasOwnProperty.call(QUESTION_SETS, setParam)) {
+      if (LEVEL?.mode === "benchmark") {
+        setParam = "benchmark";
+      } else if (!Object.prototype.hasOwnProperty.call(QUESTION_SETS, setParam)) {
         setParam = "full";
       }
       window.CURRENT_PRACTICE_SET = setParam;
-
       // level: on | below | above (default: on)
       let levelParam = (params.get("level") || "on").toLowerCase();
-      if (!["on", "below", "above"].includes(levelParam)) {
+      if (LEVEL?.mode === "benchmark") {
+        levelParam = "benchmark";
+      } else if (!["on", "below", "above"].includes(levelParam)) {
         levelParam = "on";
       }
       window.CURRENT_PRACTICE_LEVEL = levelParam;
@@ -1059,6 +1065,24 @@ function updateQuestionNavStrip() {
   });
 }
 
+
+function isBenchmarkMode() {
+  return LEVEL?.mode === "benchmark" || window.CURRENT_PRACTICE_SET === "benchmark";
+}
+
+function formatBenchmarkTime(milliseconds) {
+  if (!milliseconds || milliseconds < 0) return "Not available";
+
+  const totalSeconds = Math.round(milliseconds / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  if (minutes < 1) return `${seconds} seconds`;
+  if (seconds === 0) return `${minutes} minute${minutes === 1 ? "" : "s"}`;
+
+  return `${minutes} minute${minutes === 1 ? "" : "s"}, ${seconds} seconds`;
+}
+
 // NEW: overall set progress bar (like the organizers)
 function updateProgressBar() {
   if (!progressBarEl || !progressMessageEl) return;
@@ -1326,11 +1350,38 @@ function renderQuestion() {
   );
   delete questionStemEl.dataset.highlightColor;
 
+// Passage tabs / linked passage handling
+if (q.hidePassageTabs) {
+  const p1 = document.getElementById("passage-1");
+  const p2 = document.getElementById("passage-2");
+
+  if (p1) p1.innerHTML = "";
+  if (p2) p2.innerHTML = "";
+
+  if (linkedPassageLabelEl) linkedPassageLabelEl.textContent = "";
+
+} else if (q.passageTabs) {
+  const p1 = document.getElementById("passage-1");
+  const p2 = document.getElementById("passage-2");
+
+  if (p1) {
+    p1.innerHTML = q.passageTabs[1] || "";
+  }
+
+  if (p2) {
+    p2.innerHTML = q.passageTabs[2] || "";
+  }
+
+  if (typeof setActivePassage === "function") {
+    setActivePassage(q.linkedPassage || 1);
+  }
+
   // Linked passage helper label
   if (q.linkedPassage === 1 || q.linkedPassage === 2) {
     if (linkedPassageLabelEl) {
       linkedPassageLabelEl.textContent = `Tip: You may want to look back at Passage ${q.linkedPassage}.`;
     }
+
     if (typeof setActivePassage === "function") {
       setActivePassage(q.linkedPassage);
     }
@@ -1338,10 +1389,27 @@ function renderQuestion() {
     if (linkedPassageLabelEl) linkedPassageLabelEl.textContent = "";
   }
 
-  // Stem and instructions
-  questionStemEl.textContent = q.stem || "";
-  questionInstructionsEl.textContent = q.instructions || "";
+} else {
+  if (linkedPassageLabelEl) linkedPassageLabelEl.textContent = "";
+}
 
+  // Remove old stimulus if it exists
+const oldStimulus = document.querySelector(".question-stimulus");
+if (oldStimulus) oldStimulus.remove();
+
+// Stem and instructions
+questionStemEl.textContent = q.stem || "";
+questionInstructionsEl.textContent = q.instructions || "";
+
+// ✅ NEW: stimulus block
+if (q.stimulus) {
+  const stimulusEl = document.createElement("div");
+  stimulusEl.className = "question-stimulus";
+  stimulusEl.textContent = q.stimulus;
+
+  // Insert directly under the question stem
+  questionStemEl.insertAdjacentElement("afterend", stimulusEl);
+}
   // Reset area
   questionOptionsEl.innerHTML = "";
   resetFeedback();
@@ -2600,6 +2668,154 @@ onQuestionAnsweredResult(isCorrect);
 }
 
 
+function formatAttemptTime(milliseconds) {
+  if (!milliseconds || milliseconds < 0) return "Not available";
+
+  const totalSeconds = Math.round(milliseconds / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  if (minutes < 1) return `${seconds} seconds`;
+  if (seconds === 0) return `${minutes} minute${minutes === 1 ? "" : "s"}`;
+
+  return `${minutes} minute${minutes === 1 ? "" : "s"}, ${seconds} seconds`;
+}
+
+function showStudentAttemptSummary() {
+  if (!window.RP_REPORT || typeof window.RP_REPORT.getSummary !== "function") {
+    console.warn("[Student Summary] RP_REPORT.getSummary is not available.");
+    return;
+  }
+
+  const modal = document.getElementById("benchmark-summary-modal");
+  const body = document.getElementById("benchmark-summary-body");
+  const closeBtn = document.getElementById("benchmark-summary-close");
+  const title = modal?.querySelector(".rp-modal-title");
+  const intro = modal?.querySelector(".rp-modal-text");
+
+  if (!modal || !body) {
+    console.warn("[Student Summary] Summary modal elements were not found.");
+    return;
+  }
+
+  const isBenchmark = isBenchmarkMode();
+  const summary = window.RP_REPORT.getSummary();
+  const catalog = window.RP_STANDARDS_CATALOG || {};
+
+  if (title) {
+    title.textContent = isBenchmark ? "Benchmark Complete! 🎉" : "Practice Complete! 🎉";
+  }
+
+  if (intro) {
+    intro.textContent = isBenchmark
+      ? "Here is a quick look at your strengths and what to keep practicing."
+      : "Here is a quick look at your reading skill strengths and what to keep practicing.";
+  }
+
+  const answeredCount = Number(summary?.answeredCount || summary?.totalQuestions || 0);
+  const numCorrect = Number(summary?.numCorrect || summary?.correct || summary?.correctCount || 0);
+  const overallPct = answeredCount ? Math.round((numCorrect / answeredCount) * 100) : null;
+
+  const startedAt = summary?.startedAt ? new Date(summary.startedAt).getTime() : null;
+  const finishedAt = summary?.finishedAt ? new Date(summary.finishedAt).getTime() : Date.now();
+
+  const elapsedMs = startedAt ? finishedAt - startedAt : null;
+  const elapsedMinutes = elapsedMs ? elapsedMs / 60000 : null;
+  const timeText = formatAttemptTime(elapsedMs);
+
+  const slowDownMessage = elapsedMinutes !== null && elapsedMinutes < 10
+    ? `
+      <div class="benchmark-summary-warning">
+        <strong>⏳ Slow down next time.</strong>
+        <p>Strong readers take time to reread, review evidence, and check their answers before submitting.</p>
+      </div>
+    `
+    : "";
+
+  const perSkill = summary?.perSkill || {};
+
+  const skillRows = Object.entries(perSkill)
+    .filter(([skill, stats]) => {
+      const total = Number(stats.total || 0);
+      if (total <= 0) return false;
+
+      if (isBenchmark) {
+        return /^6\./.test(skill);
+      }
+
+      if (typeof catalog.shouldShowSkill === "function") {
+        return catalog.shouldShowSkill(skill);
+      }
+
+      return !/^passage-\d+$/.test(skill) && !["mcq", "multi-select", "matching", "highlight", "dropdown", "drag-drop"].includes(skill);
+    })
+    .map(([skill, stats]) => {
+      const total = Number(stats.total || 0);
+      const correct = Number(stats.correct || 0);
+      const pct = total ? Math.round((correct / total) * 100) : 0;
+
+      return {
+        skill,
+        total,
+        correct,
+        pct,
+        label: typeof catalog.formatSkillLabel === "function"
+          ? catalog.formatSkillLabel(skill)
+          : skill,
+        text: typeof catalog.getStudentText === "function"
+          ? catalog.getStudentText(skill)
+          : "I can keep practicing this reading skill."
+      };
+    })
+    .sort((a, b) => b.pct - a.pct);
+
+  const strengths = skillRows.slice(0, 2);
+
+  const needsPractice = skillRows
+    .slice()
+    .reverse()
+    .filter((row) => !strengths.some((s) => s.skill === row.skill))
+    .slice(0, 2);
+
+  body.innerHTML = `
+    <div class="benchmark-summary-scorebox">
+      <p><strong>${isBenchmark ? "Benchmark Score" : "Practice Score"}:</strong> ${overallPct !== null ? `${overallPct}%` : "Not available"}</p>
+      <p><strong>Time Spent:</strong> ${timeText}</p>
+      ${slowDownMessage}
+    </div>
+
+    <div class="benchmark-summary-section benchmark-strengths">
+      <h3>🌟 Strengths</h3>
+      ${strengths.length ? strengths.map(row => `
+        <div class="benchmark-summary-standard">
+          <strong>${row.label} — ${row.pct}%</strong>
+          <p>${row.text}</p>
+        </div>
+      `).join("") : "<p>You completed the practice! Your teacher can review more details with you.</p>"}
+    </div>
+
+    <div class="benchmark-summary-section benchmark-practice">
+      <h3>🎯 Keep Practicing</h3>
+      ${needsPractice.length ? needsPractice.map(row => `
+        <div class="benchmark-summary-standard">
+          <strong>${row.label} — ${row.pct}%</strong>
+          <p>${row.text}</p>
+        </div>
+      `).join("") : "<p>No extra priority area was found yet. Great effort!</p>"}
+    </div>
+  `;
+
+  modal.classList.add("active");
+  modal.setAttribute("aria-hidden", "false");
+
+  if (closeBtn) {
+    closeBtn.onclick = () => {
+      modal.classList.remove("active");
+      modal.setAttribute("aria-hidden", "true");
+    };
+  }
+}
+
 // ====== NAVIGATION ======
 if (nextQuestionBtn) {
   nextQuestionBtn.addEventListener("click", () => {
@@ -2610,6 +2826,8 @@ if (nextQuestionBtn) {
       // End of set
       setFeedback("You’ve reached the end of this practice set. 🎉", true);
       fireSetCompleteConfetti();
+      showStudentAttemptSummary();
+
       // 🔹 REPORTING HOOK – send summary to Netlify/Google Sheet
       if (window.RP_REPORT && typeof window.RP_REPORT.sendFinalReport === "function") {
         window.RP_REPORT.sendFinalReport();

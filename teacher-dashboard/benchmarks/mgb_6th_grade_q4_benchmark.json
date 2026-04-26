@@ -1,0 +1,592 @@
+{
+  "assessmentId": "mgb_6th_grade_ia4_benchmark",
+  "title": "MGB 6th Grade IA4 Study Resource",
+  "mode": "benchmark",
+  "reportingMode": "standard",
+  "grade": 6,
+  "subject": "ELA",
+  "sourceFile": "Copy of Teacher Copy - MGB 6th Grade IA4 Study Resource .pdf",
+  "sections": [
+    {
+      "sectionId": "s1_lyra_myth",
+      "title": "The Story of Lyra",
+      "type": "single_passage",
+      "passages": [
+        {
+          "passageId": "p1",
+          "title": "The Story of Lyra",
+          "genre": "myth",
+          "text": "Apollo, god of music and light, was admired for his extraordinary talent with the lyre. During peaceful times, Apollo would teach mortals how to create beautiful melodies. He took pride in his students, especially those who honored the gods and respected their gifts.\n\nOne of Apollo’s students was a young musician named Lyra. She lived in a small village and came from a modest family. Her mother crafted instruments, and Lyra spent her days practicing songs on a handmade lyre. Her music was so beautiful that villagers often whispered that Apollo himself must have taught her.\n\nLyra rejected these claims and boldly declared that her talent came from her own effort. She insisted she was more skilled than Apollo and had no need for divine instruction. \"My music is greater than any god’s,\" she proclaimed. \"It is my dedication and passion that make me superior.\"\n\nWhen Apollo heard of Lyra’s boastful words, he decided to confront her. Disguising himself as a traveling musician, he approached Lyra and said, \"It is unwise to compare yourself to the gods. Their talents are far beyond those of any mortal.\"\n\nLyra laughed and replied, \"If Apollo doubts me, then let him meet me in a contest. I will prove that my music is greater than his.\"\n\nAt once, the traveler’s disguise vanished, revealing the glowing form of Apollo himself. Without hesitation, Apollo agreed to the contest.\n\nAs they began to play, the air filled with enchanting melodies. Lyra’s music was lively and bold, while Apollo’s was rich and powerful. Though Lyra believed she had outperformed the god, Apollo was angered by her arrogance. When he demanded that she apologize, Lyra refused.\n\nIn his fury, Apollo struck his lyre against the ground. At that moment, Lyra felt her voice fade and her body stiffen. \"Since you believe your music is greater than the gods,\" Apollo declared, \"you shall become an instrument yourself.\" Lyra was transformed into a silent wooden lyre.\n\nIt is said that the lyre remains a symbol of music to this day, reminding mortals to respect the gifts they are given and honor those who inspire them."
+        }
+      ],
+      "questions": [
+        {
+          "id": 1,
+          "type": "multiple_choice",
+          "standards": ["6.T.T.1.c"],
+          "prompt": "Which sentence best states the theme of the text?",
+          "choices": {
+            "A": "Hard work always leads to success.",
+            "B": "Nature is more powerful than humans.",
+            "C": "Music is the most important art form.",
+            "D": "Pride and arrogance can lead to punishment."
+          },
+          "correctAnswer": "D"
+        },
+        {
+          "id": 2,
+          "type": "two_part_multiple_choice",
+          "standards": ["6.T.C.2.c", "6.T.PM.1.a"],
+          "partA": {
+            "prompt": "What story element specific to myths is found in this text?",
+            "choices": {
+              "A": "A detailed description of a realistic setting",
+              "B": "A character who learns a lesson through school",
+              "C": "The involvement of a god who punishes a mortal",
+              "D": "A conflict between two ordinary people"
+            },
+            "correctAnswer": "C"
+          },
+          "partB": {
+            "prompt": "Which excerpt from the text best supports your answer in Part A?",
+            "choices": {
+              "A": "‘She lived in a small village and came from a modest family.’",
+              "B": "‘At once, the traveler’s disguise vanished, revealing the glowing form of Apollo himself.’",
+              "C": "‘Disguising himself as a traveling musician, he approached Lyra…’",
+              "D": "‘Lyra spent her days practicing songs on a handmade lyre.’"
+            },
+            "correctAnswer": "B"
+          }
+        },
+        {
+          "id": 3,
+          "type": "multiple_choice",
+          "standards": ["6.L.V.3.b"],
+          "prompt": "Read paragraph 5 of the text. Which meaning of the word replied best fits the way it is used in this sentence?",
+          "stimulus": "Lyra laughed and replied, ‘If Apollo doubts me, then let him meet me in a contest. I will prove that my music is greater than his.’",
+          "choices": {
+            "A": "Answered",
+            "B": "Fought",
+            "C": "Whispered",
+            "D": "Ignored"
+          },
+          "correctAnswer": "A"
+        },
+        {
+          "id": 4,
+          "type": "multiple_choice",
+          "standards": ["6.T.T.1.b"],
+          "prompt": "Which event in the myth marks a turning point that separates the rising action from the climax of the story?",
+          "choices": {
+            "A": "Apollo reveals himself and accepts the contest",
+            "B": "Apollo hears about Lyra’s boastful claims",
+            "C": "Lyra practices music in her village",
+            "D": "Lyra is transformed into a lyre"
+          },
+          "correctAnswer": "A"
+        }
+      ]
+    },
+    {
+      "sectionId": "s2_jemison_johnson",
+      "title": "Mae Jemison Reaches for the Stars / Lonnie Johnson Invents the Future",
+      "type": "paired_passage",
+      "passages": [
+        {
+          "passageId": "p2a",
+          "title": "Mae Jemison Reaches for the Stars",
+          "genre": "informational_biography",
+          "text": "As a young girl, Mae Jemison often looked up at the night sky with curiosity. Growing up in Chicago, she loved science, dance, and reading. She especially enjoyed watching episodes of Star Trek, where she saw a future filled with exploration and discovery. These early interests helped shape her dream of traveling beyond Earth.\n\nMae Jemison was born on October 17, 1956. From an early age, she showed strong academic ability and determination. She excelled in school and developed a passion for science. Despite facing challenges as a Black woman in fields where few looked like her, Jemison remained focused on her goals.\n\nJemison attended Stanford University at just 16 years old, where she studied chemical engineering and African American studies. Later, she earned a medical degree from Cornell University. Her education prepared her for a wide range of opportunities, including work as a doctor and service in the Peace Corps.\n\nAlthough she had a successful career in medicine, Jemison never let go of her dream of space travel. She applied to NASA’s astronaut program and was selected in 1987. This achievement required years of hard work, persistence, and confidence in her abilities.\n\nIn 1992, Jemison made history when she traveled into space aboard the Space Shuttle Endeavour. She became the first Black woman to go to space. Her journey inspired countless people and showed that determination can turn dreams into reality.\n\n<img src=\"../media/mae-jemison-space.png\" alt=\"Mae Jemison aboard the Space Shuttle Endeavour\" class=\"passage-image\">\n\nToday, Jemison continues to promote science education  and encourages young people to pursue careers in STEM. She reminds others that imagination and perseverance can open doors to incredible opportunities."
+        },
+        {
+          "passageId": "p2b",
+          "title": "Lonnie Johnson Invents the Future",
+          "genre": "informational_biography",
+          "text": "As a child growing up in Mobile, Alabama, Lonnie Johnson was always curious about how things worked. He enjoyed taking apart machines and building his own inventions. His curiosity often led him to experiment with ideas that others might overlook.\n\nLonnie Johnson was born on October 6, 1949. He grew up during a time when opportunities for Black students in science and engineering were limited. Despite this, Johnson excelled in school and pursued his passion for learning. He later earned degrees in engineering and began working for the U.S. Air Force and NASA.\n\nWhile working as an engineer, Johnson contributed to important space missions. However, one of his most famous achievements came from an unexpected moment. While experimenting with a new cooling system, he accidentally created a powerful stream of water.\n\nJohnson realized that his invention could be turned into a toy. He developed what would later become the Super Soaker water gun. At first, companies were unsure about the idea, but Johnson continued to improve his design and present it to manufacturers.\n\nEventually, the Super Soaker became one of the most popular toys in the world. Johnson’s invention brought joy to millions of children while also demonstrating the power of creativity and persistence.\n\nToday, Johnson continues to work as an inventor and engineer. He also supports education initiatives that encourage students to explore careers in science and technology. His story shows how curiosity and determination can lead to unexpected success."
+        }
+      ],
+      "questions": [
+        {
+          "id": 5,
+          "linkedPassageId": "p2a",
+          "linkedPassageTab": 1,
+          "type": "multiple_choice",
+          "standards": ["6.L.V.1.b"],
+          "prompt": "Which words describe the tone with which the author conveys their point of view about Mae Jemison?",
+          "choices": {
+            "A": "Critical and doubtful",
+            "B": "Admiring and encouraging",
+            "C": "Confused and uncertain",
+            "D": "Angry and frustrated"
+          },
+          "correctAnswer": "B"
+        },
+        {
+          "id": 6,
+          "linkedPassageId": "p2b",
+          "linkedPassageTab": 2,
+          "type": "multiple_choice",
+          "standards": ["6.T.RA.1.a"],
+          "prompt": "After reading this pair of texts, a student decides to do further research on STEM careers. Which question would best support the student's research?",
+          "choices": {
+            "A": "What are some popular toys for children today?",
+            "B": "How do astronauts prepare for space travel?",
+            "C": "What education and skills are needed for careers in STEM fields?",
+            "D": "Why do people enjoy watching science fiction shows?"
+          },
+          "correctAnswer": "C"
+        },
+        {
+          "id": 7,
+          "linkedPassageId": "p2b",
+          "linkedPassageTab": 2,
+          "type": "multiple_choice",
+          "standards": ["6.T.T.2.b"],
+          "prompt": "Which BEST describes the similarity between the two texts?",
+          "choices": {
+            "A": "Both describe how individuals became famous through entertainment careers.",
+            "B": "Both explain how two individuals overcame challenges to succeed in STEM fields.",
+            "C": "Both focus on the importance of teamwork in sports.",
+            "D": "Both describe fictional characters who achieve their dreams."
+          },
+          "correctAnswer": "B"
+        },
+        {
+          "id": 8,
+          "linkedPassageId": "p2a",
+          "linkedPassageTab": 1,
+          "type": "multiple_choice",
+          "standards": ["6.T.SS.1.a"],
+          "prompt": "Read the sentence from paragraph 4 of Mae Jemison Reaches for the Stars. How does the author mainly develop this idea in the text?",
+          "stimulus": "‘Although she had a successful career in medicine, Jemison never let go of her dream of space travel.’",
+          "choices": {
+            "A": "By describing the challenges of medical school in detail",
+            "B": "By explaining how Jemison changed careers and applied to NASA",
+            "C": "By listing all of Jemison’s awards and achievements",
+            "D": "By comparing Jemison to other astronauts"
+          },
+          "correctAnswer": "B"
+        },
+        {
+          "id": 9,
+          "linkedPassageId": "p2a",
+          "linkedPassageTab": 1,
+          "type": "multiple_choice",
+          "standards": ["6.T.C.1.b"],
+          "prompt": "How does the illustration in the passage ‘Mae Jemison Reaches for the Stars’ support the text?",
+          "choices": {
+            "A": "It shows what space looks like from Earth’s surface",
+            "B": "It helps the reader understand what Jemison experienced as an astronaut",
+            "C": "It explains how space shuttles are built",
+            "D": "It shows other astronauts working together on a mission"
+          },
+          "correctAnswer": "B"
+        }
+      ]
+    },
+    {
+      "sectionId": "s3_riverside_commons",
+      "title": "Riverside Commons Letter",
+      "type": "single_passage",
+      "passages": [
+        {
+          "passageId": "p3",
+          "title": "Letter to the Owner of Riverside Commons",
+          "genre": "argument_letter",
+          "text": "To Ms. Laura Bennett,\n\nOne of the most talked-about issues in our town of Brookdale is the new rules at Riverside Commons. Should there be a strict curfew for students at Riverside Commons? As of October 1st, a 6:00 p.m. curfew was put into place. Anyone under the age of eighteen must be accompanied by an adult or they will be asked to leave the property.\n\nSome residents believe this curfew is exactly what the town needed. They argue that teenagers often gather in large groups and cause disruptions for shoppers and employees. Others believe the curfew is unfair because most students are responsible and respectful. Whether this issue is being debated in serious town meetings or casually discussed at dinner tables, it has encouraged me to share my thoughts on the matter.\n\nCurfews are not new to Brookdale. In fact, the city already enforces a 10:00 p.m. curfew for all minors. The purpose of that law is to keep young people safe and reduce late-night incidents. Many parents feel reassured knowing their children are not roaming the streets late at night. While some may view curfews as limiting, most agree they help maintain order and safety in the community.\n\nHowever, restricting access to a popular and safe place like Riverside Commons takes away an important space for young people. Nearly half of all customers at the shops and restaurants are under eighteen. Without students, many businesses would see a noticeable drop in sales.\n\nAdditionally, students need a safe and positive place to spend time after school. Many teens stay late due to sports, clubs, and tutoring sessions that often end around 5:00 p.m. As a result, they have very little time to visit Riverside Commons before the curfew begins.\n\nIt is true that problems sometimes occur when unsupervised teens gather in groups. On a few occasions, store owners have reported loud behavior or minor disruptions. For example, the café ‘Morning Brew’ mentioned that a few customers were distracted by students joking loudly outside. However, these incidents are rare, and most visitors are not affected. It seems as though the belief is that one bad seed spoils the entire basket. Punishing all students for the actions of a few is not fair.\n\nRiverside Commons should remain a welcoming place for everyone, including students. I encourage you to reconsider this curfew and think about the benefits of allowing responsible teens to continue visiting after school.\n\nSincerely,\nJordan Ellis"
+        }
+      ],
+      "questions": [
+        {
+          "id": 10,
+          "type": "multiple_choice",
+          "standards": ["6.T.T.2.d"],
+          "prompt": "In the text, ‘Riverside Commons Debate,’ the author implies that _____.",
+          "choices": {
+            "A": "all teenagers are disruptive in public places",
+            "B": "the curfew will increase business profits",
+            "C": "most students are responsible, but are being unfairly restricted",
+            "D": "Riverside Commons should only allow adults at all times"
+          },
+          "correctAnswer": "C"
+        },
+        {
+          "id": 11,
+          "type": "multiple_choice",
+          "standards": ["6.L.V.3.b"],
+          "prompt": "Read the following sentences from the letter. What is the meaning of the underlined phrase from the sentences above?",
+          "stimulus": "It seems as though the belief is that one bad seed spoils the entire basket. Punishing all students for the actions of a few is not fair.",
+          "choices": {
+            "A": "A single mistake can ruin a person’s reputation",
+            "B": "One person’s bad behavior affects how everyone is judged",
+            "C": "Some students are better than others",
+            "D": "People should always work in groups"
+          },
+          "correctAnswer": "B"
+        },
+        {
+          "id": 12,
+          "type": "multiple_choice",
+          "standards": ["6.T.SS.2.b"],
+          "prompt": "Read the following sentence from the letter. This statement from the letter would become stronger by adding which of the following sentences?",
+          "stimulus": "Nearly half of all customers at the shops and restaurants are under eighteen.",
+          "choices": {
+            "A": "Some businesses enjoy having students visit after school.",
+            "B": "Many teenagers prefer shopping online instead.",
+            "C": "Specific sales data showing how much money teens spend each week.",
+            "D": "The mall is located near several schools."
+          },
+          "correctAnswer": "C"
+        },
+      {
+        "id": 13,
+        "type": "dropdown",
+        "standards": ["6.L.V.3.c"],
+        "prompt": "Read this sentence from paragraph 6 of the essay. Choose the meaning of the word unsupervised as it is used in the sentence.",
+        "stimulus": "It is true that problems sometimes occur when unsupervised teens gather in groups.",
+        "dropdownLabel": "In this sentence, unsupervised means",
+        "choices": {
+          "A": "controlled by adults",
+          "B": "without adult supervision or monitoring",
+          "C": "behaving in a loud way",
+          "D": "visiting a store for the first time"
+        },
+        "correctAnswer": "B"
+      }
+      ]
+    },
+    {
+      "sectionId": "s4_ecosystem_interdependence",
+      "title": "Ecosystem Interdependence",
+      "type": "single_passage",
+      "passages": [
+        {
+          "passageId": "p4",
+          "title": "Ecosystem Interdependence",
+          "genre": "science_informational",
+          "text": "During a science unit on ecosystems, students learned how different organisms interact within a habitat. The teacher explained that each organism plays a specific role in maintaining balance. For example, producers like plants create their own food using sunlight, while consumers rely on other organisms for energy. Decomposers, such as fungi and bacteria, break down dead material and return nutrients to the soil.\n\nDuring class discussion, the teacher introduced the word interdependence and explained that it describes how living things depend on one another to survive. Students used digital articles and a science textbook to explore examples of interdependence in rainforests, oceans, and deserts."
+        }
+      ],
+      "questions": [
+        {
+          "id": 14,
+          "linkedPassageId": "p4",
+          "linkedPassageTab": 1,
+          "type": "multiple_choice",
+          "standards": ["6.L.V.1.a"],
+          "prompt": "Read the following passage. In this sentence, the word interdependence means:",
+          "choices": {
+            "A": "The ability of organisms to live without any other living things",
+            "B": "The process of organisms competing for limited resources",
+            "C": "The relationship in which living things rely on one another to survive",
+            "D": "The study of how plants produce their own food using sunlight"
+          },
+          "correctAnswer": "C"
+        }
+      ]
+    },
+    {
+      "sectionId": "s5_ocean_sources",
+      "title": "Ocean Exploration Sources",
+      "type": "paired_sources",
+      "passages": [
+        {
+          "passageId": "p4a",
+          "title": "Encyclopedia Article",
+          "genre": "reference_source",
+          "text": "In 1960, the deep-sea submersible Trieste reached the deepest part of the ocean, the Mariana Trench. This historic dive proved that humans could survive extreme underwater pressure. In later years, improved submersibles allowed scientists to explore shipwrecks like the Titanic and discover new species living in deep ocean ecosystems."
+        },
+        {
+          "passageId": "p4b",
+          "title": "Newspaper Article",
+          "genre": "news_source",
+          "text": "Today marks a major achievement in ocean exploration history. Scientists using a modern submersible have successfully explored parts of the Mariana Trench that no humans had ever seen before. Cameras captured images of strange sea creatures glowing in the darkness, and researchers reported new discoveries that could change what we know about life on Earth."
+        }
+      ],
+     "questions": [
+{
+  "id": 15,
+  "showPassagesTogether": true,
+  "linkedPassageTab": 1,
+  "type": "multiple_choice",
+  "standards": ["6.T.RA.1.b"],
+  "prompt": "The student took notes about information in the sources. Which note correctly paraphrases, or restates, information from both sources?",
+  "choices": {
+    "A": "Scientists first explored the Mariana Trench in 1960 using the Trieste, and recent missions continue to discover new species and areas of the deep ocean.",
+    "B": "The Titanic was discovered in the Mariana Trench by a modern submersible using advanced cameras.",
+    "C": "Ocean exploration began with the invention of underwater cameras that allowed scientists to study glowing sea creatures.",
+    "D": "The Mariana Trench is the only place in the ocean where scientists have found new species of animals."
+  },
+  "correctAnswer": "A"
+}
+]
+},
+{
+  "sectionId": "s6_mla_quote",
+  "title": "Using Direct Quotes",
+  "type": "single_passage",
+  "passages": [
+    {
+      "passageId": "p5",
+      "title": "Writing Task",
+      "genre": "instructional_text",
+      "text": "Jordan is writing a report on dolphins. He is using the book Ocean Animals and Their Habitats, written by Taylor Reed and published by Bluewater Press. He wants to use the following quote from page 42:\n\n‘Dolphins are highly intelligent marine mammals that communicate using a variety of sounds.’"
+    }
+  ],
+  "questions": [
+    {
+      "id": 16,
+      "linkedPassageId": "p5",
+      "linkedPassageTab": 1,
+      "type": "multiple_choice",
+      "standards": ["6.T.RA.2.c"],
+      "prompt": "Which of the following is the correct way to write this direct quote, according to MLA guidelines?",
+      "choices": {
+        "A": "‘Dolphins are highly intelligent marine mammals that communicate using a variety of sounds’ (Reed 42).",
+        "B": "‘Dolphins are highly intelligent marine mammals that communicate using a variety of sounds.’ (Taylor Reed, page 42)",
+        "C": "‘Dolphins are highly intelligent marine mammals that communicate using a variety of sounds’ (Ocean Animals and Their Habitats 42).",
+        "D": "‘Dolphins are highly intelligent marine mammals that communicate using a variety of sounds,’ Reed, page 42."
+      },
+      "correctAnswer": "A"
+    }
+  ]
+},
+{
+  "sectionId": "s7_recess_draft",
+  "title": "Student Essay Draft",
+  "type": "single_passage",
+  "passages": [
+    {
+      "passageId": "p6",
+      "title": "Argumentative Essay Draft",
+      "genre": "student_writing",
+      "text": "First, it should be said that there are times when recess may need to be limited. For example, students should not be allowed to leave class for recess if they have not completed required assignments or if safety concerns arise. However, providing a daily recess period for middle school students would have many benefits. It could help reduce the noise and stress level in classrooms, which many students would agree is helpful. Students who participate in recess are also less likely to be disruptive because they have an appropriate outlet for their energy. Second, many students find that physical activity during the school day can improve concentration. This can support learning and help students stay more focused during instructional time."
+    }
+  ],
+  "questions": [
+    {
+      "id": 17,
+      "linkedPassageId": "p6",
+      "linkedPassageTab": 1,
+      "type": "multi_select",
+      "standards": ["6.T.SS.2.c"],
+      "prompt": "Select TWO sentences that would be more appropriate for the student to include in her essay.",
+      "choices": {
+        "A": "It could help lower the amount of noise and distraction in classrooms, which many students would consider beneficial.",
+        "B": "It would totally chill everyone out and make school way less boring for kids.",
+        "C": "Students participating in recess are less likely to be disruptive because they have an appropriate outlet for their energy.",
+        "D": "Kids will finally get a break and stop acting crazy in class all day.",
+        "E": "Recess gives students a chance to reset mentally and return to class with improved attention and readiness to learn."
+      },
+      "correctAnswers": ["A", "C"]
+    }
+  ]
+},
+    {
+      "sectionId": "s8_writing_language_editing",
+      "title": "Writing, Language, and Editing",
+      "type": "standalone_questions",
+      "passages": [],
+      "questions": [
+        {
+          "id": 18,
+          "type": "multi_select",
+          "standards": ["6.T.SS.1.c"],
+          "prompt": "Read the two sentences below and choose the correct transition words or phrases that could be used between the two sentences. Select ALL THAT APPLY.",
+          "stimulus": "Lena was excited about joining the school science fair. She also felt nervous because she had never presented in front of a large audience before.",
+          "choices": {
+            "A": "However,",
+            "B": "In addition,",
+            "C": "At the same time,",
+            "D": "As a result,",
+            "E": "For example,"
+          },
+          "correctAnswers": ["A", "C"]
+        },
+        {
+          "id": 19,
+          "type": "highlight_sentence",
+          "standards": ["6.T.T.2.d"],
+          "prompt": "A student is writing a science report on rainforests for his science class. The student wants to revise the draft to include only details that support his main claim about the importance of rainforests. Highlight the sentence that should be deleted because it does not support the claim in the report.",
+          "stimulus": "Rainforests are important to Earth’s environment because they produce a large amount of the oxygen we breathe. Trees and plants in rainforests absorb carbon dioxide and release oxygen through photosynthesis. This helps keep the air clean and balanced for all living things. Rainforests also provide habitats for millions of plant and animal species. Many organisms that live in rainforests are found nowhere else on Earth. Scientists believe new species are still being discovered in these ecosystems every year. In addition, rainforests help regulate global climate patterns by absorbing heat and moisture. This can influence rainfall in other parts of the world. Rainforests are often located near tropical regions with warm temperatures and frequent rainfall throughout the year. Because of all these benefits, rainforests are essential to life on Earth and must be protected.",
+          "correctSelection": [
+            "Rainforests are often located near tropical regions with warm temperatures and frequent rainfall throughout the year."
+          ]
+        },
+        {
+          "id": 20,
+          "type": "multiple_choice",
+          "standards": ["6.L.GC.1"],
+          "prompt": "Read the following sentence. What is the correct way to punctuate the sentence?",
+          "stimulus": "After months of practice Marcus finally completed his first marathon race.",
+          "choices": {
+            "A": "After months of practice, Marcus finally completed his first marathon race.",
+            "B": "After months of practice Marcus, finally completed his first marathon race.",
+            "C": "After, months of practice Marcus finally completed his first marathon race.",
+            "D": "After months of practice Marcus finally, completed his first marathon race."
+          },
+          "correctAnswer": "A"
+        },
+        {
+          "id": 21,
+          "type": "highlight_sentence_multi",
+          "standards": ["6.T.C.2.d"],
+          "prompt": "Highlight the two sentences in the following paragraph that would best help you answer this research question.",
+          "stemQuestion": "What awards did Japanese filmmaker Hayao Miyazaki’s movies receive in the 2000s?",
+          "stimulus": "In the early 2000s, Miyazaki continued to gain international recognition for his animated films. Spirited Away, released in 2001, became a major worldwide success and won the Academy Award for Best Animated Feature. It also received top honors at several international film festivals, including the Berlin International Film Festival, where it won the Golden Bear. In 2004, Howl’s Moving Castle was released and was nominated for an Academy Award. The film also earned praise for its storytelling and animation style. Later, Ponyo, released in 2008, was widely popular with audiences but did not receive as many major awards as his earlier films.",
+          "correctSelections": [
+            "Spirited Away, released in 2001, became a major worldwide success and won the Academy Award for Best Animated Feature.",
+            "It also received top honors at several international film festivals, including the Berlin International Film Festival, where it won the Golden Bear."
+          ]
+        }
+      ]
+    },
+{
+  "sectionId": "s9_sentence_variety",
+  "title": "Improving Sentence Variety",
+  "type": "single_passage",
+  "passages": [
+    {
+      "passageId": "p7",
+      "title": "Student Paragraph",
+      "genre": "student_writing",
+      "text": "I have heard that students learn best when they study in complete silence, but I do not agree with that idea. I can study while listening to soft music, and I can also review notes while discussing ideas with a classmate. I have never struggled to concentrate; therefore, I believe the claim that students must always study in silence is incorrect."
+    }
+  ],
+  "questions": [
+    {
+      "id": 22,
+      "linkedPassageId": "p7",
+      "linkedPassageTab": 1,
+      "type": "multiple_choice",
+      "standards": ["6.L.GC.2.b"],
+      "prompt": "Which is the best way to rewrite the  sentence below to improve sentence variety in the paragraph?",
+      "stimulus": "I can study while listening to soft music, and I can also review notes while discussing ideas with a classmate.",
+      "choices": {
+        "A": "I can study while listening to soft music, and I can also review notes while discussing ideas with a classmate.",
+        "B": "While listening to soft music, I can study effectively, and I can also review notes while discussing ideas with a classmate.",
+        "C": "I can study while listening to soft music, and I can also review notes while I am discussing ideas with a classmate.",
+        "D": "I study while listening to soft music, and I review notes while discussing ideas with a classmate."
+      },
+      "correctAnswer": "B"
+    }
+   ]
+},
+{
+  "sectionId": "s10_violin_narrative_conclusion",
+  "title": "Violin Narrative Draft",
+  "type": "single_passage",
+  "passages": [
+    {
+      "passageId": "p8",
+      "title": "Narrative Draft",
+      "genre": "student_writing",
+      "text": "When I was in fourth grade, I really wanted to join the school basketball team, and I practiced every chance I got in hopes of making it. For my birthday that year, my parents surprised me with something unexpected: a violin.\n\nAt first, I was disappointed because I had wanted to play basketball, not learn an instrument. I even thought about quitting before I really started. However, I decided to give the violin a chance, and I began practicing every day after school. Slowly, I started to improve, and I realized I was actually enjoying the challenge. Eventually, I no longer cared about basketball tryouts because I was focused on music instead.\n\nPlaying the violin was not easy, and it required patience and dedication. I spent many evenings practicing difficult pieces and learning how to read music. After several months, my music teacher selected me to perform in the school concert as a soloist."
+    }
+  ],
+  "questions": [
+    {
+      "id": 23,
+      "linkedPassageId": "p8",
+      "linkedPassageTab": 1,
+      "type": "multiple_choice",
+      "standards": ["6.T.T.1.e"],
+      "prompt": "A student is writing a narrative for class about learning to play the violin. The student wants to revise the draft to include a strong conclusion. Choose the sentence that would best conclude the narrative.",
+      "choices": {
+        "A": "I still think basketball is a fun sport to watch on TV.",
+        "B": "That experience taught me that sometimes unexpected opportunities can lead to new passions and success.",
+        "C": "Violins are made of wood and have four strings.",
+        "D": "Many students in my class also play instruments after school."
+      },
+      "correctAnswer": "B"
+    }
+  ]
+},
+{
+  "sectionId": "s11_maya_new_school",
+  "title": "Maya’s New School",
+  "type": "single_passage",
+  "passages": [
+    {
+      "passageId": "p9",
+      "title": "Narrative Passage",
+      "genre": "narrative",
+      "text": "During the first week at her new school, Maya felt completely lost. The hallways were crowded, and every classroom looked the same. On Monday morning, she accidentally walked into the wrong class and froze when everyone turned to stare at her. A kind student named Jordan smiled and quietly pointed her in the right direction.\n\nBy Wednesday, Maya began to recognize familiar faces. She noticed that Jordan always sat near the window and often helped other students find their seats. Maya slowly started to feel more comfortable, especially during lunch when she and Jordan began sitting together. The cafeteria was loud and busy, but it became less overwhelming each day.\n\nOn Friday, Maya finally walked into her classroom with confidence. She knew where she was going and even greeted Jordan in the hallway. For the first time all week, the school felt like a place she could belong."
+    }
+  ],
+  "questions": [
+  {
+  "id": 24,
+  "linkedPassageId": "p9",
+  "linkedPassageTab": 1,
+  "type": "classify",
+  "standards": ["6.T.T.1.a"],
+  "prompt": "Drag each narrative technique into the correct category based on how it is used in the passage.",
+  "instructions": "Drag each item into the correct column.",
+  "categories": [
+    { "id": "used", "label": "Used in the passage" },
+    { "id": "not_used", "label": "Not used in the passage" }
+  ],
+  "items": [
+    {
+      "id": "chronological-sequence",
+      "text": "Chronological sequence of events showing Maya’s adjustment over time",
+      "categoryId": "used"
+    },
+    {
+      "id": "setting-details",
+      "text": "Setting details such as hallways, cafeteria, and classrooms",
+      "categoryId": "used"
+    },
+    {
+      "id": "dialogue",
+      "text": "Dialogue showing Maya’s thoughts and feelings directly",
+      "categoryId": "not_used"
+    },
+    {
+      "id": "flashback",
+      "text": "Flashbacks explaining why Maya transferred schools",
+      "categoryId": "not_used"
+    },
+    {
+      "id": "figurative-language",
+      "text": "Figurative language comparing Maya’s experience to a storm",
+      "categoryId": "not_used"
+    }
+  ]
+}
+  ]
+},
+{
+  "sectionId": "s12_roots_affixes",
+  "title": "Greek and Latin Roots and Affixes",
+  "type": "single_passage",
+  "passages": [
+    {
+      "passageId": "p10",
+      "title": "Science Vocabulary",
+      "genre": "informational",
+      "text": "During science class, students learned about how plants respond to changes in their environment. The teacher explained that some plants are hydrophilic, meaning they are attracted to water and grow best in moist conditions.\n\nThe teacher also introduced other related vocabulary words such as biodegradable, transportation, and predictable to help students understand how word parts can give clues to meaning."
+    }
+  ],
+  "questions": [
+    {
+      "id": 25,
+      "linkedPassageId": "p10",
+      "linkedPassageTab": 1,
+      "type": "multi_select",
+      "standards": ["6.L.V.2.c"],
+      "prompt": "Based on your knowledge of Greek and Latin roots and affixes, which TWO words are correctly constructed and used in context? Select TWO.",
+      "choices": {
+        "A": "Hydrophilic means ‘attracted to water,’ based on Greek roots meaning water (hydro) and love (philic).",
+        "B": "Biodegradable means something that cannot be broken down by natural processes.",
+        "C": "Transportable would mean something that can be carried or moved from one place to another.",
+        "D": "Predictable means something that happens in a completely random way with no pattern.",
+        "E": "Thermometer means a device used to measure temperature, based on the root thermo meaning heat."
+      },
+      "correctAnswers": ["A", "E"]
+    }
+  ]
+}
+  ]
+}

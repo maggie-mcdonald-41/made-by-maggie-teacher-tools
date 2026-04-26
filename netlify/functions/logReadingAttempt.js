@@ -12,7 +12,7 @@ function sanitizeFragment(value) {
 function normalizeSetParam(raw) {
   const v = String(raw || "").toLowerCase().trim();
   if (v === "mini") return "mini1"; // legacy support
-  if (v === "full" || v === "mini1" || v === "mini2") return v;
+  if (v === "full" || v === "mini1" || v === "mini2" || v === "benchmark") return v;
   return "full";
 }
 
@@ -49,8 +49,10 @@ exports.handler = async function (event, context) {
 
     // NEW: assessment metadata
     const assessmentName = (body.assessmentName || "").trim();
-    const assessmentType = (body.assessmentType || "").trim();
-
+    const assessmentType = (
+      body.assessmentType ||
+      (body.practiceSet === "benchmark" || body.set === "benchmark" ? "benchmark" : "")
+    ).trim();
     if (!sessionCode || !studentName) {
       return {
         statusCode: 400,

@@ -42,6 +42,12 @@ const copyCoTeacherStatusEl = document.getElementById("copy-co-teacher-status");
 const downloadCsvBtn = document.getElementById("download-csv");
 const monitorSessionBtn = document.getElementById("monitor-session-btn");
 
+// Benchmark controls
+const benchmarkSessionInput = document.getElementById("benchmark-session");
+const benchmarkSetSelect = document.getElementById("benchmark-set");
+const startBenchmarkBtn = document.getElementById("start-benchmark-btn");
+const monitorBenchmarkBtn = document.getElementById("monitor-benchmark-btn");
+
 // Filters / view summary / overlay
 const clearFiltersBtn = document.getElementById("clear-filters-btn");
 const clearStudentOverlayBtn = document.getElementById("clear-student-overlay-btn");
@@ -62,6 +68,9 @@ const studentDetailOverallEl = document.getElementById("student-detail-overall")
 const studentDetailAttemptsEl = document.getElementById("student-detail-attempts");
 const studentDetailNeedsWorkEl = document.getElementById("student-detail-needs-work");
 const studentDetailStrengthsEl = document.getElementById("student-detail-strengths");
+const studentDetailBenchmarkEl = document.getElementById("student-detail-benchmark");
+const summaryBenchmarkAccuracyEl = document.getElementById("summary-benchmark-accuracy");
+const summaryBenchmarkDetailsEl = document.getElementById("summary-benchmark-details");
 
 // Selected student's full attempt (question-by-question) panel
 const attemptQnPanel = document.querySelector(".student-attempt-detail-panel");
@@ -148,12 +157,129 @@ let CURRENT_SESSION_OWNER_OVERRIDE = null;
 let _historyHydrateInFlight = null;
 let _historyHydrateEmail = "";
 
+// ---------- MODE TAB SWITCHING ----------
+const modeTabs = document.querySelectorAll(".mode-tab");
+const modePanels = document.querySelectorAll(".mode-panel");
+
+modeTabs.forEach((tab) => {
+  tab.addEventListener("click", () => {
+    const selectedMode = tab.dataset.mode;
+
+    modeTabs.forEach((btn) => {
+      const isActive = btn === tab;
+      btn.classList.toggle("active", isActive);
+      btn.setAttribute("aria-selected", isActive ? "true" : "false");
+    });
+
+    modePanels.forEach((panel) => {
+      const shouldShow =
+        (selectedMode === "practice" && panel.id === "practicePanel") ||
+        (selectedMode === "benchmark" && panel.id === "benchmarkPanel");
+
+      panel.classList.toggle("active", shouldShow);
+      panel.hidden = !shouldShow;
+    });
+  });
+});
+
+// ---------- BENCHMARK HELPERS ----------
+// Dropdown value -> benchmark JSON file
+const BENCHMARK_MAP = {
+  q4: "benchmarks/mgb_6th_grade_q4_benchmark.json"
+};
+
+async function loadBenchmarkData(benchmarkKey) {
+  const filePath = BENCHMARK_MAP[benchmarkKey];
+
+  if (!filePath) {
+    throw new Error(`No benchmark file mapped for: ${benchmarkKey}`);
+  }
+
+  const res = await fetch(filePath, {
+    method: "GET",
+    headers: { Accept: "application/json" }
+  });
+
+  if (!res.ok) {
+    throw new Error(`Could not load benchmark file: ${filePath}`);
+  }
+
+  return await res.json();
+}
+
+async function startBenchmarkSession() {
+  const rawSession = (benchmarkSessionInput?.value || "").trim();
+  const benchmarkKey = benchmarkSetSelect?.value || "q4";
+
+  if (!rawSession) {
+    alert("Type a Benchmark Session name first, then click Start Benchmark.");
+    benchmarkSessionInput?.focus();
+    return;
+  }
+
+  const normalizedSession = normalizeSessionNameForComparison(rawSession);
+
+  try {
+    if (startBenchmarkBtn) {
+      startBenchmarkBtn.disabled = true;
+      startBenchmarkBtn.textContent = "Loading Benchmark…";
+    }
+
+    const benchmarkData = await loadBenchmarkData(benchmarkKey);
+
+    console.log("[Benchmark] Loaded benchmark:", benchmarkData);
+
+    if (loadStatusEl) {
+      loadStatusEl.textContent =
+        `Benchmark loaded: ${benchmarkData.title || "Benchmark"} (${normalizedSession}).`;
+    }
+
+    if (sessionPill) {
+      sessionPill.textContent = `Benchmark: ${normalizedSession}`;
+    }
+
+    // Keep this for the next wiring step.
+    window.CURRENT_BENCHMARK_SESSION = {
+      sessionCode: normalizedSession,
+      benchmarkKey,
+      benchmarkData
+    };
+
+const studentLink = buildBenchmarkStudentLink(normalizedSession, benchmarkKey);
+
+if (sessionLinkInput) {
+  sessionLinkInput.value = studentLink;
+}
+
+if (copyLinkStatusEl) {
+  copyLinkStatusEl.textContent =
+    "Benchmark link ready. Click Copy to share with students.";
+  copyLinkStatusEl.style.display = "inline";
+}
+
+enableBenchmarkMonitorButton(normalizedSession, benchmarkKey);
+
+alert("Benchmark link is ready. Copy it and share it with students.");  } catch (err) {
+    console.error("[Benchmark] Error loading benchmark:", err);
+    alert("Could not load the benchmark JSON. Check the file name/path and try again.");
+
+    if (loadStatusEl) {
+      loadStatusEl.textContent =
+        "Could not load benchmark JSON. Check benchmarks/mgb_6th_grade_q4_benchmark.json.";
+    }
+  } finally {
+    if (startBenchmarkBtn) {
+      startBenchmarkBtn.disabled = false;
+      startBenchmarkBtn.textContent = "🧪 Start Benchmark";
+    }
+  }
+}
 
 // ---------- UTILITIES ----------
 function normalizeSetParam(raw) {
   const v = String(raw || "").toLowerCase().trim();
   if (v === "mini") return "mini1"; // legacy support
-  if (v === "full" || v === "mini1" || v === "mini2") return v;
+  if (v === "full" || v === "mini1" || v === "mini2" || v === "benchmark") return v;
   return "full";
 }
 
@@ -211,6 +337,52 @@ function formatPercent(numerator, denominator) {
   return `${pct}%`;
 }
 
+function isBenchmarkAttempt(attempt) {
+  if (!attempt) return false;
+
+  const set = String(attempt.practiceSet || attempt.set || "").toLowerCase().trim();
+  const level = String(attempt.practiceLevel || attempt.level || "").toLowerCase().trim();
+  const type = String(attempt.assessmentType || "").toLowerCase().trim();
+
+  return set === "benchmark" || level === "benchmark" || type === "benchmark";
+}
+
+function getAttemptTotals(attempt) {
+  if (!attempt) return { correct: 0, total: 0 };
+
+  let correct = Number(attempt.numCorrect || 0);
+  let total = Number(attempt.totalQuestions || attempt.answeredCount || 0);
+
+  if ((!total || !correct) && attempt.bySkill && typeof attempt.bySkill === "object") {
+    let derivedCorrect = 0;
+    let derivedTotal = 0;
+
+    Object.values(attempt.bySkill).forEach((stats) => {
+      if (!stats) return;
+      derivedCorrect += Number(stats.correct || 0);
+      derivedTotal += Number(stats.total || 0);
+    });
+
+    if (!total && derivedTotal) total = derivedTotal;
+    if (!correct && derivedCorrect) correct = derivedCorrect;
+  }
+
+  return { correct, total };
+}
+
+function summarizeAttempts(attempts) {
+  return (attempts || []).reduce(
+    (acc, attempt) => {
+      const totals = getAttemptTotals(attempt);
+      acc.correct += totals.correct;
+      acc.total += totals.total;
+      acc.count += 1;
+      return acc;
+    },
+    { correct: 0, total: 0, count: 0 }
+  );
+}
+
 function formatDate(iso) {
   if (!iso) return "—";
   const d = new Date(iso);
@@ -220,6 +392,25 @@ function formatDate(iso) {
     day: "numeric",
     hour: "numeric",
     minute: "2-digit"
+  });
+}
+
+function switchDashboardTab(tabName) {
+  const selectedMode = tabName === "benchmark" ? "benchmark" : "practice";
+
+  modeTabs.forEach((tab) => {
+    const isActive = tab.dataset.mode === selectedMode;
+    tab.classList.toggle("active", isActive);
+    tab.setAttribute("aria-selected", isActive ? "true" : "false");
+  });
+
+  modePanels.forEach((panel) => {
+    const shouldShow =
+      (selectedMode === "practice" && panel.id === "practicePanel") ||
+      (selectedMode === "benchmark" && panel.id === "benchmarkPanel");
+
+    panel.classList.toggle("active", shouldShow);
+    panel.hidden = !shouldShow;
   });
 }
 
@@ -400,6 +591,29 @@ if (isOverrideOwner) {
   }
 }
 
+function createStandardBlock(standards = [], uniqueSuffix = "") {
+  if (!standards.length) return "";
+
+  return standards.map((std, index) => {
+    const desc = window.RP_STANDARDS_CATALOG?.getOfficialText?.(std) || "Standard description not available.";
+    const safeId = `std-${String(std).replace(/[^a-zA-Z0-9_-]/g, "-")}-${uniqueSuffix}-${index}`;
+
+    return `
+      <div class="standard-block">
+        <div class="standard-header">
+          <span class="tag">${std}</span>
+          <button class="standard-toggle-btn" type="button" data-target="${safeId}">
+            View Standard
+          </button>
+        </div>
+        <div class="standard-description hidden" id="${safeId}">
+          ${desc}
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
 function renderAttemptQnPanel(attempt) {
   if (!attemptQnBodyEl) return;
 
@@ -509,10 +723,19 @@ function renderAttemptQnPanel(attempt) {
       correctP.innerHTML =
         `<strong>Correct answer:</strong> ${correctLabel}`;
 
-      card.appendChild(header);
-      card.appendChild(stemP);
-      card.appendChild(studentP);
-      card.appendChild(correctP);
+        card.appendChild(header);
+
+        const standardWrap = document.createElement("div");
+        standardWrap.className = "attempt-q-standards";
+        standardWrap.innerHTML = createStandardBlock(
+          q.standards || q.skills || [],
+          q.questionNumber || q.questionId || qNum || "unknown"
+        );
+        card.appendChild(standardWrap);
+
+        card.appendChild(stemP);
+        card.appendChild(studentP);
+        card.appendChild(correctP);
 
       attemptQnBodyEl.appendChild(card);
     });
@@ -831,8 +1054,11 @@ function updateSessionHistory(sessionCodeRaw, attempts) {
 
   const history = loadHistoryFromStorage() || [];
 
-  const selectedSet = getSelectedPracticeSet();
-  const selectedLevel = currentLevelParam || "on";
+const isBenchmarkSession =
+  Array.isArray(attempts) && attempts.some(isBenchmarkAttempt);
+
+const selectedSet = isBenchmarkSession ? "benchmark" : getSelectedPracticeSet();
+const selectedLevel = isBenchmarkSession ? "benchmark" : currentLevelParam || "on";
 
   const selectedOwnerEmail = (() => {
     let owner =
@@ -999,19 +1225,33 @@ async function hydrateSessionHistoryFromServer(viewerEmail) {
         renderSessionHistory(existing);
         return;
       }
-
-// Group attempts by sessionCode 
+// Group attempts by session + set + level + owner
 const grouped = new Map();
 
 attempts.forEach((a) => {
   const sessionCode = (a.sessionCode || "").trim();
   if (!sessionCode) return;
 
-  const key = sessionCode;
+  const isBenchmark = isBenchmarkAttempt(a);
+
+  const practiceSet = isBenchmark
+    ? "benchmark"
+    : normalizeSetParam(a.practiceSet || a.set || a.setType || "full");
+
+  const practiceLevel = isBenchmark
+    ? "benchmark"
+    : String(a.practiceLevel || a.level || a.levelBand || "on").toLowerCase();
+
+  const ownerEmail = String(a.ownerEmail || email || "").trim().toLowerCase();
+
+  const key = getHistoryKey(sessionCode, practiceSet, practiceLevel, ownerEmail);
 
   if (!grouped.has(key)) {
     grouped.set(key, {
       sessionCode,
+      practiceSet,
+      practiceLevel,
+      ownerEmail,
       lastLoadedAt: null,
       rawAttempts: [],
     });
@@ -1104,23 +1344,23 @@ attempts.forEach((a) => {
       const s = (a.practiceSet || a.set || a.setType || "").toString().trim();
       const l = (a.practiceLevel || a.level || a.levelBand || "").toString().trim();
       if (!inferredSet && s) inferredSet = normalizeSetParam(s);
-      if (!inferredLevel && ["below","on","above"].includes(l.toLowerCase())) {
+      if (!inferredLevel && ["below","on","above","benchmark"].includes(l.toLowerCase())) {
         inferredLevel = l.toLowerCase();
       }
       if (inferredSet && inferredLevel) break;
     }
 
-        return {
-          sessionCode: entry.sessionCode,
-          lastLoadedAt: entry.lastLoadedAt || new Date().toISOString(),
-          attemptsCount,
-          totalQuestions,
-          totalCorrect,
-          uniqueStudentsCount,
-          practiceSet: inferredSet || undefined,
-          practiceLevel: inferredLevel || undefined,
-          ownerEmail: email || null
-        };
+      return {
+        sessionCode: entry.sessionCode,
+        lastLoadedAt: entry.lastLoadedAt || new Date().toISOString(),
+        attemptsCount,
+        totalQuestions,
+        totalCorrect,
+        uniqueStudentsCount,
+        practiceSet: entry.practiceSet || inferredSet || undefined,
+        practiceLevel: entry.practiceLevel || inferredLevel || undefined,
+        ownerEmail: entry.ownerEmail || email || null
+      };
       });
 
       // Merge with whatever is in localStorage already
@@ -1308,23 +1548,59 @@ if (entry.practiceSet && setSelect) {
   try { localStorage.setItem("rp_lastSet", v); } catch (e) {}
 }
 
-if (entry.practiceLevel && levelSelect) {
+if (entry.practiceLevel) {
   const v = entry.practiceLevel.toLowerCase();
-  if (["below","on","above"].includes(v)) {
+
+  currentLevelParam = v;
+  try { localStorage.setItem("rp_lastLevel", v); } catch (e) {}
+
+  if (levelSelect && ["below", "on", "above"].includes(v)) {
     levelSelect.value = v;
-    currentLevelParam = v;
-    try { localStorage.setItem("rp_lastLevel", v); } catch (e) {}
   }
 }
 
 // Rebuild links + monitor button for THIS historical session context
-if (sessionLinkInput) sessionLinkInput.value = buildStudentLink(entry.sessionCode);
-if (coTeacherLinkInput) coTeacherLinkInput.value = buildCoTeacherLink(entry.sessionCode);
-enableMonitorButton(entry.sessionCode);
+const isBenchmarkHistory =
+  entry.practiceSet === "benchmark" || entry.practiceLevel === "benchmark";
+
+if (isBenchmarkHistory) {
+  switchDashboardTab("benchmark");
+} else {
+  switchDashboardTab("practice");
+}
+
+if (isBenchmarkHistory) {
+  const benchmarkKey = entry.benchmarkKey || "q4";
+
+  if (benchmarkSessionInput) benchmarkSessionInput.value = entry.sessionCode;
+  if (benchmarkSetSelect) benchmarkSetSelect.value = benchmarkKey;
+
+  if (sessionLinkInput) {
+    sessionLinkInput.value = buildBenchmarkStudentLink(entry.sessionCode, benchmarkKey);
+  }
+
+  if (coTeacherLinkInput) {
+    coTeacherLinkInput.value = buildBenchmarkCoTeacherLink(entry.sessionCode, benchmarkKey);
+  }
+
+  enableBenchmarkMonitorButton(entry.sessionCode, benchmarkKey);
+
+  currentSetParam = "benchmark";
+  currentLevelParam = "benchmark";
+
+  try {
+    localStorage.setItem("rp_lastSet", "benchmark");
+    localStorage.setItem("rp_lastLevel", "benchmark");
+  } catch (e) {}
+} else {
+  if (sessionLinkInput) sessionLinkInput.value = buildStudentLink(entry.sessionCode);
+  if (coTeacherLinkInput) coTeacherLinkInput.value = buildCoTeacherLink(entry.sessionCode);
+  enableMonitorButton(entry.sessionCode);
+}
+
 if (typeof updateCurrentViewSummary === "function") updateCurrentViewSummary();
 
 loadAttempts();
-
 
     });
 
@@ -1508,18 +1784,24 @@ function updateScoreBandsChart(allAttempts, studentAttempts = [], studentName = 
         ticks: { precision: 0 }
       }
     },
-    plugins: {
-      legend: {
-        display: true,
-        position: "bottom",
-        labels: { padding: 14 }
+
+plugins: {
+  legend: { display: true, position: "bottom", labels: { padding: 14 } },
+  tooltip: {
+    callbacks: {
+      title: (items) => {
+        const standard = items?.[0]?.label || "";
+        const officialText =
+          window.RP_STANDARDS_CATALOG?.getOfficialText?.(standard) || standard;
+
+        return isStandardCode(standard)
+          ? `${standard}: ${officialText}`
+          : standard;
       },
-      tooltip: {
-        callbacks: {
-          label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}`
-        }
-      }
+      label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}%`
     }
+  }
+},
   };
 
   if (scoreBandsChart) {
@@ -1694,16 +1976,36 @@ function updateSkillAccuracyChart(skillTotalsAll, skillTotalsStudent = {}, stude
   const options = {
     responsive: true,
     maintainAspectRatio: false,
-
+    interaction: {
+      mode: "index",
+      intersect: false
+    },
     onResize: (chart) => {
       applyAdaptiveXTicks(chart, "skill");
       chart.update("none");
     },
 
     layout: { padding: { left: 14, right: 10, top: 8, bottom: 40 } },
-    plugins: {
-      legend: { display: true, position: "bottom", labels: { padding: 14 } }
-    },
+plugins: {
+  legend: { display: true, position: "bottom", labels: { padding: 14 } },
+  tooltip: {
+    enabled: true,
+    callbacks: {
+      title: (items) => {
+        const standard = items?.[0]?.label || "";
+        const officialText =
+          window.RP_STANDARDS_CATALOG?.getOfficialText?.(standard) || "";
+
+        if (isStandardCode(standard) && officialText) {
+          return `${standard}: ${officialText}`;
+        }
+
+        return standard;
+      },
+      label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}%`
+    }
+  }
+},
     scales: {
         x: { ticks: getDefaultXAxisTicks("skill") },
         y: { min: 0, max: 100, ticks: { stepSize: 20, callback: (v) => `${v}%` } }
@@ -1859,11 +2161,50 @@ function getDefaultXAxisTicks(mode = "skill") {
   };
 }
 
+function isStandardCode(value) {
+  return /^6\.[A-Z]\.[A-Z]+(?:\.[0-9]+)?(?:\.[a-z])?$/i.test(String(value || "").trim());
+}
+
+function getStandardAccuracyLabel(standard, stats) {
+  const total = Number(stats?.total || 0);
+  const correct = Number(stats?.correct || 0);
+  const pct = total ? Math.round((correct / total) * 100) : 0;
+  return `${standard} (${pct}%)`;
+}
+
+function renderBenchmarkStandardTag(title, standards) {
+  if (!standards.length) {
+    return `${title}: —`;
+  }
+
+  const itemsHtml = standards.map(({ standard, stats }, index) => {
+    const desc = window.RP_STANDARDS_CATALOG?.getOfficialText?.(standard) || "Official standard description not available.";
+    const safeId = `tag-std-${String(standard).replace(/[^a-zA-Z0-9_-]/g, "-")}-${index}-${title.replace(/\s+/g, "-")}`;
+
+    return `
+      <span class="benchmark-standard-mini">
+        <strong>${getStandardAccuracyLabel(standard, stats)}</strong>
+        <button class="standard-toggle-btn" type="button" data-target="${safeId}">
+          View Standard
+        </button>
+        <span class="standard-description hidden" id="${safeId}">
+          ${desc}
+        </span>
+      </span>
+    `;
+  }).join("");
+
+  return `<strong>${title}:</strong> ${itemsHtml}`;
+}
+
 // ---------- SESSION TAGS + STUDENT DETAIL + HEAT MAP ----------
 function updateSessionTagsFromAttempts(attempts) {
   if (!mostMissedSkillEl || !mostMissedTypeEl) return;
 
-  // Aggregate by skill
+  const benchmarkAttempts = (attempts || []).filter(isBenchmarkAttempt);
+  const isBenchmarkView = benchmarkAttempts.length > 0;
+
+  // Aggregate by skill/standard
   const skillTotals = {};
   const typeTotals = {};
 
@@ -1873,27 +2214,65 @@ function updateSessionTagsFromAttempts(attempts) {
         if (!skillTotals[skill]) {
           skillTotals[skill] = { correct: 0, total: 0 };
         }
-        skillTotals[skill].correct += stats.correct || 0;
-        skillTotals[skill].total += stats.total || 0;
+        skillTotals[skill].correct += Number(stats.correct || 0);
+        skillTotals[skill].total += Number(stats.total || 0);
       });
     }
+
     if (a.byType) {
       Object.entries(a.byType).forEach(([type, stats]) => {
         if (!typeTotals[type]) {
           typeTotals[type] = { correct: 0, total: 0 };
         }
-        typeTotals[type].correct += stats.correct || 0;
-        typeTotals[type].total += stats.total || 0;
+        typeTotals[type].correct += Number(stats.correct || 0);
+        typeTotals[type].total += Number(stats.total || 0);
       });
     }
   });
 
+  // ✅ Benchmark Mode: show top 2 and bottom 2 standards instead of practice tags
+  if (isBenchmarkView) {
+    const standardEntries = Object.entries(skillTotals)
+      .filter(([standard, stats]) => isStandardCode(standard) && Number(stats.total || 0) > 0)
+      .map(([standard, stats]) => ({
+        standard,
+        stats,
+        pct: Number(stats.total || 0)
+          ? (Number(stats.correct || 0) / Number(stats.total || 0)) * 100
+          : 0
+      }))
+      .sort((a, b) => b.pct - a.pct);
+
+    const strongestStandards = standardEntries.slice(0, 2);
+
+    const strongestKeys = new Set(strongestStandards.map((s) => s.standard));
+
+    const priorityStandards = standardEntries
+      .slice()
+      .reverse()
+      .filter((s) => !strongestKeys.has(s.standard))
+      .slice(0, 2);
+
+    mostMissedSkillEl.innerHTML = renderBenchmarkStandardTag(
+      "📘 Strongest Standards",
+      strongestStandards
+    );
+
+    mostMissedTypeEl.innerHTML = renderBenchmarkStandardTag(
+      "🎯 Priority Standards",
+      priorityStandards
+    );
+
+    return;
+  }
+
+  // ✅ Practice Mode: keep existing behavior
   const pickMostMissed = (totalsObj, friendlyMap) => {
     let worstKey = null;
     let worstPct = 101;
 
     Object.entries(totalsObj).forEach(([key, stats]) => {
-      if (!stats.total || stats.total < 2) return; // ignore tiny samples
+      if (!stats.total || stats.total < 2) return;
       const pct = (stats.correct / stats.total) * 100;
       if (pct < worstPct) {
         worstPct = pct;
@@ -1935,6 +2314,9 @@ function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelec
     studentDetailAttemptsEl.textContent = "Attempts counted: —.";
     studentDetailNeedsWorkEl.innerHTML = '<li class="muted">Not enough data yet.</li>';
     studentDetailStrengthsEl.innerHTML = '<li class="muted">Not enough data yet.</li>';
+    if (studentDetailBenchmarkEl) {
+  studentDetailBenchmarkEl.textContent = "Benchmark: —.";
+}
 
     // clear progress chart if it exists
     if (studentProgressChart) {
@@ -1998,6 +2380,37 @@ function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelec
   studentDetailAttemptsEl.textContent =
     `Attempts counted: ${studentAttempts.length}.`;
 
+    const allAttemptsForThisStudent = Array.isArray(ALL_VIEWER_ATTEMPTS)
+  ? ALL_VIEWER_ATTEMPTS.filter(
+      (a) => (a.studentName || "").trim().toLowerCase() === studentName.trim().toLowerCase()
+    )
+  : studentAttempts;
+
+const benchmarkAttemptsForStudent = allAttemptsForThisStudent.filter(isBenchmarkAttempt);
+const practiceAttemptsForStudent = allAttemptsForThisStudent.filter((a) => !isBenchmarkAttempt(a));
+
+const benchmarkSummary = summarizeAttempts(benchmarkAttemptsForStudent);
+const practiceSummary = summarizeAttempts(practiceAttemptsForStudent);
+
+const benchmarkPct = benchmarkSummary.total
+  ? Math.round((benchmarkSummary.correct / benchmarkSummary.total) * 100)
+  : null;
+
+const practicePct = practiceSummary.total
+  ? Math.round((practiceSummary.correct / practiceSummary.total) * 100)
+  : null;
+
+if (studentDetailBenchmarkEl) {
+  const benchmarkText = benchmarkPct === null
+    ? "Benchmark: no benchmark data yet"
+    : `Benchmark: ${benchmarkPct}% (${benchmarkSummary.correct} of ${benchmarkSummary.total})`;
+
+  const practiceText = practicePct === null
+    ? "Practice: no practice data yet"
+    : `Practice: ${practicePct}% (${practiceSummary.correct} of ${practiceSummary.total})`;
+
+  studentDetailBenchmarkEl.textContent = `${benchmarkText} · ${practiceText}`;
+}
   // ===== Progress-over-time chart =====
   const chartCanvas = document.getElementById("student-detail-progress-chart");
   if (chartCanvas && typeof Chart !== "undefined") {
@@ -2192,14 +2605,16 @@ onClick: (e, legendItem, legend) => {
 
   // ---- Skills: using skillTotalsSelected (already per-student) ----
   const skillEntries = Object.entries(skillTotalsSelected || {});
-  const skillsWithPct = skillEntries
-    .filter(([, stats]) => stats.total && stats.total >= MIN_QUESTIONS)
-    .map(([skill, stats]) => ({
-      skill,
-      pct: (stats.correct / stats.total) * 100,
-      total: stats.total
-    }));
-
+ const skillsWithPct = skillEntries
+  .filter(([skill, stats]) => {
+    const minNeeded = isStandardCode(skill) ? 1 : MIN_QUESTIONS;
+    return stats.total && stats.total >= minNeeded;
+  })
+  .map(([skill, stats]) => ({
+    skill,
+    pct: (stats.correct / stats.total) * 100,
+    total: stats.total
+  }));
   // ---- Question types: aggregate from this student's attempts ----
   const typeTotalsSelected = {};
   studentAttempts.forEach((a) => {
@@ -2241,39 +2656,47 @@ onClick: (e, legendItem, legend) => {
     return;
   }
 
-  // ---- Sort + pick needs work & strengths for skills ----
-  const sortedSkillLow = [...skillsWithPct].sort((a, b) => a.pct - b.pct);
-  const sortedSkillHigh = [...skillsWithPct].sort((a, b) => b.pct - a.pct);
+// ---- Sort + pick needs work & strengths for skills ----
+// Only put skills/standards in "To Strengthen" if they are actually below target.
+// This prevents high-scoring standards from being mislabeled as weaknesses.
+const sortedSkillLow = [...skillsWithPct].sort((a, b) => a.pct - b.pct);
+const sortedSkillHigh = [...skillsWithPct].sort((a, b) => b.pct - a.pct);
 
-  const needsWorkSkills = sortedSkillLow.slice(0, 2);
-  const needsWorkSkillNames = new Set(needsWorkSkills.map((s) => s.skill));
+const needsWorkSkills = sortedSkillLow
+  .filter((s) => s.pct < 70)
+  .slice(0, 2);
 
-  const strengthsSkills = [];
-  for (const s of sortedSkillHigh) {
-    if (!needsWorkSkillNames.has(s.skill)) {
-      strengthsSkills.push(s);
-    }
-    if (strengthsSkills.length >= 2) break;
-  }
+const strengthsSkills = sortedSkillHigh
+  .filter((s) => s.pct >= 70)
+  .slice(0, 2);
 
   // ---- Sort + pick needs work & strengths for types ----
   const sortedTypeLow = [...typesWithPct].sort((a, b) => a.pct - b.pct);
   const sortedTypeHigh = [...typesWithPct].sort((a, b) => b.pct - a.pct);
 
-  const needsWorkTypes = sortedTypeLow.slice(0, 2);
-  const needsWorkTypeKeys = new Set(needsWorkTypes.map((t) => t.key));
+  const needsWorkTypes = sortedTypeLow
+  .filter((t) => t.pct < 70)
+  .slice(0, 2);
 
-  const strengthsTypes = [];
-  for (const t of sortedTypeHigh) {
-    if (!needsWorkTypeKeys.has(t.key)) {
-      strengthsTypes.push(t);
-    }
-    if (strengthsTypes.length >= 2) break;
+const strengthsTypes = sortedTypeHigh
+  .filter((t) => t.pct >= 70)
+  .slice(0, 2);
+
+const makeSkillLi = ({ skill, pct, total }) => {
+  const officialText =
+    window.RP_STANDARDS_CATALOG?.getOfficialText?.(skill) || "";
+
+  if (isStandardCode(skill) && officialText) {
+    return `
+      <li class="student-standard-detail">
+        <strong>${skill}</strong>: ${Math.round(pct)}% (${total} questions)
+        <div class="student-standard-text">${officialText}</div>
+      </li>
+    `;
   }
 
-  const makeSkillLi = ({ skill, pct, total }) =>
-    `<li>${skill}: ${Math.round(pct)}% (${total} questions)</li>`;
-
+  return `<li>${skill}: ${Math.round(pct)}% (${total} questions)</li>`;
+};
   const makeTypeLi = ({ label, pct, total }) =>
     `<li>${label}: ${Math.round(pct)}% (${total} questions)</li>`;
 
@@ -2484,7 +2907,31 @@ function renderDashboard(attempts) {
 
   const avgQuestions = totalAttempts ? totalAnswered / totalAttempts : 0;
   const avgCorrect = totalAttempts ? totalCorrect / totalAttempts : 0;
+  const benchmarkAttempts = attempts.filter(isBenchmarkAttempt);
+  const benchmarkSummary = summarizeAttempts(benchmarkAttempts);
 
+  if (summaryBenchmarkAccuracyEl && summaryBenchmarkDetailsEl) {
+    if (!benchmarkSummary.count || !benchmarkSummary.total) {
+      summaryBenchmarkAccuracyEl.textContent = "—";
+      summaryBenchmarkDetailsEl.textContent = "No benchmark attempts loaded";
+    } else {
+      const benchmarkPct = Math.round(
+        (benchmarkSummary.correct / benchmarkSummary.total) * 100
+      );
+
+      const benchmarkStudents = new Set(
+        benchmarkAttempts
+          .map((a) => (a.studentName || "").trim())
+          .filter(Boolean)
+      );
+
+      summaryBenchmarkAccuracyEl.textContent = `${benchmarkPct}%`;
+      summaryBenchmarkDetailsEl.textContent =
+        `${benchmarkSummary.count} attempt${benchmarkSummary.count === 1 ? "" : "s"} · ` +
+        `${benchmarkStudents.size} student${benchmarkStudents.size === 1 ? "" : "s"} · ` +
+        `${benchmarkSummary.correct} of ${benchmarkSummary.total} correct`;
+    }
+  }
 
   if (summaryAvgQuestionsEl) {
     summaryAvgQuestionsEl.textContent = avgQuestions.toFixed(1);
@@ -3258,6 +3705,102 @@ function buildCoTeacherLink(sessionCode) {
   return link;
 }
 
+function buildBenchmarkCoTeacherLink(sessionCode, benchmarkKey = "q4") {
+  const cleanSession = (sessionCode || "").trim().toUpperCase();
+  if (!cleanSession) return "";
+
+  const baseUrl = `${window.location.origin}/teacher-dashboard/teacher-dashboard.html`;
+  const params = new URLSearchParams();
+
+  params.set("sessionCode", cleanSession);
+  params.set("mode", "benchmark");
+  params.set("benchmark", benchmarkKey);
+  params.set("set", "benchmark");
+  params.set("level", "benchmark");
+
+  let ownerEmail =
+    CURRENT_SESSION_OWNER_OVERRIDE ||
+    OWNER_EMAIL_FOR_VIEW ||
+    (teacherUser && teacherUser.email) ||
+    "";
+
+  if (!ownerEmail) {
+    try {
+      ownerEmail = window.localStorage.getItem("rp_lastOwnerEmail") || "";
+    } catch (e) {}
+  }
+
+  if (!ownerEmail) return "";
+
+  params.set("owner", ownerEmail);
+
+  return `${baseUrl}?${params.toString()}`;
+}
+
+function buildBenchmarkStudentLink(sessionCode, benchmarkKey = "q4") {
+  const cleanSession = (sessionCode || "").trim().toUpperCase();
+  if (!cleanSession) return "";
+
+  const baseUrl = `${window.location.origin}/teacher-dashboard/reading-practice/index.html`;
+  const params = new URLSearchParams();
+
+  params.set("session", cleanSession);
+  params.set("mode", "benchmark");
+  params.set("benchmark", benchmarkKey);
+  params.set("set", "benchmark");
+  params.set("level", "benchmark");
+
+  let ownerEmail =
+    CURRENT_SESSION_OWNER_OVERRIDE ||
+    (teacherUser && teacherUser.email) ||
+    OWNER_EMAIL_FOR_VIEW ||
+    "";
+
+  if (!ownerEmail) {
+    try {
+      ownerEmail = window.localStorage.getItem("rp_lastOwnerEmail") || "";
+    } catch (e) {}
+  }
+
+  if (ownerEmail) params.set("owner", ownerEmail);
+
+  return `${baseUrl}?${params.toString()}`;
+}
+
+function enableBenchmarkMonitorButton(sessionCodeRaw, benchmarkKey = "q4") {
+  if (!monitorBenchmarkBtn) return;
+
+  const session = (sessionCodeRaw || "").trim().toUpperCase();
+
+  if (!session) {
+    monitorBenchmarkBtn.disabled = true;
+    monitorBenchmarkBtn.onclick = null;
+    return;
+  }
+
+  monitorBenchmarkBtn.disabled = false;
+
+  monitorBenchmarkBtn.onclick = () => {
+    const params = new URLSearchParams();
+    params.set("session", session);
+    params.set("mode", "benchmark");
+    params.set("benchmark", benchmarkKey);
+    params.set("set", "benchmark");
+    params.set("level", "benchmark");
+
+    const ownerEmail =
+      CURRENT_SESSION_OWNER_OVERRIDE ||
+      (teacherUser && teacherUser.email) ||
+      OWNER_EMAIL_FOR_VIEW ||
+      "";
+
+    if (ownerEmail) params.set("owner", ownerEmail);
+
+    const url = `${window.location.origin}/teacher-dashboard/reading-practice/live-monitor.html?${params.toString()}`;
+    window.open(url, "_blank");
+  };
+}
+
 function startNewSession() {
   const rawSession = sessionInput.value.trim();
 
@@ -3512,6 +4055,21 @@ sessionInput.addEventListener("input", () => {
   clearDuplicateSessionUI();
   saveDashboardPrefs();
 });
+// Toggle official standard descriptions
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".standard-toggle-btn");
+  if (!btn) return;
+
+  const targetId = btn.dataset.target;
+  const el = document.getElementById(targetId);
+  if (!el) return;
+
+  el.classList.toggle("hidden");
+
+  btn.textContent = el.classList.contains("hidden")
+    ? "View Standard"
+    : "Hide Standard";
+});
 
 // Clear student overlay button
 if (clearStudentOverlayBtn) {
@@ -3544,6 +4102,16 @@ if (startSessionBtn) {
   );
 }
 
+// Start Benchmark button (requires sign-in)
+if (startBenchmarkBtn) {
+  startBenchmarkBtn.addEventListener(
+    "click",
+    requireTeacherSignedIn((e) => {
+      e.preventDefault();
+      startBenchmarkSession();
+    })
+  );
+}
 // ====== FULLSCREEN CHARTS ======
 function initChartFullscreen() {
   const overlay = document.getElementById("chart-fullscreen-backdrop");
@@ -3700,7 +4268,7 @@ renderSessionHistory(loadHistoryFromStorage());
 
     // OPTIONAL: level (if you keep this feature)
     const urlLevelRaw = (params.get("level") || "on").toLowerCase();
-    currentLevelParam = ["on", "below", "above"].includes(urlLevelRaw)
+    currentLevelParam = ["on", "below", "above", "benchmark"].includes(urlLevelRaw)
       ? urlLevelRaw
       : "on";
 
