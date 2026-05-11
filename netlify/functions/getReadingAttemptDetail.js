@@ -637,24 +637,41 @@ if (!totalQuestions && answeredCount) {
       );
     }
 
-    // ---------- Step 2: if not found by key, scan all blobs for data.attemptId match ----------
+    // ---------- Step 2: if not found by key, scan attempt blobs for data.attemptId match ----------
+    // This is mainly for older dashboard rows that may still pass the stored attemptId
+    // instead of the blob key. Keep it paginated and limited to session/ attempts.
     if (!foundData) {
-      const list = await store.list();
-      const entries = list.blobs || list || [];
+      let cursor = undefined;
 
-      for (const item of entries) {
-        if (!item.key.endsWith(".json")) continue;
+      do {
+        const listOptions = {
+          prefix: "session/",
+          paginate: true,
+          limit: 1000,
+        };
 
-        const data = await store.get(item.key, { type: "json" });
-        if (!data) continue;
-
-        const attemptIdFromData = (data.attemptId || "").trim();
-        if (attemptIdFromData && attemptIdFromData === rawAttemptId) {
-          foundKey = item.key;
-          foundData = data;
-          break;
+        if (cursor) {
+          listOptions.cursor = cursor;
         }
-      }
+
+        const list = await store.list(listOptions);
+        const entries = list.blobs || [];
+        cursor = list.cursor || null;
+
+        for (const item of entries) {
+          if (!item || !item.key || !item.key.endsWith(".json")) continue;
+
+          const data = await store.get(item.key, { type: "json" });
+          if (!data) continue;
+
+          const attemptIdFromData = (data.attemptId || "").trim();
+          if (attemptIdFromData && attemptIdFromData === rawAttemptId) {
+            foundKey = item.key;
+            foundData = data;
+            break;
+          }
+        }
+      } while (!foundData && cursor);
     }
 
     if (!foundData) {

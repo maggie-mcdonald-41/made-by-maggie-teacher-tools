@@ -905,6 +905,57 @@ function saveHistoryToStorage(history) {
     console.warn("[Dashboard] Could not save session history:", e);
   }
 }
+
+function getActiveViewerEmail() {
+  return String((teacherUser && teacherUser.email) || "").trim().toLowerCase();
+}
+
+function filterHistoryForViewer(history, viewerEmail = getActiveViewerEmail()) {
+  const email = String(viewerEmail || "").trim().toLowerCase();
+
+  if (!Array.isArray(history)) return [];
+
+  // If no teacher is signed in yet, do not show locally cached history.
+  // This prevents shared-computer leakage between teachers.
+  if (!email) return [];
+
+  return history.filter((entry) => {
+    const owner = String(entry?.ownerEmail || "").trim().toLowerCase();
+
+    // Old entries without ownerEmail are hidden for safety.
+    // Server hydration will rebuild valid entries for the signed-in teacher.
+    if (!owner) return false;
+
+    return owner === email;
+  });
+}
+
+function clearDashboardForSignedOut() {
+  CURRENT_SESSION_OWNER_OVERRIDE = null;
+  OWNER_EMAIL_FOR_VIEW = OWNER_EMAIL_FROM_URL ? OWNER_EMAIL_FOR_VIEW : null;
+  ALL_VIEWER_ATTEMPTS = [];
+  CURRENT_ATTEMPTS = [];
+  CURRENT_STUDENT_FOR_CHARTS = null;
+  CURRENT_HISTORY_KEY = null;
+
+  if (sessionInput) sessionInput.value = "";
+  if (benchmarkSessionInput) benchmarkSessionInput.value = "";
+  if (sessionPill) sessionPill.textContent = "Session: all sessions";
+  if (sessionLinkInput) sessionLinkInput.value = "";
+  if (coTeacherLinkInput) coTeacherLinkInput.value = "";
+  if (loadStatusEl) loadStatusEl.textContent = "Sign in to load your sessions.";
+
+  try {
+    window.localStorage.removeItem("rp_lastSessionCode");
+    window.localStorage.removeItem("rp_lastSessionLink");
+    window.localStorage.removeItem("rp_lastCoTeacherLink");
+    window.localStorage.removeItem("rp_lastOwnerEmail");
+  } catch (e) {}
+
+  renderDashboard([]);
+  renderSessionHistory([]);
+  clearAttemptQnPanel();
+}
 // Helper for consistent keys
 function getHistoryKey(sessionCode, practiceSet = "", practiceLevel = "", ownerEmail = "") {
   return [
@@ -952,7 +1003,7 @@ function getSessionDateSuffix() {
 }
 
 function getExistingNormalizedSessionNames() {
-  const history = loadHistoryFromStorage() || [];
+  const history = filterHistoryForViewer(loadHistoryFromStorage() || []);
   const existing = new Set();
 
   history.forEach((entry) => {
@@ -1252,8 +1303,9 @@ do {
 ALL_VIEWER_ATTEMPTS = attempts;
 
       if (!attempts.length) {
-        // nothing to hydrate, fall back to whatever is in localStorage
-        const existing = loadHistoryFromStorage();
+        // Nothing to hydrate from server.
+        // Only show local history that belongs to the signed-in viewer.
+        const existing = filterHistoryForViewer(loadHistoryFromStorage(), email);
         renderSessionHistory(existing);
         return;
       }
@@ -1395,8 +1447,10 @@ attempts.forEach((a) => {
       };
       });
 
-      // Merge with whatever is in localStorage already
-      const localHistory = loadHistoryFromStorage();
+      // Merge only local history that belongs to this signed-in teacher.
+      // This prevents another teacher's shared-browser localStorage entries
+      // from appearing in the current teacher's dashboard.
+      const localHistory = filterHistoryForViewer(loadHistoryFromStorage(), email);
       const mergedByKey = new Map();
 
       const addEntries = (entries) => {
@@ -1452,8 +1506,8 @@ attempts.forEach((a) => {
         "[Dashboard] Could not hydrate session history from server:",
         err
       );
-      // fall back to local history if something goes wrong
-      const existing = loadHistoryFromStorage();
+      // Fall back only to this signed-in teacher's local history.
+      const existing = filterHistoryForViewer(loadHistoryFromStorage(), email);
       renderSessionHistory(existing);
     } finally {
       _historyHydrateInFlight = null;
@@ -4308,7 +4362,7 @@ initChartFullscreen();
 
 // Initial render: empty dashboard + any stored history
 renderDashboard([]);
-renderSessionHistory(loadHistoryFromStorage());
+renderSessionHistory(filterHistoryForViewer(loadHistoryFromStorage()));
 
 // Use URL ?sessionCode=&owner= to pre-fill filters
 (function applyUrlFiltersOnLoad() {
@@ -4511,6 +4565,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (signOutBtn) {
     signOutBtn.addEventListener("click", () => {
+      clearDashboardForSignedOut();
       window.RP_AUTH?.signOut?.();
     });
   }
@@ -4554,7 +4609,15 @@ document.addEventListener("DOMContentLoaded", () => {
         teacherUser?.email &&
         OWNER_EMAIL_FOR_VIEW !== teacherUser.email;
 
-      // Hydrate history (main teacher only)
+      // While server hydration runs, show only this teacher's locally cached history.
+      // Never show unscoped localStorage history on shared devices.
+      if (signedIn) {
+        renderSessionHistory(filterHistoryForViewer(loadHistoryFromStorage(), teacherUser.email));
+      } else if (!OWNER_EMAIL_FROM_URL) {
+        renderSessionHistory([]);
+      }
+
+      // Hydrate history from server for the main teacher view.
       if (signedIn && !isCoTeacherView && typeof hydrateSessionHistoryFromServer === "function") {
         hydrateSessionHistoryFromServer(teacherUser.email);
       }

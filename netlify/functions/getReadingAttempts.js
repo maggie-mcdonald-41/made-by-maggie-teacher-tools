@@ -83,7 +83,20 @@ exports.handler = async function (event) {
         if (row) attemptsRaw.push(row);
       }
     } else {
-      const list = await store.list({ paginate: true, cursor });
+      // Dashboard history view: scan only stored attempt blobs.
+      // Attempts are saved under session/{safeSession}/{attemptId}.json.
+      // Prefixing with "session/" avoids accidental non-attempt blobs and helps pagination.
+      const listOptions = {
+        prefix: "session/",
+        paginate: true,
+        limit,
+      };
+
+      if (cursor) {
+        listOptions.cursor = cursor;
+      }
+
+      const list = await store.list(listOptions);
       const entries = list.blobs || [];
       nextCursor = list.cursor || null;
 
@@ -195,7 +208,10 @@ const practiceLevel = String(data.practiceLevel || data.level || "on").toLowerCa
 
       return {
         key,
-        attemptId: data.attemptId || key,
+        // Use the actual blob key for detail lookups so getReadingAttemptDetail.js
+        // can fetch directly instead of scanning the whole blob store.
+        attemptId: key,
+        storedAttemptId: data.attemptId || "",
         studentId,
         studentName,
         sessionCode,
