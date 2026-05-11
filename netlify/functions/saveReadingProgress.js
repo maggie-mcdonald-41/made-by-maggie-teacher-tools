@@ -4,7 +4,7 @@ const { getStore, connectLambda } = require("@netlify/blobs");
 function normalizeSetParam(raw) {
   const v = String(raw || "").toLowerCase().trim();
   if (v === "mini") return "mini1";
-  if (v === "full" || v === "mini1" || v === "mini2") return v;
+  if (v === "full" || v === "mini1" || v === "mini2" || v === "benchmark") return v;
   return "full";
 }
 

@@ -4,17 +4,27 @@
   const SESSION_CODE = params.get("session") || "";
   const CLASS_FILTER = params.get("class") || "";
 
-  const RAW_SET = (params.get("set") || "full").toLowerCase();
-  const SET_PARAM =
-    RAW_SET === "mini" ? "mini1" : // legacy support
-    ["full", "mini1", "mini2"].includes(RAW_SET) ? RAW_SET : "full";
+ const MODE_PARAM = (params.get("mode") || "practice").toLowerCase();
+const BENCHMARK_KEY = (params.get("benchmark") || "q4").toLowerCase();
 
-  const SET_LABEL =
-    SET_PARAM === "mini1"
-      ? "Mini-Quick Check"
-      : SET_PARAM === "mini2"
-      ? "Mini-Extra Practice"
-      : "Full Practice";
+const RAW_SET = (params.get("set") || "full").toLowerCase();
+const SET_PARAM =
+  RAW_SET === "mini" ? "mini1" : // legacy support
+  ["full", "mini1", "mini2", "benchmark"].includes(RAW_SET) ? RAW_SET : "full";
+
+const IS_BENCHMARK_MODE =
+  MODE_PARAM === "benchmark" ||
+  SET_PARAM === "benchmark" ||
+  (params.get("level") || "").toLowerCase() === "benchmark";
+
+const SET_LABEL =
+  IS_BENCHMARK_MODE
+    ? "Benchmark"
+    : SET_PARAM === "mini1"
+    ? "Mini-Quick Check"
+    : SET_PARAM === "mini2"
+    ? "Mini-Extra Practice"
+    : "Full Practice";
 
   // 🔑 the teacher who owns this data
   const OWNER_EMAIL = params.get("owner") || "";
@@ -93,6 +103,94 @@
       default: return "";
     }
   }
+
+  function escapeHtml(str) {
+  return String(str || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+const BENCHMARK_PATHS = {
+  q4: "../benchmarks/mgb_6th_grade_q4_benchmark.json"
+};
+
+let benchmarkQuestionMetaPromise = null;
+
+async function getBenchmarkQuestionMeta() {
+  if (!IS_BENCHMARK_MODE) return new Map();
+
+  if (benchmarkQuestionMetaPromise) {
+    return benchmarkQuestionMetaPromise;
+  }
+
+  benchmarkQuestionMetaPromise = (async () => {
+    const path = BENCHMARK_PATHS[BENCHMARK_KEY] || BENCHMARK_PATHS.q4;
+    const metaById = new Map();
+
+    try {
+      const res = await fetch(path);
+      if (!res.ok) throw new Error(`Could not load benchmark file: ${path}`);
+
+      const benchmark = await res.json();
+
+      (benchmark.sections || []).forEach((section) => {
+        (section.questions || []).forEach((q) => {
+          const qid = normalizeQuestionId(q.id);
+          if (qid == null) return;
+
+          metaById.set(qid, {
+            standards: Array.isArray(q.standards) ? q.standards : [],
+            type: q.type || ""
+          });
+        });
+      });
+    } catch (err) {
+      console.warn("[Monitor] Could not load benchmark standards:", err);
+    }
+
+    return metaById;
+  })();
+
+  return benchmarkQuestionMetaPromise;
+}
+
+function getOfficialStandardTooltip(standards = []) {
+  const catalog = window.RP_STANDARDS_CATALOG;
+
+  return standards
+    .map((code) => {
+      const official =
+        catalog && typeof catalog.getOfficialText === "function"
+          ? catalog.getOfficialText(code)
+          : "";
+
+      return official ? `${code}: ${official}` : code;
+    })
+    .join("\n\n");
+}
+
+function getQuestionHeaderLabel(qId, benchmarkMeta) {
+  if (IS_BENCHMARK_MODE) {
+    const meta = benchmarkMeta && benchmarkMeta.get(qId);
+    const standards = meta && Array.isArray(meta.standards)
+      ? meta.standards
+      : [];
+
+    return {
+      label: standards.length ? standards.join(" / ") : `Q${qId}`,
+      title: standards.length ? getOfficialStandardTooltip(standards) : `Question ${qId}`
+    };
+  }
+
+  const typeKey = QUESTION_TYPES_FULL[qId - 1] || "";
+
+  return {
+    label: mapTypeToLabel(typeKey) || `Q${qId}`,
+    title: mapTypeToLabel(typeKey) || `Question ${qId}`
+  };
+}
 
   // ✅ NEW: normalize questionId whether it comes as number or string ("3")
   function normalizeQuestionId(qid) {
@@ -222,17 +320,26 @@
         return;
       }
 
-      // Build table with question-type header row
-      let html = "<table class='monitor-table'><thead><tr>";
-      html += "<th>Student</th><th>% Correct</th>";
+    const benchmarkMeta = await getBenchmarkQuestionMeta();
 
-      for (let i = 0; i < MAX_QUESTIONS; i++) {
-        const qId = QUESTION_ID_SEQUENCE[i];
-        const typeKey = QUESTION_TYPES_FULL[qId - 1] || "";
-        const label = mapTypeToLabel(typeKey) || (i + 1);
-        html += `<th><div class="header-rotate">${label}</div></th>`;
-      }
-      html += "</tr></thead><tbody>";
+    // Build table with question header row.
+    // Practice mode keeps question-type labels.
+    // Benchmark mode shows standards such as 6.T.T.1.c.
+    let html = "<table class='monitor-table'><thead><tr>";
+    html += "<th>Student</th><th>% Correct</th>";
+
+    for (let i = 0; i < MAX_QUESTIONS; i++) {
+      const qId = QUESTION_ID_SEQUENCE[i];
+      const header = getQuestionHeaderLabel(qId, benchmarkMeta);
+
+      html += `
+        <th title="${escapeHtml(header.title)}">
+          <div class="header-rotate">${escapeHtml(header.label)}</div>
+        </th>
+      `;
+    }
+
+    html += "</tr></thead><tbody>";
 
       rows.forEach((row) => {
         html += "<tr>";
