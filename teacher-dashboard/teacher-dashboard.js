@@ -1245,6 +1245,55 @@ const selectedLevel = isBenchmarkSession ? "benchmark" : currentLevelParam || "o
 
 // ---------- SERVER-HYDRATED SESSION HISTORY (owned + shared) ----------
 
+async function fetchAttemptSummaryPagesForScope(options = {}) {
+  const viewerEmail = String(options.viewerEmail || "").trim().toLowerCase();
+  const ownerEmail = String(options.ownerEmail || "").trim().toLowerCase();
+  const maxPages = Number(options.maxPages || 100);
+  const pageLimit = Number(options.limit || 100);
+
+  let attempts = [];
+  let cursor = null;
+  let pageCount = 0;
+
+  do {
+    const params = new URLSearchParams();
+
+    if (viewerEmail) {
+      params.set("viewerEmail", viewerEmail);
+    } else if (ownerEmail) {
+      params.set("ownerEmail", ownerEmail);
+    }
+
+    params.set("limit", String(pageLimit));
+
+    if (cursor) {
+      params.set("cursor", cursor);
+    }
+
+    const res = await fetch(
+      `/.netlify/functions/getReadingAttempts?${params.toString()}`,
+      {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      }
+    );
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`History/search fetch failed: ${res.status} ${text}`);
+    }
+
+    const payload = await res.json().catch(() => ({}));
+    const pageAttempts = Array.isArray(payload.attempts) ? payload.attempts : [];
+
+    attempts = attempts.concat(pageAttempts);
+    cursor = payload.nextCursor || null;
+    pageCount += 1;
+  } while (cursor && pageCount < maxPages);
+
+  return attempts;
+}
+
 async function hydrateSessionHistoryFromServer(viewerEmail) {
   if (typeof fetch === "undefined") return;
 
@@ -1259,44 +1308,11 @@ async function hydrateSessionHistoryFromServer(viewerEmail) {
 
   _historyHydrateInFlight = (async () => {
     try {
-let attempts = [];
-let cursor = null;
-let pageCount = 0;
-const MAX_HISTORY_PAGES = 50;
-
-do {
-  const params = new URLSearchParams();
-  params.set("viewerEmail", email);
-  params.set("limit", "250");
-
-  if (cursor) {
-    params.set("cursor", cursor);
-  }
-
-  const res = await fetch(
-    `/.netlify/functions/getReadingAttempts?${params.toString()}`,
-    {
-      method: "GET",
-      headers: { Accept: "application/json" },
-    }
-  );
-
-  if (!res.ok) {
-    console.warn(
-      "[Dashboard] History fetch failed:",
-      res.status,
-      await res.text().catch(() => "")
-    );
-    return;
-  }
-
-  const payload = await res.json().catch(() => ({}));
-  const pageAttempts = Array.isArray(payload.attempts) ? payload.attempts : [];
-
-  attempts = attempts.concat(pageAttempts);
-  cursor = payload.nextCursor || null;
-  pageCount += 1;
-} while (cursor && pageCount < MAX_HISTORY_PAGES);
+const attempts = await fetchAttemptSummaryPagesForScope({
+  viewerEmail: email,
+  limit: 100,
+  maxPages: 100,
+});
 
 // Cache summary attempts for cross-session student progress graphs.
 // Full Q-by-Q details still load only when a teacher clicks a row.
@@ -3439,34 +3455,39 @@ async function runStudentSearch() {
   `;
 
   try {
-    const params = new URLSearchParams();
-
     const ownerEmail = (CURRENT_SESSION_OWNER_OVERRIDE || OWNER_EMAIL_FOR_VIEW || "").trim().toLowerCase();
     const useOwnerScope =
       !!ownerEmail && (!teacherUser || teacherUser.email.toLowerCase() !== ownerEmail);
 
-    if (useOwnerScope) {
-      params.set("ownerEmail", ownerEmail);
-    } else if (teacherUser && teacherUser.email) {
-      params.set("viewerEmail", teacherUser.email);
-    } else if (ownerEmail) {
-      params.set("ownerEmail", ownerEmail);
-    }
+    let allAttempts = Array.isArray(ALL_VIEWER_ATTEMPTS)
+      ? ALL_VIEWER_ATTEMPTS.slice()
+      : [];
 
-    const res = await fetch(
-      `/.netlify/functions/getReadingAttempts?${params.toString()}`,
-      {
-        method: "GET",
-        headers: { Accept: "application/json" }
+    // If the global cache is empty, hydrate it before searching.
+    // Student search must search across all summary pages, not just the first page.
+    if (!allAttempts.length) {
+      if (useOwnerScope) {
+        allAttempts = await fetchAttemptSummaryPagesForScope({
+          ownerEmail,
+          limit: 100,
+          maxPages: 100,
+        });
+      } else if (teacherUser && teacherUser.email) {
+        allAttempts = await fetchAttemptSummaryPagesForScope({
+          viewerEmail: teacherUser.email,
+          limit: 100,
+          maxPages: 100,
+        });
+
+        ALL_VIEWER_ATTEMPTS = allAttempts;
+      } else if (ownerEmail) {
+        allAttempts = await fetchAttemptSummaryPagesForScope({
+          ownerEmail,
+          limit: 100,
+          maxPages: 100,
+        });
       }
-    );
-
-    if (!res.ok) {
-      throw new Error(`Server error: ${res.status}`);
     }
-
-    const data = await res.json();
-    const allAttempts = Array.isArray(data.attempts) ? data.attempts : [];
 
     const needle = cleanTerm.toLowerCase();
     const matching = allAttempts.filter((a) => {

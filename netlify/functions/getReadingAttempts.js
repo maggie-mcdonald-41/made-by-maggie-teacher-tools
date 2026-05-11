@@ -98,10 +98,12 @@ exports.handler = async function (event) {
 
     const setParam = normalizeSetParam(rawSet);
 
-    const limitRaw = Number(params.limit || 500);
+    // Keep summary responses small enough for Netlify.
+    // The dashboard can request multiple pages when it needs a full history/search cache.
+    const limitRaw = Number(params.limit || 100);
     const limit = Number.isFinite(limitRaw)
-      ? Math.min(Math.max(Math.floor(limitRaw), 1), 1000)
-      : 500;
+      ? Math.min(Math.max(Math.floor(limitRaw), 1), 250)
+      : 100;
 
     const cursor = (params.cursor || "").trim() || undefined;
 
@@ -133,9 +135,9 @@ exports.handler = async function (event) {
       // Netlify Blobs list() pages through the global blob list. If we only load one global page
       // and then filter by viewerEmail afterward, the teacher's benchmark attempts may not be
       // inside that page. That makes valid benchmark sessions disappear from history.
-      const CONCURRENCY = 10;
-      const SCAN_PAGE_LIMIT = 250;
-      const MAX_SCAN_PAGES_PER_REQUEST = 20;
+      const CONCURRENCY = 8;
+      const SCAN_PAGE_LIMIT = 100;
+      const MAX_SCAN_PAGES_PER_REQUEST = 10;
 
       let scanCursor = cursor;
       let scannedPages = 0;
