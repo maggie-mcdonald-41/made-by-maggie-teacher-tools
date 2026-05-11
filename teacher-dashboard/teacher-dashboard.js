@@ -246,20 +246,34 @@ async function startBenchmarkSession() {
     };
 
 const studentLink = buildBenchmarkStudentLink(normalizedSession, benchmarkKey);
+const coTeacherLink = buildBenchmarkCoTeacherLink(normalizedSession, benchmarkKey);
 
 if (sessionLinkInput) {
   sessionLinkInput.value = studentLink;
 }
 
+if (coTeacherLinkInput) {
+  coTeacherLinkInput.value = coTeacherLink;
+}
+
 if (copyLinkStatusEl) {
   copyLinkStatusEl.textContent =
-    "Benchmark link ready. Click Copy to share with students.";
+    "Benchmark student link ready. Click Copy to share with students.";
   copyLinkStatusEl.style.display = "inline";
+}
+
+if (copyCoTeacherStatusEl) {
+  copyCoTeacherStatusEl.textContent =
+    coTeacherLink
+      ? "Benchmark co-teacher dashboard link ready."
+      : "Sign in first to generate a co-teacher dashboard link.";
+  copyCoTeacherStatusEl.style.display = "inline";
 }
 
 enableBenchmarkMonitorButton(normalizedSession, benchmarkKey);
 
-alert("Benchmark link is ready. Copy it and share it with students.");  } catch (err) {
+alert("Benchmark links are ready. Copy the student link or co-teacher link as needed.");
+  } catch (err) {
     console.error("[Benchmark] Error loading benchmark:", err);
     alert("Could not load the benchmark JSON. Check the file name/path and try again.");
 
@@ -3707,7 +3721,11 @@ function buildCoTeacherLink(sessionCode) {
 
 function buildBenchmarkCoTeacherLink(sessionCode, benchmarkKey = "q4") {
   const cleanSession = (sessionCode || "").trim().toUpperCase();
-  if (!cleanSession) return "";
+
+  if (!cleanSession) {
+    if (coTeacherLinkInput) coTeacherLinkInput.value = "";
+    return "";
+  }
 
   const baseUrl = `${window.location.origin}/teacher-dashboard/teacher-dashboard.html`;
   const params = new URLSearchParams();
@@ -3730,11 +3748,31 @@ function buildBenchmarkCoTeacherLink(sessionCode, benchmarkKey = "q4") {
     } catch (e) {}
   }
 
-  if (!ownerEmail) return "";
+  ownerEmail = String(ownerEmail || "").trim().toLowerCase();
+
+  if (!ownerEmail) {
+    if (coTeacherLinkInput) coTeacherLinkInput.value = "";
+    return "";
+  }
 
   params.set("owner", ownerEmail);
 
-  return `${baseUrl}?${params.toString()}`;
+  const link = `${baseUrl}?${params.toString()}`;
+
+  if (coTeacherLinkInput) {
+    coTeacherLinkInput.value = link;
+  }
+
+  try {
+    window.localStorage.setItem("rp_lastCoTeacherLink", link);
+    window.localStorage.setItem("rp_lastOwnerEmail", ownerEmail);
+    window.localStorage.setItem("rp_lastSet", "benchmark");
+    window.localStorage.setItem("rp_lastLevel", "benchmark");
+  } catch (e) {
+    // non-fatal
+  }
+
+  return link;
 }
 
 function buildBenchmarkStudentLink(sessionCode, benchmarkKey = "q4") {
@@ -4259,12 +4297,18 @@ renderSessionHistory(loadHistoryFromStorage());
   try {
     const params = new URLSearchParams(window.location.search);
 
-    const urlSession = params.get("sessionCode") || params.get("session");
-    const urlOwner = params.get("owner") || params.get("ownerEmail");
+const urlSession = params.get("sessionCode") || params.get("session");
+const urlOwner = params.get("owner") || params.get("ownerEmail");
+const urlMode = (params.get("mode") || "").toLowerCase();
+const urlBenchmarkKey = params.get("benchmark") || "q4";
 
-    // NEW: set can be full | mini1 | mini2 (and legacy "mini")
-    const rawSet = (params.get("set") || "").toLowerCase();
-    const urlSet = normalizeSetParam(rawSet); // full | mini1 | mini2
+// NEW: set can be full | mini1 | mini2 | benchmark
+const rawSet = (params.get("set") || "").toLowerCase();
+const urlSet = normalizeSetParam(rawSet);
+const isBenchmarkUrl =
+  urlMode === "benchmark" ||
+  rawSet === "benchmark" ||
+  (params.get("level") || "").toLowerCase() === "benchmark";
 
     // OPTIONAL: level (if you keep this feature)
     const urlLevelRaw = (params.get("level") || "on").toLowerCase();
@@ -4290,11 +4334,30 @@ renderSessionHistory(loadHistoryFromStorage());
     }
 
 
-    // Prefill session + pill
-    if (urlSession && sessionInput) {
-      sessionInput.value = urlSession;
-      if (sessionPill) sessionPill.textContent = `Session: ${urlSession}`;
-    }
+// Prefill session + pill
+if (urlSession && sessionInput) {
+  sessionInput.value = urlSession;
+}
+
+if (urlSession && benchmarkSessionInput && isBenchmarkUrl) {
+  benchmarkSessionInput.value = urlSession;
+}
+
+if (benchmarkSetSelect && isBenchmarkUrl) {
+  benchmarkSetSelect.value = urlBenchmarkKey;
+}
+
+if (sessionPill && urlSession) {
+  sessionPill.textContent = isBenchmarkUrl
+    ? `Benchmark: ${urlSession}`
+    : `Session: ${urlSession}`;
+}
+
+if (isBenchmarkUrl) {
+  switchDashboardTab("benchmark");
+} else {
+  switchDashboardTab("practice");
+}
 
 
     // ✅ Sync practice set from URL into selector
@@ -4322,10 +4385,24 @@ renderSessionHistory(loadHistoryFromStorage());
     } catch (e) {}
         }
 
-    // Keep monitor button & view summary aligned after URL-prefill
-    const session = (sessionInput?.value || "").trim();
-    enableMonitorButton(session);
-    if (typeof updateCurrentViewSummary === "function") updateCurrentViewSummary();
+// Keep monitor button & view summary aligned after URL-prefill
+const session = (sessionInput?.value || "").trim();
+
+if (isBenchmarkUrl) {
+  if (sessionLinkInput && session) {
+    sessionLinkInput.value = buildBenchmarkStudentLink(session, urlBenchmarkKey);
+  }
+
+  if (coTeacherLinkInput && session) {
+    coTeacherLinkInput.value = buildBenchmarkCoTeacherLink(session, urlBenchmarkKey);
+  }
+
+  enableBenchmarkMonitorButton(session, urlBenchmarkKey);
+} else {
+  enableMonitorButton(session);
+}
+
+if (typeof updateCurrentViewSummary === "function") updateCurrentViewSummary();
   } catch (e) {
     console.warn("[Dashboard] Could not parse URL filters:", e);
   }
