@@ -1262,12 +1262,12 @@ async function hydrateSessionHistoryFromServer(viewerEmail) {
 let attempts = [];
 let cursor = null;
 let pageCount = 0;
-const MAX_HISTORY_PAGES = 10;
+const MAX_HISTORY_PAGES = 50;
 
 do {
   const params = new URLSearchParams();
   params.set("viewerEmail", email);
-  params.set("limit", "500");
+  params.set("limit", "250");
 
   if (cursor) {
     params.set("cursor", cursor);
@@ -1301,6 +1301,13 @@ do {
 // Cache summary attempts for cross-session student progress graphs.
 // Full Q-by-Q details still load only when a teacher clicks a row.
 ALL_VIEWER_ATTEMPTS = attempts;
+
+console.log("[Dashboard] Hydrated session-history attempts:", {
+  total: attempts.length,
+  benchmark: attempts.filter(isBenchmarkAttempt).length,
+  practice: attempts.filter((a) => !isBenchmarkAttempt(a)).length,
+  sessions: [...new Set(attempts.map((a) => a.sessionCode).filter(Boolean))]
+});
 
       if (!attempts.length) {
         // Nothing to hydrate from server.

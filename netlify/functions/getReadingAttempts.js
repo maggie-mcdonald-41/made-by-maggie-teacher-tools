@@ -16,6 +16,49 @@ function sanitizeFragment(value) {
     .slice(0, 64);
 }
 
+function normalizeEmail(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function getRawOwnerEmail(data) {
+  return normalizeEmail(
+    data.ownerEmail ||
+      data.teacherEmail ||
+      (data.sessionInfo && data.sessionInfo.ownerEmail) ||
+      (data.sessionInfo && data.sessionInfo.teacherEmail) ||
+      ""
+  );
+}
+
+function getRawSharedEmails(data) {
+  const shared = Array.isArray(data.sharedWithEmails)
+    ? data.sharedWithEmails
+    : Array.isArray(data.sessionInfo && data.sessionInfo.sharedWithEmails)
+    ? data.sessionInfo.sharedWithEmails
+    : [];
+
+  return shared.map((email) => normalizeEmail(email)).filter(Boolean);
+}
+
+function rawAttemptMatchesScope(data, rawViewerEmail, rawOwnerEmail) {
+  const viewerEmail = normalizeEmail(rawViewerEmail);
+  const ownerEmailParam = normalizeEmail(rawOwnerEmail);
+
+  const attemptOwner = getRawOwnerEmail(data);
+  const sharedWith = getRawSharedEmails(data);
+
+  if (viewerEmail) {
+    if (!attemptOwner && sharedWith.length === 0) return false;
+    return attemptOwner === viewerEmail || sharedWith.includes(viewerEmail);
+  }
+
+  if (ownerEmailParam) {
+    return attemptOwner === ownerEmailParam;
+  }
+
+  return true;
+}
+
 // ✅ NEW: small concurrency helper to speed up loading blobs
 async function mapWithConcurrency(items, limit, worker) {
   const results = new Array(items.length);
@@ -83,34 +126,65 @@ exports.handler = async function (event) {
         if (row) attemptsRaw.push(row);
       }
     } else {
-      // Dashboard history view: scan only stored attempt blobs.
-      // Attempts are saved under session/{safeSession}/{attemptId}.json.
-      // Prefixing with "session/" avoids accidental non-attempt blobs and helps pagination.
-      const listOptions = {
-        prefix: "session/",
-        paginate: true,
-        limit,
-      };
-
-      if (cursor) {
-        listOptions.cursor = cursor;
-      }
-
-      const list = await store.list(listOptions);
-      const entries = list.blobs || [];
-      nextCursor = list.cursor || null;
-
-      // ✅ Load JSON concurrently (faster)
+      // Dashboard history view:
+      // Scan stored attempt blobs, but collect only attempts that match the signed-in viewer/owner.
+      //
+      // Why this matters:
+      // Netlify Blobs list() pages through the global blob list. If we only load one global page
+      // and then filter by viewerEmail afterward, the teacher's benchmark attempts may not be
+      // inside that page. That makes valid benchmark sessions disappear from history.
       const CONCURRENCY = 10;
-      const loaded = await mapWithConcurrency(entries, CONCURRENCY, async (item) => {
-        if (!item || !item.key || !item.key.endsWith(".json")) return null;
-        const data = await store.get(item.key, { type: "json" });
-        return data ? { key: item.key, data } : null;
-      });
+      const SCAN_PAGE_LIMIT = 250;
+      const MAX_SCAN_PAGES_PER_REQUEST = 20;
 
-      for (const row of loaded) {
-        if (row) attemptsRaw.push(row);
-      }
+      let scanCursor = cursor;
+      let scannedPages = 0;
+
+      do {
+        const listOptions = {
+          prefix: "session/",
+          paginate: true,
+          limit: SCAN_PAGE_LIMIT,
+        };
+
+        if (scanCursor) {
+          listOptions.cursor = scanCursor;
+        }
+
+        const list = await store.list(listOptions);
+        const entries = list.blobs || [];
+        scanCursor = list.cursor || null;
+        scannedPages += 1;
+
+        const loaded = await mapWithConcurrency(entries, CONCURRENCY, async (item) => {
+          if (!item || !item.key || !item.key.endsWith(".json")) return null;
+
+          const data = await store.get(item.key, { type: "json" });
+          if (!data) return null;
+
+          // Scope before adding to this response page.
+          if (!rawAttemptMatchesScope(data, rawViewerEmail, rawOwnerEmail)) {
+            return null;
+          }
+
+          return { key: item.key, data };
+        });
+
+        for (const row of loaded) {
+          if (!row) continue;
+          attemptsRaw.push(row);
+
+          if (attemptsRaw.length >= limit) {
+            break;
+          }
+        }
+
+        if (attemptsRaw.length >= limit) {
+          break;
+        }
+      } while (scanCursor && scannedPages < MAX_SCAN_PAGES_PER_REQUEST);
+
+      nextCursor = scanCursor || null;
     }
 
     // ---------- Normalize for Teacher Dashboard ----------
