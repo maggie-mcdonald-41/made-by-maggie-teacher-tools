@@ -55,7 +55,15 @@ exports.handler = async function (event) {
 
     const setParam = normalizeSetParam(rawSet);
 
+    const limitRaw = Number(params.limit || 500);
+    const limit = Number.isFinite(limitRaw)
+      ? Math.min(Math.max(Math.floor(limitRaw), 1), 1000)
+      : 500;
+
+    const cursor = (params.cursor || "").trim() || undefined;
+
     let attemptsRaw = [];
+    let nextCursor = null;
 
     // --- Load attempts (session-scoped if provided) ---
     if (rawSession) {
@@ -75,8 +83,9 @@ exports.handler = async function (event) {
         if (row) attemptsRaw.push(row);
       }
     } else {
-      const list = await store.list();
-      const entries = list.blobs || list || [];
+      const list = await store.list({ paginate: true, cursor });
+      const entries = list.blobs || [];
+      nextCursor = list.cursor || null;
 
       // ✅ Load JSON concurrently (faster)
       const CONCURRENCY = 10;
@@ -204,7 +213,10 @@ const practiceLevel = String(data.practiceLevel || data.level || "on").toLowerCa
         isComplete,
         bySkill,
         byType,
-        questionResults: Array.isArray(data.questionResults) ? data.questionResults : [],
+                // Do NOT include full question-by-question results in the list endpoint.
+        // Full details are loaded on demand by getReadingAttemptDetail.js.
+        // This keeps Netlify from rejecting the response as too large.
+        questionResultsCount: Array.isArray(data.questionResults) ? data.questionResults.length : 0,
         startedAt,
         finishedAt,
       };
@@ -247,8 +259,13 @@ const practiceLevel = String(data.practiceLevel || data.level || "on").toLowerCa
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ success: true, attempts }),
+      body: JSON.stringify({
+        success: true,
+        attempts,
+        nextCursor,
+      }),
     };
+
   } catch (err) {
     console.error("[getReadingAttempts] Fatal error:", err);
     return {

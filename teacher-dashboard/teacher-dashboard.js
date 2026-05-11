@@ -1208,30 +1208,48 @@ async function hydrateSessionHistoryFromServer(viewerEmail) {
 
   _historyHydrateInFlight = (async () => {
     try {
-      const params = new URLSearchParams();
-      params.set("viewerEmail", email);
+let attempts = [];
+let cursor = null;
+let pageCount = 0;
+const MAX_HISTORY_PAGES = 10;
 
-      const res = await fetch(
-        `/.netlify/functions/getReadingAttempts?${params.toString()}`,
-        {
-          method: "GET",
-          headers: { Accept: "application/json" },
-        }
-      );
+do {
+  const params = new URLSearchParams();
+  params.set("viewerEmail", email);
+  params.set("limit", "500");
 
-      if (!res.ok) {
-        console.warn(
-          "[Dashboard] History fetch failed:",
-          res.status,
-          await res.text().catch(() => "")
-        );
-        return;
-      }
+  if (cursor) {
+    params.set("cursor", cursor);
+  }
 
-      const payload = await res.json().catch(() => ({}));
-      const attempts = Array.isArray(payload.attempts) ? payload.attempts : [];
-      // Cache all attempts for cross-session student progress graphs
-      ALL_VIEWER_ATTEMPTS = attempts;
+  const res = await fetch(
+    `/.netlify/functions/getReadingAttempts?${params.toString()}`,
+    {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    }
+  );
+
+  if (!res.ok) {
+    console.warn(
+      "[Dashboard] History fetch failed:",
+      res.status,
+      await res.text().catch(() => "")
+    );
+    return;
+  }
+
+  const payload = await res.json().catch(() => ({}));
+  const pageAttempts = Array.isArray(payload.attempts) ? payload.attempts : [];
+
+  attempts = attempts.concat(pageAttempts);
+  cursor = payload.nextCursor || null;
+  pageCount += 1;
+} while (cursor && pageCount < MAX_HISTORY_PAGES);
+
+// Cache summary attempts for cross-session student progress graphs.
+// Full Q-by-Q details still load only when a teacher clicks a row.
+ALL_VIEWER_ATTEMPTS = attempts;
 
       if (!attempts.length) {
         // nothing to hydrate, fall back to whatever is in localStorage
