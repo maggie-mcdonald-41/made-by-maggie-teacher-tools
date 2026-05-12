@@ -3607,6 +3607,30 @@ if (useOwnerScope) {
         "No attempts found yet. Once students complete the practice, load again.";
     } else {
       renderDashboard(attempts);
+
+      // Keep the cross-session student search cache aware of anything we just loaded.
+      // This is especially important for sessions that existed before the lightweight
+      // index was fully repaired.
+      if (Array.isArray(attempts) && attempts.length) {
+        const existing = Array.isArray(ALL_VIEWER_ATTEMPTS)
+          ? ALL_VIEWER_ATTEMPTS
+          : [];
+
+        const byAttemptId = new Map();
+
+        existing.forEach((a) => {
+          const key = a.attemptId || `${a.sessionCode || ""}_${a.studentName || ""}_${a.finishedAt || ""}`;
+          if (key) byAttemptId.set(key, a);
+        });
+
+        attempts.forEach((a) => {
+          const key = a.attemptId || `${a.sessionCode || ""}_${a.studentName || ""}_${a.finishedAt || ""}`;
+          if (key) byAttemptId.set(key, a);
+        });
+
+        ALL_VIEWER_ATTEMPTS = Array.from(byAttemptId.values());
+      }
+
       // Hydrate session history with real attempts
       updateSessionHistory(sessionCodeRaw, attempts);
       loadStatusEl.textContent = `Loaded ${attempts.length} attempt${

@@ -37,7 +37,7 @@ exports.handler = async function (event, context) {
       body.teacherEmail ||
       (body.user && body.user.email) ||
       ""
-    ).trim();
+    ).trim().toLowerCase();
 
     // NEW: optional co-teacher sharing
     let sharedWithEmails = [];
@@ -51,7 +51,14 @@ exports.handler = async function (event, context) {
     const assessmentName = (body.assessmentName || "").trim();
     const assessmentType = (
       body.assessmentType ||
-      (body.practiceSet === "benchmark" || body.set === "benchmark" ? "benchmark" : "")
+      (
+        body.practiceSet === "benchmark" ||
+        body.set === "benchmark" ||
+        body.practiceLevel === "benchmark" ||
+        body.level === "benchmark"
+          ? "benchmark"
+          : ""
+      )
     ).trim();
     if (!sessionCode || !studentName) {
       return {
@@ -165,6 +172,8 @@ exports.handler = async function (event, context) {
 
       assessmentName,
       assessmentType,
+      benchmarkKey: body.benchmarkKey || body.benchmark || "",
+      benchmarkId: body.benchmarkId || body.assessmentId || "",
 
       practiceSet: attempt.practiceSet,
       practiceLevel: attempt.practiceLevel,

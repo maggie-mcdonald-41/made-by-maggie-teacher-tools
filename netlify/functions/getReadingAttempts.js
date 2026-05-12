@@ -40,6 +40,112 @@ function getRawSharedEmails(data) {
   return shared.map((email) => normalizeEmail(email)).filter(Boolean);
 }
 
+function getIndexEmailsFromAttempt(attempt) {
+  const indexEmails = new Set();
+
+  const ownerEmail = normalizeEmail(
+    attempt.ownerEmail ||
+      attempt.teacherEmail ||
+      (attempt.sessionInfo && attempt.sessionInfo.ownerEmail) ||
+      (attempt.sessionInfo && attempt.sessionInfo.teacherEmail) ||
+      ""
+  );
+
+  if (ownerEmail) {
+    indexEmails.add(ownerEmail);
+  }
+
+  const sharedWithEmails = Array.isArray(attempt.sharedWithEmails)
+    ? attempt.sharedWithEmails
+    : Array.isArray(attempt.sessionInfo && attempt.sessionInfo.sharedWithEmails)
+    ? attempt.sessionInfo.sharedWithEmails
+    : [];
+
+  sharedWithEmails.forEach((email) => {
+    const clean = normalizeEmail(email);
+    if (clean) indexEmails.add(clean);
+  });
+
+  return indexEmails;
+}
+
+function buildAttemptSummaryForIndex(attempt) {
+  const practiceSet = normalizeSetParam(attempt.practiceSet || attempt.set || "full");
+  const practiceLevel = String(attempt.practiceLevel || attempt.level || "on").toLowerCase();
+
+  const assessmentType =
+    attempt.assessmentType ||
+    (practiceSet === "benchmark" || practiceLevel === "benchmark" ? "benchmark" : "");
+
+  return {
+    key: attempt.attemptId,
+    attemptId: attempt.attemptId,
+    storedAttemptId: attempt.storedAttemptId || "",
+
+    studentId: attempt.studentId || "",
+    studentName: attempt.studentName || "",
+    sessionCode: attempt.sessionCode || "",
+
+    ownerEmail: normalizeEmail(attempt.ownerEmail || ""),
+    sharedWithEmails: Array.isArray(attempt.sharedWithEmails)
+      ? attempt.sharedWithEmails.map((email) => normalizeEmail(email)).filter(Boolean)
+      : [],
+
+    assessmentName: attempt.assessmentName || "",
+    assessmentType,
+    benchmarkKey: attempt.benchmarkKey || "",
+    benchmarkId: attempt.benchmarkId || "",
+
+    practiceSet,
+    practiceLevel,
+    set: practiceSet,
+    level: practiceLevel,
+
+    numCorrect: Number(attempt.numCorrect || 0),
+    totalQuestions: Number(attempt.totalQuestions || 0),
+    answeredCount: Number(attempt.answeredCount || 0),
+    isComplete: !!attempt.isComplete,
+
+    bySkill: attempt.bySkill || {},
+    byType: attempt.byType || {},
+
+    startedAt: attempt.startedAt || null,
+    finishedAt: attempt.finishedAt || null,
+
+    questionResultsCount: Number(attempt.questionResultsCount || 0),
+  };
+}
+
+async function repairViewerIndexesForAttempts(store, attempts) {
+  if (!Array.isArray(attempts) || !attempts.length) return;
+
+  const writes = [];
+
+  attempts.forEach((attempt) => {
+    if (!attempt || !attempt.attemptId || !attempt.sessionCode) return;
+
+    const indexEmails = getIndexEmailsFromAttempt(attempt);
+    if (!indexEmails.size) return;
+
+    const summary = buildAttemptSummaryForIndex(attempt);
+    const stableId = sanitizeFragment(
+      attempt.storedAttemptId ||
+        attempt.attemptId.split("/").pop()?.replace(/\.json$/i, "") ||
+        `${attempt.sessionCode}_${attempt.studentName || Date.now()}`
+    );
+
+    indexEmails.forEach((email) => {
+      const safeEmail = sanitizeFragment(email);
+      const indexKey = `index/by-viewer/${safeEmail}/${stableId}.json`;
+      writes.push(store.setJSON(indexKey, summary));
+    });
+  });
+
+  if (writes.length) {
+    await Promise.all(writes);
+  }
+}
+
 function rawAttemptMatchesScope(data, rawViewerEmail, rawOwnerEmail) {
   const viewerEmail = normalizeEmail(rawViewerEmail);
   const ownerEmailParam = normalizeEmail(rawOwnerEmail);
@@ -308,9 +414,11 @@ if (!totalQuestions && questionResultsLen) totalQuestions = questionResultsLen;
         key,
         // If this row came from the teacher index, data.attemptId should already be
         // the full attempt blob key, such as session/IA4-STUDY-GUIDE/attempt.json.
-        // Fall back to data.key or key for older/non-indexed rows.
-        attemptId: data.attemptId || data.key || key,
-        storedAttemptId: data.storedAttemptId || "",
+        // If this row came directly from a session blob, use the actual blob key.
+        attemptId: key.startsWith("index/")
+          ? (data.attemptId || data.key || key)
+          : key,
+        storedAttemptId: data.storedAttemptId || data.attemptId || "",
         studentId,
         studentName,
         sessionCode,
@@ -372,6 +480,17 @@ if (!totalQuestions && questionResultsLen) totalQuestions = questionResultsLen;
       const bTime = (b.finishedAt || b.startedAt || "").toString();
       return bTime.localeCompare(aTime);
     });
+
+    // If the teacher manually loaded a specific session, repair any missing
+    // lightweight index entries for that session. This helps recover sessions
+    // created before the index system was fully wired.
+    if (rawSession && (rawViewerEmail || rawOwnerEmail)) {
+      try {
+        await repairViewerIndexesForAttempts(store, attempts);
+      } catch (repairErr) {
+        console.warn("[getReadingAttempts] Index repair skipped:", repairErr);
+      }
+    }
 
     return {
       statusCode: 200,

@@ -16,6 +16,88 @@ function sanitizeFragment(value) {
     .slice(0, 64);
 }
 
+function normalizeEmail(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function getIndexEmailsFromAttempt(attempt) {
+  const indexEmails = new Set();
+
+  const ownerEmail = normalizeEmail(
+    attempt.ownerEmail ||
+      attempt.teacherEmail ||
+      (attempt.sessionInfo && attempt.sessionInfo.ownerEmail) ||
+      (attempt.sessionInfo && attempt.sessionInfo.teacherEmail) ||
+      ""
+  );
+
+  if (ownerEmail) {
+    indexEmails.add(ownerEmail);
+  }
+
+  const sharedWithEmails = Array.isArray(attempt.sharedWithEmails)
+    ? attempt.sharedWithEmails
+    : Array.isArray(attempt.sessionInfo && attempt.sessionInfo.sharedWithEmails)
+    ? attempt.sessionInfo.sharedWithEmails
+    : [];
+
+  sharedWithEmails.forEach((email) => {
+    const clean = normalizeEmail(email);
+    if (clean) indexEmails.add(clean);
+  });
+
+  return indexEmails;
+}
+
+function buildAttemptSummaryForIndex(attemptKey, attempt) {
+  const practiceSet = normalizeSetParam(attempt.practiceSet || attempt.set || "full");
+  const practiceLevel = String(attempt.practiceLevel || attempt.level || "on").toLowerCase();
+
+  const assessmentType =
+    attempt.assessmentType ||
+    (practiceSet === "benchmark" || practiceLevel === "benchmark" ? "benchmark" : "");
+
+  return {
+    key: attemptKey,
+
+    // IMPORTANT: dashboard detail loading needs the full blob key here
+    attemptId: attemptKey,
+    storedAttemptId: attempt.attemptId || "",
+
+    studentName: attempt.studentName || "",
+    studentId: attempt.studentId || "",
+    sessionCode: attempt.sessionCode || "",
+
+    ownerEmail: normalizeEmail(attempt.ownerEmail || attempt.teacherEmail || ""),
+    sharedWithEmails: Array.isArray(attempt.sharedWithEmails)
+      ? attempt.sharedWithEmails.map((email) => normalizeEmail(email)).filter(Boolean)
+      : [],
+
+    assessmentName: attempt.assessmentName || "",
+    assessmentType,
+
+    practiceSet,
+    practiceLevel,
+    set: practiceSet,
+    level: practiceLevel,
+
+    numCorrect: Number(attempt.numCorrect || 0),
+    totalQuestions: Number(attempt.totalQuestions || 0),
+    answeredCount: Number(attempt.answeredCount || 0),
+    isComplete: !!attempt.isComplete,
+
+    bySkill: attempt.bySkill || attempt.perSkill || {},
+    byType: attempt.byType || attempt.perType || {},
+
+    startedAt: attempt.startedAt || null,
+    finishedAt: attempt.finishedAt || attempt.lastSavedAt || new Date().toISOString(),
+
+    questionResultsCount: Array.isArray(attempt.questionResults)
+      ? attempt.questionResults.length
+      : 0,
+  };
+}
+
 function buildPartialAttemptFromProgress(
   sessionCode,
   safeSession,
@@ -220,6 +302,20 @@ assessmentType: payload.assessmentType || "",
           attemptKey
         );
         await attemptsStore.setJSON(attemptKey, partialAttempt);
+
+        // Also write/update the lightweight dashboard/search index.
+        // Without this, live monitoring works, but session history and student search
+        // cannot see partial/in-progress attempts.
+        const indexEmails = getIndexEmailsFromAttempt(partialAttempt);
+        const attemptSummary = buildAttemptSummaryForIndex(attemptKey, partialAttempt);
+
+        await Promise.all(
+          Array.from(indexEmails).map((email) => {
+            const safeEmail = sanitizeFragment(email);
+            const indexKey = `index/by-viewer/${safeEmail}/${partialAttempt.attemptId}.json`;
+            return attemptsStore.setJSON(indexKey, attemptSummary);
+          })
+        );
       } else {
         console.log(
           "[saveReadingProgress] Skipping partial attempt upsert (answeredCount:",
