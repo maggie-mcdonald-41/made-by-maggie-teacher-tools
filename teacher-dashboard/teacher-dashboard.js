@@ -1257,8 +1257,8 @@ const selectedLevel = isBenchmarkSession ? "benchmark" : currentLevelParam || "o
     totalQuestions,
     totalCorrect,
     uniqueStudentsCount,
-    practiceSet: selectedSet,     // full | mini1 | mini2
-    practiceLevel: selectedLevel, // below | on | above
+    practiceSet: selectedSet,     // full | mini1 | mini2 | benchmark
+    practiceLevel: selectedLevel, // below | on | above | benchmark
     // Persist ownerEmail so history restores correct links later (owner OR co-teacher)
     ownerEmail: selectedOwnerEmail || null
   };
@@ -1279,76 +1279,30 @@ const selectedLevel = isBenchmarkSession ? "benchmark" : currentLevelParam || "o
 async function fetchAttemptSummaryPagesForScope(options = {}) {
   const viewerEmail = String(options.viewerEmail || "").trim().toLowerCase();
   const ownerEmail = String(options.ownerEmail || "").trim().toLowerCase();
-  const maxPages = Number(options.maxPages || 100);
-  const pageLimit = Number(options.limit || 100);
-  const scanSessions = !!options.scanSessions;
 
-  let attempts = [];
-  let cursor = null;
-  let pageCount = 0;
+  const params = new URLSearchParams();
 
-  do {
-    const params = new URLSearchParams();
-
-    if (viewerEmail) {
-      params.set("viewerEmail", viewerEmail);
-    } else if (ownerEmail) {
-      params.set("ownerEmail", ownerEmail);
-    }
-
-    params.set("limit", String(pageLimit));
-
-    if (scanSessions) {
-      params.set("scanSessions", "1");
-    }
-
-    if (cursor) {
-      params.set("cursor", cursor);
-    }
-
-    const res = await fetch(
-      `/.netlify/functions/getReadingAttempts?${params.toString()}`,
-      {
-        method: "GET",
-        headers: { Accept: "application/json" },
-      }
-    );
-
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      throw new Error(`History/search fetch failed: ${res.status} ${text}`);
-    }
-
-    const payload = await res.json().catch(() => ({}));
-    const pageAttempts = Array.isArray(payload.attempts) ? payload.attempts : [];
-
-    attempts = attempts.concat(pageAttempts);
-    cursor = payload.nextCursor || null;
-    pageCount += 1;
-  } while (cursor && pageCount < maxPages);
-
-  // If the lightweight index is empty, fall back to a paginated scan of session blobs.
-  // This restores the old "all available sessions for this teacher/student" behavior
-  // without returning full questionResults arrays.
-  if (
-    !attempts.length &&
-    !scanSessions &&
-    (viewerEmail || ownerEmail)
-  ) {
-    console.warn(
-      "[Dashboard] Teacher index returned 0 attempts; falling back to session scan."
-    );
-
-    return fetchAttemptSummaryPagesForScope({
-      viewerEmail,
-      ownerEmail,
-      limit: pageLimit,
-      maxPages,
-      scanSessions: true,
-    });
+  if (viewerEmail) {
+    params.set("viewerEmail", viewerEmail);
+  } else if (ownerEmail) {
+    params.set("ownerEmail", ownerEmail);
   }
 
-  return attempts;
+  const res = await fetch(
+    `/.netlify/functions/getReadingAttempts?${params.toString()}`,
+    {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    }
+  );
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`History/search fetch failed: ${res.status} ${text}`);
+  }
+
+  const payload = await res.json().catch(() => ({}));
+  return Array.isArray(payload.attempts) ? payload.attempts : [];
 }
 
 async function hydrateSessionHistoryFromServer(viewerEmail) {
@@ -1367,8 +1321,6 @@ async function hydrateSessionHistoryFromServer(viewerEmail) {
     try {
 const attempts = await fetchAttemptSummaryPagesForScope({
   viewerEmail: email,
-  limit: 100,
-  maxPages: 100,
 });
 
 // Cache summary attempts for cross-session student progress graphs.
@@ -3522,35 +3474,26 @@ async function runStudentSearch() {
     const useOwnerScope =
       !!ownerEmail && (!teacherUser || teacherUser.email.toLowerCase() !== ownerEmail);
 
-    let allAttempts = Array.isArray(ALL_VIEWER_ATTEMPTS)
-      ? ALL_VIEWER_ATTEMPTS.slice()
-      : [];
+    let allAttempts = [];
 
-    // If the global cache is empty, hydrate it before searching.
-    // Student search must search across all summary pages, not just the first page.
-    if (!allAttempts.length) {
-      if (useOwnerScope) {
-        allAttempts = await fetchAttemptSummaryPagesForScope({
-          ownerEmail,
-          limit: 100,
-          maxPages: 100,
-        });
-      } else if (teacherUser && teacherUser.email) {
-        allAttempts = await fetchAttemptSummaryPagesForScope({
-          viewerEmail: teacherUser.email,
-          limit: 100,
-          maxPages: 100,
-        });
-
-        ALL_VIEWER_ATTEMPTS = allAttempts;
-      } else if (ownerEmail) {
-        allAttempts = await fetchAttemptSummaryPagesForScope({
-          ownerEmail,
-          limit: 100,
-          maxPages: 100,
-        });
-      }
+    // Student search should always search the server-backed full attempt history,
+    // not just the locally patched cache from the most recently loaded session.
+    if (useOwnerScope) {
+      allAttempts = await fetchAttemptSummaryPagesForScope({
+        ownerEmail,
+      });
+    } else if (teacherUser && teacherUser.email) {
+      allAttempts = await fetchAttemptSummaryPagesForScope({
+        viewerEmail: teacherUser.email,
+      });
+    } else if (ownerEmail) {
+      allAttempts = await fetchAttemptSummaryPagesForScope({
+        ownerEmail,
+      });
     }
+
+    // Refresh the shared cache so student progress graphs use the full history too.
+    ALL_VIEWER_ATTEMPTS = allAttempts;
 
     const needle = cleanTerm.toLowerCase();
     const matching = allAttempts.filter((a) => {

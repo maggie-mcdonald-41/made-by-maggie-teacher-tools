@@ -43,7 +43,7 @@ exports.handler = async function (event, context) {
     let sharedWithEmails = [];
     if (Array.isArray(body.sharedWithEmails)) {
       sharedWithEmails = body.sharedWithEmails
-        .map((email) => String(email).trim())
+        .map((email) => String(email).trim().toLowerCase())
         .filter(Boolean);
     }
 
