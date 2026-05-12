@@ -127,66 +127,74 @@ exports.handler = async function (event) {
       for (const row of loaded) {
         if (row) attemptsRaw.push(row);
       }
+    } else if (rawViewerEmail || rawOwnerEmail) {
+      // Dashboard history/search view:
+      // Use the lightweight per-teacher index created by logReadingAttempt.js.
+      // This avoids scanning the entire attempt store and keeps history/search reliable.
+      const indexEmail = String(rawViewerEmail || rawOwnerEmail || "")
+        .trim()
+        .toLowerCase();
+
+      const safeEmail = sanitizeFragment(indexEmail);
+      const indexPrefix = `index/by-viewer/${safeEmail}/`;
+
+      const listOptions = {
+        prefix: indexPrefix,
+        paginate: true,
+        limit,
+      };
+
+      if (cursor) {
+        listOptions.cursor = cursor;
+      }
+
+      const list = await store.list(listOptions);
+      const entries = list.blobs || [];
+      nextCursor = list.cursor || null;
+
+      const CONCURRENCY = 10;
+      const loaded = await mapWithConcurrency(entries, CONCURRENCY, async (item) => {
+        if (!item || !item.key || !item.key.endsWith(".json")) return null;
+
+        const data = await store.get(item.key, { type: "json" });
+        if (!data) return null;
+
+        return { key: item.key, data };
+      });
+
+      for (const row of loaded) {
+        if (row) attemptsRaw.push(row);
+      }
     } else {
-      // Dashboard history view:
-      // Scan stored attempt blobs, but collect only attempts that match the signed-in viewer/owner.
-      //
-      // Why this matters:
-      // Netlify Blobs list() pages through the global blob list. If we only load one global page
-      // and then filter by viewerEmail afterward, the teacher's benchmark attempts may not be
-      // inside that page. That makes valid benchmark sessions disappear from history.
-      const CONCURRENCY = 8;
-      const SCAN_PAGE_LIMIT = 100;
-      const MAX_SCAN_PAGES_PER_REQUEST = 10;
+      // Safety fallback only.
+      // Do not scan index/ blobs as attempts.
+      const listOptions = {
+        prefix: "session/",
+        paginate: true,
+        limit,
+      };
 
-      let scanCursor = cursor;
-      let scannedPages = 0;
+      if (cursor) {
+        listOptions.cursor = cursor;
+      }
 
-      do {
-        const listOptions = {
-          prefix: "session/",
-          paginate: true,
-          limit: SCAN_PAGE_LIMIT,
-        };
+      const list = await store.list(listOptions);
+      const entries = list.blobs || [];
+      nextCursor = list.cursor || null;
 
-        if (scanCursor) {
-          listOptions.cursor = scanCursor;
-        }
+      const CONCURRENCY = 10;
+      const loaded = await mapWithConcurrency(entries, CONCURRENCY, async (item) => {
+        if (!item || !item.key || !item.key.endsWith(".json")) return null;
 
-        const list = await store.list(listOptions);
-        const entries = list.blobs || [];
-        scanCursor = list.cursor || null;
-        scannedPages += 1;
+        const data = await store.get(item.key, { type: "json" });
+        if (!data) return null;
 
-        const loaded = await mapWithConcurrency(entries, CONCURRENCY, async (item) => {
-          if (!item || !item.key || !item.key.endsWith(".json")) return null;
+        return { key: item.key, data };
+      });
 
-          const data = await store.get(item.key, { type: "json" });
-          if (!data) return null;
-
-          // Scope before adding to this response page.
-          if (!rawAttemptMatchesScope(data, rawViewerEmail, rawOwnerEmail)) {
-            return null;
-          }
-
-          return { key: item.key, data };
-        });
-
-        for (const row of loaded) {
-          if (!row) continue;
-          attemptsRaw.push(row);
-
-          if (attemptsRaw.length >= limit) {
-            break;
-          }
-        }
-
-        if (attemptsRaw.length >= limit) {
-          break;
-        }
-      } while (scanCursor && scannedPages < MAX_SCAN_PAGES_PER_REQUEST);
-
-      nextCursor = scanCursor || null;
+      for (const row of loaded) {
+        if (row) attemptsRaw.push(row);
+      }
     }
 
     // ---------- Normalize for Teacher Dashboard ----------
@@ -278,21 +286,38 @@ if (!totalQuestions && questionResultsLen) totalQuestions = questionResultsLen;
         ? data.sessionInfo.sharedWithEmails
         : [];
 
-    // ✅ Backfill defaults so older attempts still match filters
-const practiceSet = normalizeSetParam(data.practiceSet || data.set || "full");
-const practiceLevel = String(data.practiceLevel || data.level || "on").toLowerCase();
+      // Backfill defaults so older attempts still match filters.
+      // Preserve benchmark metadata from either full attempts or index summaries.
+      const rawPracticeSet =
+        data.practiceSet ||
+        data.set ||
+        data.setType ||
+        (data.sessionInfo && (data.sessionInfo.practiceSet || data.sessionInfo.set || data.sessionInfo.setType)) ||
+        "full";
 
+      const rawPracticeLevel =
+        data.practiceLevel ||
+        data.level ||
+        data.levelBand ||
+        (data.sessionInfo && (data.sessionInfo.practiceLevel || data.sessionInfo.level || data.sessionInfo.levelBand)) ||
+        "on";
+
+      const practiceSet = normalizeSetParam(rawPracticeSet);
+      const practiceLevel = String(rawPracticeLevel || "on").toLowerCase();
       return {
         key,
-        // Use the actual blob key for detail lookups so getReadingAttemptDetail.js
-        // can fetch directly instead of scanning the whole blob store.
-        attemptId: key,
-        storedAttemptId: data.attemptId || "",
+        // If this row came from the teacher index, data.attemptId should already be
+        // the full attempt blob key, such as session/IA4-STUDY-GUIDE/attempt.json.
+        // Fall back to data.key or key for older/non-indexed rows.
+        attemptId: data.attemptId || data.key || key,
+        storedAttemptId: data.storedAttemptId || "",
         studentId,
         studentName,
         sessionCode,
         assessmentName,
         assessmentType,
+        benchmarkKey: data.benchmarkKey || data.benchmark || "",
+        benchmarkId: data.benchmarkId || data.assessmentId || "",
         ownerEmail,
         sharedWithEmails,
         practiceSet,

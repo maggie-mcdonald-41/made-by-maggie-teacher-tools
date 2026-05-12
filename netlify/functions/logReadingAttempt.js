@@ -135,8 +135,63 @@ exports.handler = async function (event, context) {
       questionResults: questionResultsArray,
     };
 
-    // Store JSON
+    // Store full attempt JSON.
+    // This is used by getReadingAttemptDetail.js when the teacher clicks a row.
     await store.setJSON(key, attempt);
+
+    // Store lightweight dashboard/search index entries.
+    // This prevents getReadingAttempts.js from having to scan every session blob
+    // just to discover this teacher's sessions.
+    const indexEmails = new Set();
+
+    if (ownerEmail) {
+      indexEmails.add(ownerEmail.toLowerCase());
+    }
+
+    sharedWithEmails.forEach((email) => {
+      const clean = String(email || "").trim().toLowerCase();
+      if (clean) indexEmails.add(clean);
+    });
+
+    const attemptSummary = {
+      key,
+      attemptId: key,
+      storedAttemptId: attemptId,
+      studentName,
+      sessionCode,
+
+      ownerEmail: ownerEmail || "",
+      sharedWithEmails,
+
+      assessmentName,
+      assessmentType,
+
+      practiceSet: attempt.practiceSet,
+      practiceLevel: attempt.practiceLevel,
+      set: attempt.practiceSet,
+      level: attempt.practiceLevel,
+
+      numCorrect,
+      totalQuestions,
+      answeredCount,
+      isComplete,
+
+      bySkill: attempt.bySkill,
+      byType: attempt.byType,
+
+      startedAt: attempt.startedAt,
+      finishedAt: attempt.finishedAt,
+
+      questionResultsCount: questionResultsArray.length,
+    };
+
+    await Promise.all(
+      Array.from(indexEmails).map((email) => {
+        const safeEmail = sanitizeFragment(email);
+        const indexKey = `index/by-viewer/${safeEmail}/${attemptId}.json`;
+        return store.setJSON(indexKey, attemptSummary);
+      })
+    );
 
     return {
       statusCode: 200,

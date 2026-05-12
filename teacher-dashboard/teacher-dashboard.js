@@ -1322,7 +1322,8 @@ console.log("[Dashboard] Hydrated session-history attempts:", {
   total: attempts.length,
   benchmark: attempts.filter(isBenchmarkAttempt).length,
   practice: attempts.filter((a) => !isBenchmarkAttempt(a)).length,
-  sessions: [...new Set(attempts.map((a) => a.sessionCode).filter(Boolean))]
+  sessions: [...new Set(attempts.map((a) => a.sessionCode).filter(Boolean))],
+  sample: attempts.slice(0, 3)
 });
 
       if (!attempts.length) {
