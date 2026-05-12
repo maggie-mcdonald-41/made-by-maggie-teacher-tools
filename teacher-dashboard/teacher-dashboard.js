@@ -1623,8 +1623,6 @@ function renderSessionHistory(history) {
     return;
   }
 
-  // Keep sessions in their existing order (no jumping on re-render)
-  const sorted = visibleHistory.slice();
   // Newest sessions first. This prevents newly loaded server/local sessions
   // from getting pushed to the bottom of the history list.
   const sorted = visibleHistory.slice().sort((a, b) =>
@@ -1632,6 +1630,7 @@ function renderSessionHistory(history) {
       (a.lastLoadedAt || "").toString()
     )
   );
+
   const currentKey = CURRENT_HISTORY_KEY;
 
   sorted.forEach((entry) => {
