@@ -24,8 +24,10 @@ function getRawOwnerEmail(data) {
   return normalizeEmail(
     data.ownerEmail ||
       data.teacherEmail ||
+      data.owner ||
       (data.sessionInfo && data.sessionInfo.ownerEmail) ||
       (data.sessionInfo && data.sessionInfo.teacherEmail) ||
+      (data.sessionInfo && data.sessionInfo.owner) ||
       ""
   );
 }
@@ -33,8 +35,12 @@ function getRawOwnerEmail(data) {
 function getRawSharedEmails(data) {
   const shared = Array.isArray(data.sharedWithEmails)
     ? data.sharedWithEmails
+    : Array.isArray(data.sharedWith)
+    ? data.sharedWith
     : Array.isArray(data.sessionInfo && data.sessionInfo.sharedWithEmails)
     ? data.sessionInfo.sharedWithEmails
+    : Array.isArray(data.sessionInfo && data.sessionInfo.sharedWith)
+    ? data.sessionInfo.sharedWith
     : [];
 
   return shared.map((email) => normalizeEmail(email)).filter(Boolean);
@@ -204,6 +210,15 @@ exports.handler = async function (event) {
 
     const setParam = normalizeSetParam(rawSet);
 
+    // When the lightweight teacher index is missing or incomplete,
+    // the dashboard can request a paginated scan of session/ blobs.
+    // This keeps the old "search all available sessions" behavior,
+    // but still returns summary-only rows to avoid Netlify response-size caps.
+    const scanSessions =
+      params.scanSessions === "1" ||
+      params.scanSessions === "true" ||
+      params.scanFallback === "1";
+
     // Keep summary responses small enough for Netlify.
     // The dashboard can request multiple pages when it needs a full history/search cache.
     const limitRaw = Number(params.limit || 100);
@@ -233,7 +248,7 @@ exports.handler = async function (event) {
       for (const row of loaded) {
         if (row) attemptsRaw.push(row);
       }
-    } else if (rawViewerEmail || rawOwnerEmail) {
+    } else if ((rawViewerEmail || rawOwnerEmail) && !scanSessions) {
       // Dashboard history/search view:
       // Use the lightweight per-teacher index created by logReadingAttempt.js.
       // This avoids scanning the entire attempt store and keeps history/search reliable.
@@ -379,18 +394,9 @@ if (!totalQuestions && questionResultsLen) totalQuestions = questionResultsLen;
         (data.sessionInfo && data.sessionInfo.assessmentType) ||
         "";
 
-      const ownerEmail =
-        data.ownerEmail ||
-        data.teacherEmail ||
-        (data.sessionInfo && data.sessionInfo.ownerEmail) ||
-        (data.sessionInfo && data.sessionInfo.teacherEmail) ||
-        "";
+      const ownerEmail = getRawOwnerEmail(data);
 
-      const sharedWithEmails = Array.isArray(data.sharedWithEmails)
-        ? data.sharedWithEmails
-        : Array.isArray(data.sessionInfo && data.sessionInfo.sharedWithEmails)
-        ? data.sessionInfo.sharedWithEmails
-        : [];
+      const sharedWithEmails = getRawSharedEmails(data);
 
       // Backfill defaults so older attempts still match filters.
       // Preserve benchmark metadata from either full attempts or index summaries.
@@ -484,7 +490,7 @@ if (!totalQuestions && questionResultsLen) totalQuestions = questionResultsLen;
     // If the teacher manually loaded a specific session, repair any missing
     // lightweight index entries for that session. This helps recover sessions
     // created before the index system was fully wired.
-    if (rawSession && (rawViewerEmail || rawOwnerEmail)) {
+    if ((rawSession || scanSessions) && (rawViewerEmail || rawOwnerEmail)) {
       try {
         await repairViewerIndexesForAttempts(store, attempts);
       } catch (repairErr) {

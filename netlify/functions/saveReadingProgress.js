@@ -284,12 +284,15 @@ assessmentType: payload.assessmentType || "",
       const totalQuestions =
         typeof payload.totalQuestions === "number" && payload.totalQuestions > 0
           ? payload.totalQuestions
-          : answeredCount;
+          : 0;
 
-      // Only write a partial attempt if the student has started
-      // but has NOT finished the full set. Completed attempts are
-      // logged separately via logReadingAttempt/sendFinalReport.
-      if (answeredCount > 0 && answeredCount < totalQuestions) {
+      const hasKnownTotal = totalQuestions > 0;
+
+      // Only write a partial attempt if the student has started.
+      // If totalQuestions is unknown, still write the partial so live/session
+      // history and student search can discover the attempt.
+      // Completed attempts are still logged separately by logReadingAttempt.
+      if (answeredCount > 0 && (!hasKnownTotal || answeredCount < totalQuestions)) {
         const partialAttempt = buildPartialAttemptFromProgress(
           sessionCode,
           safeSession,

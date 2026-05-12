@@ -245,6 +245,37 @@ async function startBenchmarkSession() {
       benchmarkData
     };
 
+    // Keep the dashboard's active state aligned with the Benchmark session.
+    // Without this, later Load Attempts / history behavior can still behave
+    // like the teacher is in the regular practice filters.
+    currentSessionCode = normalizedSession;
+    currentSetParam = "benchmark";
+    currentLevelParam = "benchmark";
+
+    if (sessionInput) sessionInput.value = normalizedSession;
+    if (benchmarkSessionInput) benchmarkSessionInput.value = normalizedSession;
+
+    try {
+      window.localStorage.setItem("rp_lastSessionCode", normalizedSession);
+      window.localStorage.setItem("rp_lastSet", "benchmark");
+      window.localStorage.setItem("rp_lastLevel", "benchmark");
+
+      const ownerForBenchmark =
+        CURRENT_SESSION_OWNER_OVERRIDE ||
+        (teacherUser && teacherUser.email) ||
+        OWNER_EMAIL_FOR_VIEW ||
+        "";
+
+      if (ownerForBenchmark) {
+        window.localStorage.setItem(
+          "rp_lastOwnerEmail",
+          String(ownerForBenchmark).trim().toLowerCase()
+        );
+      }
+    } catch (e) {
+      // non-fatal
+    }
+
 const studentLink = buildBenchmarkStudentLink(normalizedSession, benchmarkKey);
 const coTeacherLink = buildBenchmarkCoTeacherLink(normalizedSession, benchmarkKey);
 
@@ -1250,6 +1281,7 @@ async function fetchAttemptSummaryPagesForScope(options = {}) {
   const ownerEmail = String(options.ownerEmail || "").trim().toLowerCase();
   const maxPages = Number(options.maxPages || 100);
   const pageLimit = Number(options.limit || 100);
+  const scanSessions = !!options.scanSessions;
 
   let attempts = [];
   let cursor = null;
@@ -1265,6 +1297,10 @@ async function fetchAttemptSummaryPagesForScope(options = {}) {
     }
 
     params.set("limit", String(pageLimit));
+
+    if (scanSessions) {
+      params.set("scanSessions", "1");
+    }
 
     if (cursor) {
       params.set("cursor", cursor);
@@ -1290,6 +1326,27 @@ async function fetchAttemptSummaryPagesForScope(options = {}) {
     cursor = payload.nextCursor || null;
     pageCount += 1;
   } while (cursor && pageCount < maxPages);
+
+  // If the lightweight index is empty, fall back to a paginated scan of session blobs.
+  // This restores the old "all available sessions for this teacher/student" behavior
+  // without returning full questionResults arrays.
+  if (
+    !attempts.length &&
+    !scanSessions &&
+    (viewerEmail || ownerEmail)
+  ) {
+    console.warn(
+      "[Dashboard] Teacher index returned 0 attempts; falling back to session scan."
+    );
+
+    return fetchAttemptSummaryPagesForScope({
+      viewerEmail,
+      ownerEmail,
+      limit: pageLimit,
+      maxPages,
+      scanSessions: true,
+    });
+  }
 
   return attempts;
 }
@@ -1568,7 +1625,13 @@ function renderSessionHistory(history) {
 
   // Keep sessions in their existing order (no jumping on re-render)
   const sorted = visibleHistory.slice();
-
+  // Newest sessions first. This prevents newly loaded server/local sessions
+  // from getting pushed to the bottom of the history list.
+  const sorted = visibleHistory.slice().sort((a, b) =>
+    (b.lastLoadedAt || "").toString().localeCompare(
+      (a.lastLoadedAt || "").toString()
+    )
+  );
   const currentKey = CURRENT_HISTORY_KEY;
 
   sorted.forEach((entry) => {
