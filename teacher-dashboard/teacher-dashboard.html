@@ -1127,6 +1127,75 @@ body.dashboard-dark .standard-toggle-btn {
     height: 100% !important;
   }
 
+    .benchmark-bands-panel {
+    margin-bottom: 1rem;
+  }
+
+  .benchmark-bands-layout {
+    display: grid;
+    grid-template-columns: minmax(240px, 0.75fr) minmax(260px, 1fr);
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .benchmark-donut-wrapper {
+    min-height: 260px;
+  }
+
+  .benchmark-bands-stats {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .benchmark-band-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(15, 23, 42, 0.07);
+    font-size: 0.82rem;
+  }
+
+  .benchmark-band-row.is-selected-band {
+    outline: 2px solid var(--teal-dark);
+    box-shadow: 0 6px 16px rgba(5, 193, 184, 0.16);
+  }
+
+  .benchmark-band-dot {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 999px;
+    display: inline-block;
+  }
+
+  .benchmark-band-label {
+    font-weight: 700;
+  }
+
+  .benchmark-band-percent {
+    color: var(--gray-mid);
+    font-weight: 700;
+  }
+
+  .benchmark-band-count {
+    font-weight: 800;
+    color: var(--teal-dark);
+  }
+
+  :root[data-theme="dark"] .benchmark-band-row {
+    background: rgba(15, 23, 42, 0.8);
+    border-color: rgba(148, 163, 184, 0.22);
+  }
+
+  @media (max-width: 900px) {
+    .benchmark-bands-layout {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
   @media (max-width: 900px) {
     .dashboard-charts-row {
       grid-template-columns: minmax(0, 1fr);
@@ -3160,8 +3229,32 @@ body.dark .mode-launch-panel .muted {
         </button>
       </section>
 
-<!-- CHARTS: Score Distribution full-width, others below -->
+<!-- CHARTS: Benchmark bands, Score Distribution, others below -->
 <section class="dashboard-charts">
+  <!-- Benchmark Performance Bands -->
+  <article id="benchmark-bands-panel" class="dash-panel benchmark-bands-panel" hidden>
+    <header class="dash-panel-header">
+      <h2 class="dash-panel-title">Benchmark Performance Bands</h2>
+      <p id="benchmark-bands-subtitle" class="dash-panel-subtitle">
+        Session-level benchmark performance by band.
+      </p>
+    </header>
+
+    <div class="benchmark-bands-layout">
+      <div class="chart-wrapper benchmark-donut-wrapper">
+        <canvas
+          id="chart-benchmark-bands"
+          aria-label="Benchmark performance bands donut chart"
+          role="img"
+        ></canvas>
+      </div>
+
+      <div id="benchmark-bands-stats" class="benchmark-bands-stats">
+        <p class="muted small">Benchmark band data will appear here.</p>
+      </div>
+    </div>
+  </article>
+
   <!-- Full-width Score Distribution -->
   <article class="dash-panel">
     <header class="dash-panel-header">

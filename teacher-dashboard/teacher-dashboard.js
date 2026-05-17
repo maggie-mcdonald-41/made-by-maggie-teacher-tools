@@ -97,6 +97,7 @@ const attemptsSubtitleEl = document.getElementById("attempts-subtitle");
 const attemptsTableBody = document.getElementById("attempts-table-body");
 const skillsTableBody = document.getElementById("skills-table-body");
 
+let benchmarkBandsChart = null;
 let scoreBandsChart = null;
 let typeAccuracyChart = null;
 let skillAccuracyChart = null;
@@ -1825,6 +1826,225 @@ if (historyDeleteBtn) {
 // Initialize button state on first load
 updateHistoryActionButtonsState();
 
+function getBenchmarkPerformanceBands() {
+  return [
+    {
+      label: "Advanced",
+      min: 90,
+      max: 100,
+      count: 0,
+      color: "var(--green)"
+    },
+    {
+      label: "Proficient",
+      min: 80,
+      max: 89,
+      count: 0,
+      color: "var(--teal)"
+    },
+    {
+      label: "Basic",
+      min: 70,
+      max: 79,
+      count: 0,
+      color: "var(--gold)"
+    },
+    {
+      label: "Below Basic",
+      min: 60,
+      max: 69,
+      count: 0,
+      color: "var(--orange)"
+    },
+    {
+      label: "Far Below Basic",
+      min: 0,
+      max: 59,
+      count: 0,
+      color: "var(--red)"
+    }
+  ];
+}
+
+function getAttemptPercentCorrect(attempt) {
+  const totals = getAttemptTotals(attempt);
+  if (!totals.total) return null;
+  return Math.round((totals.correct / totals.total) * 100);
+}
+
+function findBenchmarkBandForPercent(pct) {
+  if (pct == null || Number.isNaN(Number(pct))) return null;
+
+  return getBenchmarkPerformanceBands().find(
+    (band) => pct >= band.min && pct <= band.max
+  ) || null;
+}
+
+function resolveDashboardCssColor(value, fallback) {
+  if (!value) return fallback;
+
+  if (!String(value).startsWith("var(")) {
+    return value;
+  }
+
+  const variableName = String(value)
+    .replace("var(", "")
+    .replace(")", "")
+    .trim();
+
+  return (
+    getComputedStyle(document.documentElement)
+      .getPropertyValue(variableName)
+      .trim() || fallback
+  );
+}
+
+function updateBenchmarkBandsChart(allAttempts, studentAttempts = [], studentName = null) {
+  const panel = document.getElementById("benchmark-bands-panel");
+  const canvas = document.getElementById("chart-benchmark-bands");
+  const statsEl = document.getElementById("benchmark-bands-stats");
+  const subtitleEl = document.getElementById("benchmark-bands-subtitle");
+
+  if (!panel || !canvas || !statsEl || typeof Chart === "undefined") return;
+
+  const benchmarkAttempts = (allAttempts || []).filter(isBenchmarkAttempt);
+  const benchmarkStudentAttempts = (studentAttempts || []).filter(isBenchmarkAttempt);
+
+  if (!benchmarkAttempts.length) {
+    panel.hidden = true;
+
+    if (benchmarkBandsChart) {
+      benchmarkBandsChart.destroy();
+      benchmarkBandsChart = null;
+    }
+
+    statsEl.innerHTML = `<p class="muted small">No benchmark attempts loaded.</p>`;
+    return;
+  }
+
+  panel.hidden = false;
+
+  const bands = getBenchmarkPerformanceBands();
+
+  benchmarkAttempts.forEach((attempt) => {
+    const pct = getAttemptPercentCorrect(attempt);
+    const band = findBenchmarkBandForPercent(pct);
+    if (!band) return;
+
+    const match = bands.find((b) => b.label === band.label);
+    if (match) match.count += 1;
+  });
+
+  const selectedBandLabels = new Set();
+
+  benchmarkStudentAttempts.forEach((attempt) => {
+    const pct = getAttemptPercentCorrect(attempt);
+    const band = findBenchmarkBandForPercent(pct);
+    if (band) selectedBandLabels.add(band.label);
+  });
+
+  const totalBandAttempts = bands.reduce((sum, band) => sum + band.count, 0);
+
+  const labels = bands.map((band) => band.label);
+  const data = bands.map((band) => band.count);
+  const colors = bands.map((band) =>
+    resolveDashboardCssColor(band.color, "#94a3b8")
+  );
+
+  const selectedOffsets = bands.map((band) =>
+    selectedBandLabels.has(band.label) ? 18 : 0
+  );
+
+  const selectedBorderWidths = bands.map((band) =>
+    selectedBandLabels.has(band.label) ? 4 : 1
+  );
+
+  const selectedBandText =
+    studentName && selectedBandLabels.size
+      ? `Selected student: ${studentName} — ${Array.from(selectedBandLabels).join(", ")}`
+      : studentName
+        ? `Selected student: ${studentName} — no benchmark band found`
+        : "Click a student row to highlight that student's benchmark band.";
+
+  if (subtitleEl) {
+    subtitleEl.textContent = selectedBandText;
+  }
+
+  statsEl.innerHTML = bands.map((band, index) => {
+    const pct = totalBandAttempts
+      ? Math.round((band.count / totalBandAttempts) * 100)
+      : 0;
+
+    const isSelected = selectedBandLabels.has(band.label);
+
+    return `
+      <div class="benchmark-band-row ${isSelected ? "is-selected-band" : ""}">
+        <span
+          class="benchmark-band-dot"
+          style="background:${colors[index]}"
+          aria-hidden="true"
+        ></span>
+        <span class="benchmark-band-label">${band.label}</span>
+        <span class="benchmark-band-percent">${pct}%</span>
+        <span class="benchmark-band-count">${band.count}</span>
+      </div>
+    `;
+  }).join("");
+
+  const chartData = {
+    labels,
+    datasets: [
+      {
+        label: "Students",
+        data,
+        backgroundColor: colors,
+        borderColor: "#ffffff",
+        borderWidth: selectedBorderWidths,
+        offset: selectedOffsets,
+        hoverOffset: 14
+      }
+    ]
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: "58%",
+    plugins: {
+      legend: {
+        display: true,
+        position: "bottom",
+        labels: {
+          padding: 14
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => {
+            const count = Number(ctx.parsed || 0);
+            const pct = totalBandAttempts
+              ? Math.round((count / totalBandAttempts) * 100)
+              : 0;
+
+            return `${ctx.label}: ${count} student${count === 1 ? "" : "s"} (${pct}%)`;
+          }
+        }
+      }
+    }
+  };
+
+  if (benchmarkBandsChart) {
+    benchmarkBandsChart.data = chartData;
+    benchmarkBandsChart.options = chartOptions;
+    benchmarkBandsChart.update();
+  } else {
+    benchmarkBandsChart = new Chart(canvas, {
+      type: "doughnut",
+      data: chartData,
+      options: chartOptions
+    });
+  }
+}
 
 // ---------- CHARTS ----------
 function updateScoreBandsChart(allAttempts, studentAttempts = [], studentName = null) {
@@ -2995,11 +3215,18 @@ function renderDashboard(attempts) {
     : [];
 
   // Update charts with class vs selected student
+  updateBenchmarkBandsChart(
+    attempts,
+    selectedStudentAttempts,
+    CURRENT_STUDENT_FOR_CHARTS
+  );
+
   updateScoreBandsChart(
     attempts,
     selectedStudentAttempts,
     CURRENT_STUDENT_FOR_CHARTS
   );
+
   updateTypeAccuracyChart(
     attempts,
     selectedStudentAttempts,
