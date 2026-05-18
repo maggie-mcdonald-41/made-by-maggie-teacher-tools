@@ -301,6 +301,16 @@
     <select id="rp-tts-voice" class="rp-tts-select" aria-label="Select reader voice"></select>
   </div>
 
+  <div class="rp-tts-row">
+    <label class="rp-tts-label" for="rp-tts-speed">Speed:</label>
+    <select id="rp-tts-speed" class="rp-tts-select rp-tts-speed-select" aria-label="Select reading speed">
+      <option value="0.75">Slow</option>
+      <option value="1" selected>Normal</option>
+      <option value="1.25">Fast</option>
+      <option value="1.5">Very Fast</option>
+    </select>
+  </div>
+
   <div class="rp-tts-buttons">
     <button type="button" id="rp-tts-read-passage" class="rp-tts-btn">📖 Passage</button>
     <button type="button" id="rp-tts-read-question" class="rp-tts-btn">❓ Question</button>

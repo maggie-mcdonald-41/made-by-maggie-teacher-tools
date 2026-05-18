@@ -10,15 +10,16 @@
   // ---- DOM hooks (match index.html you already updated) ----
   const floatRoot = document.getElementById("rp-tts-float");
   const voiceSelect = document.getElementById("rp-tts-voice");
+  const speedSelect = document.getElementById("rp-tts-speed");
   const btnReadPassage = document.getElementById("rp-tts-read-passage");
   const btnReadQuestion = document.getElementById("rp-tts-read-question");
   const btnToggle = document.getElementById("rp-tts-toggle");
   const btnStop = document.getElementById("rp-tts-stop");
 
   // If the widget isn't present, do nothing.
-  if (!floatRoot || !voiceSelect || !btnReadPassage || !btnReadQuestion || !btnToggle || !btnStop) {
-    return;
-  }
+if (!floatRoot || !voiceSelect || !speedSelect || !btnReadPassage || !btnReadQuestion || !btnToggle || !btnStop) {
+  return;
+}
 
   // ---- Feature guard ----
   if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
@@ -41,6 +42,16 @@
   let isSpeaking = false;
 
   // ---- Helpers ----
+
+function getSelectedRate() {
+  const rate = parseFloat(speedSelect.value);
+
+  if (!Number.isFinite(rate)) return 1;
+
+  // Web Speech rate usually supports a wide range, but these limits keep it student-friendly.
+  return Math.min(Math.max(rate, 0.5), 2);
+}
+
   function normalizeText(raw) {
     if (!raw) return "";
     return String(raw)
@@ -135,8 +146,8 @@
       const u = new SpeechSynthesisUtterance(chunk);
       if (selectedVoice) u.voice = selectedVoice;
 
-      // Keep defaults natural; you can adjust later if you want
-      u.rate = 1;
+      // Use the selected student reading speed.
+      u.rate = getSelectedRate();
       u.pitch = 1;
 
       u.onstart = () => {

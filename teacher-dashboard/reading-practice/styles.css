@@ -2356,6 +2356,10 @@ body.dark-theme .rp-modal input {
   background: #fff;
 }
 
+.rp-tts-speed-select {
+  max-width: 160px;
+}
+
 .rp-tts-buttons {
   display: flex;
   flex-wrap: wrap;
