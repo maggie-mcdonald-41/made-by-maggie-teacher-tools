@@ -56,11 +56,15 @@ Object.entries(data).forEach(([key, value]) => {
 });
 
 
-        if (data.selectedBodyCount && [1, 2, 3].includes(data.selectedBodyCount)) {
+        if (data.selectedBodyCount && [1, 2, 3].includes(data.selectedBodyCount) && !(typeof isStudentSettingsLocked === 'function' && isStudentSettingsLocked())) {
           selectedBodyCount = data.selectedBodyCount;
           document.getElementById('paragraphCount').value = selectedBodyCount;
           localStorage.setItem('bodyParagraphs', selectedBodyCount);
           updateBodyParagraphVisibility(selectedBodyCount);
+        } else if (typeof applyStudentLinkLockToControls === 'function') {
+          applyStudentLinkLockToControls();
+          updateEvidenceFirstVisibility?.();
+          updateBodyParagraphVisibility?.(selectedBodyCount);
         }
 
         syncData();

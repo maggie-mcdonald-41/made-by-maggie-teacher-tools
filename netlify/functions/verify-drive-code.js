@@ -10,8 +10,8 @@ exports.handler = async (event) => {
   }
 
   // Argumentative Codes
-  const argumentativeCodes = ['WRITE2025', 'MCTEACH', 'MAGGIE2025'];
-  const opinionCodes = ['OPINION2025', 'GRADE3','OPTEACH'];
+  const argumentativeCodes = ['WRITE2026', 'MCTEACH', 'MAGGIE2026'];
+  const opinionCodes = ['OPINION2026', 'GRADE3','OPTEACH'];
 
   let folderUrl = '';
 

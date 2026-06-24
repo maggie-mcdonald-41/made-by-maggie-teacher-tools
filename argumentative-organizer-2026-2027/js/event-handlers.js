@@ -189,10 +189,33 @@ function attemptThesisReverseSync() {
   const previewBox = document.getElementById('sync-preview');
   const previewClaim = document.getElementById('preview-claim');
   const previewReasons = document.getElementById('preview-reasons');
-  const paragraphCount = parseInt(document.getElementById('paragraphCount')?.value, 10);
+  const paragraphSelect = document.getElementById('paragraphCount');
+  const countFromSelect = parseInt(paragraphSelect?.value, 10);
+  const countFromState = parseInt(typeof selectedBodyCount !== 'undefined' ? selectedBodyCount : '', 10);
+  const countFromStorage = parseInt(localStorage.getItem('bodyParagraphs'), 10);
+  const validParagraphCounts = [1, 2, 3];
+  const paragraphCount = validParagraphCounts.includes(countFromSelect)
+    ? countFromSelect
+    : validParagraphCounts.includes(countFromState)
+      ? countFromState
+      : validParagraphCounts.includes(countFromStorage)
+        ? countFromStorage
+        : 2;
+
+  if (paragraphSelect && !validParagraphCounts.includes(countFromSelect)) {
+    paragraphSelect.value = paragraphCount;
+  }
+
+  if (typeof selectedBodyCount !== 'undefined') {
+    selectedBodyCount = paragraphCount;
+  }
+
+  localStorage.setItem('bodyParagraphs', paragraphCount);
 
   // Reset previous state
   warning.innerText = '';
+  warning.classList.remove('hidden');
+  warning.style.color = 'red';
   previewBox.classList.add('hidden');
   previewClaim.innerText = '';
   previewReasons.innerHTML = '';
@@ -242,34 +265,44 @@ function confirmReverseSync() {
   const previewBox = document.getElementById('sync-preview');
   const claim = previewBox.dataset.claim;
   let reasons;
+
   try {
-    reasons = JSON.parse(previewBox.dataset.reasons);
+    reasons = JSON.parse(previewBox.dataset.reasons || '[]');
   } catch (e) {
     console.error("❌ Failed to parse reasons:", previewBox.dataset.reasons);
     return;
   }
 
-  // Update claim
-  if (claim) {
-    const claimBox = document.getElementById('claim-box');
-    if (claimBox) {
-      claimBox.innerText = claim;
-      claimBox.setAttribute('data-source', 'sync');
-      activeEdits.delete('claim-box');
-    }
+  function writeSyncedText(id, value) {
+    const el = document.getElementById(id);
+    if (!el || !value) return;
+
+    el.innerText = value;
+    el.setAttribute('data-source', 'sync');
+    activeEdits.delete(id);
+    localStorage.setItem(id, value);
   }
 
-  // Update each reason box dynamically
+  // Update the standard thesis-builder claim.
+  writeSyncedText('claim-box', claim);
+
+  // In Evidence-First mode, also update the Evidence-First claim.
+  // Without this, syncData() can push the older EF claim back into claim-box.
+  if (isEvidenceFirst) {
+    writeSyncedText('ef-claim-box', claim);
+  }
+
+  // Update each standard reason box and, in EF mode, each EF reason box.
   reasons.forEach((reason, index) => {
-    const box = document.getElementById(`reason${index + 1}-box`);
-    if (box) {
-      box.innerText = reason;
-      box.setAttribute('data-source', 'sync');
-      activeEdits.delete(box.id);
+    const n = index + 1;
+    writeSyncedText(`reason${n}-box`, reason);
+
+    if (isEvidenceFirst) {
+      writeSyncedText(`ef-reason-bp${n}`, reason);
     }
   });
 
-  // Save changes to localStorage
+  // Save changes and refresh connected generated sections.
   syncData();
 
   // Clear preview display
@@ -277,11 +310,17 @@ function confirmReverseSync() {
 
   // Show success message
   const messageEl = document.getElementById('sync-warning');
-  messageEl.innerText = "✅ Claim and reasons updated!";
+  messageEl.classList.remove('hidden');
+  messageEl.style.color = 'green';
+  messageEl.innerText = isEvidenceFirst
+    ? "✅ Claim and reasons updated in both Evidence-First and Thesis sections!"
+    : "✅ Claim and reasons updated!";
   
   // Auto-hide message after 4 seconds
   setTimeout(() => {
     messageEl.innerText = "";
+    messageEl.classList.add('hidden');
+    messageEl.style.color = '';
   }, 4000);
 }
 // === end event-handlers.js ===

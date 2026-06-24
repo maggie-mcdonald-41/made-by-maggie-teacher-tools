@@ -46,16 +46,12 @@ function insertSentenceStarter(targetId, starter) {
   box.focus();
 }
 
-// Set up the Evidence-First toggle (if you still need it here)
+// Set up the Evidence-First toggle state.
+// The actual change listener lives in main.js so it does not get registered twice.
 function initEvidenceFirstToggle() {
   const toggle = document.getElementById('evidenceFirstToggle');
   if (!toggle) return;
-
-  toggle.addEventListener('change', () => {
-    isEvidenceFirst = toggle.checked;
-    updateEvidenceFirstVisibility();
-    updateEvidenceBoxes();
-  });
+  toggle.checked = isEvidenceFirst;
 }
 
 

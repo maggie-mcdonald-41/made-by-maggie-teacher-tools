@@ -9,17 +9,19 @@ const SCOPES      = [
 ].join(' ');
 
 
-const essayType = 'argument'; // or 'opinion'
+const essayType = 'opinion';
+const PRODUCT_YEAR = '2026-2027';
+const STORAGE_SCOPE = `${essayType}-${PRODUCT_YEAR}`;
 let autosaveTimer = null;
-const APP_NAME = 'madebymaggie-organizer';
-const RECOVERY_KEY = `lastKnownGoodEssayData-${essayType}`;
-const RECOVERY_META_KEY = `lastKnownGoodEssayMeta-${essayType}`;
+const APP_NAME = `madebymaggie-organizer-${PRODUCT_YEAR}`;
+const RECOVERY_KEY = `lastKnownGoodEssayData-${STORAGE_SCOPE}`;
+const RECOVERY_META_KEY = `lastKnownGoodEssayMeta-${STORAGE_SCOPE}`;
 
 let tokenClient;
 let accessToken = localStorage.getItem('accessToken');
 let userEmail   = localStorage.getItem('userEmail');
 let isSignedIn  = !!accessToken;
-let fileId = localStorage.getItem(`fileId-${essayType}`) || null;
+let fileId = localStorage.getItem(`fileId-${STORAGE_SCOPE}`) || null;
 let autosavePaused = false;
 let folderId = null;
 const FOLDER_NAME = 'EssayToolSave';
@@ -437,7 +439,7 @@ function startGoogleAuth() {
 
         // persist fileId for next page load
         if (fileId) {
-          localStorage.setItem(`fileId-${essayType}`, fileId);
+          localStorage.setItem(`fileId-${STORAGE_SCOPE}`, fileId);
         } else {
           throw new Error("No fileId found after loadFromDrive()");
         }
@@ -490,7 +492,7 @@ async function loadFromDrive() {
       selectedFile = await checkRes.json();
     } else {
       console.warn('[Drive] Stored fileId is no longer valid:', fileId);
-      localStorage.removeItem(`fileId-${essayType}`);
+      localStorage.removeItem(`fileId-${STORAGE_SCOPE}`);
       fileId = null;
     }
   }
@@ -500,6 +502,7 @@ async function loadFromDrive() {
       appProperties has { key='app' and value='${APP_NAME}' }
       and appProperties has { key='owner' and value='${userEmail}' }
       and appProperties has { key='type' and value='${essayType}' }
+      and appProperties has { key='schoolYear' and value='${PRODUCT_YEAR}' }
       and trashed = false
       and '${folderId}' in parents
     `;
@@ -511,7 +514,7 @@ async function loadFromDrive() {
     if (res.files?.length) {
       selectedFile = res.files[0];
       fileId = selectedFile.id;
-      localStorage.setItem(`fileId-${essayType}`, fileId);
+      localStorage.setItem(`fileId-${STORAGE_SCOPE}`, fileId);
       console.log('[Drive] Found matching file:', fileId);
     } else {
       console.log('[Drive] No matching typed file — creating one');
@@ -604,6 +607,13 @@ function populateFieldsFromJSON(data) {
       localStorage.setItem(id, typeof value === 'string' ? value : JSON.stringify(value));
     } catch {}
   });
+
+  if (typeof applyStudentLinkSettingsToState === 'function') {
+    applyStudentLinkSettingsToState();
+    applyStudentLinkLockToControls?.();
+    updateEvidenceFirstVisibility?.();
+    updateBodyParagraphVisibility?.(selectedBodyCount);
+  }
 }
 
 
@@ -616,10 +626,10 @@ async function createDriveFile() {
   await getOrCreateFolder();
 
   const metadata = {
-    name: `EssayToolSave-${essayType}.json`,
+    name: `EssayToolSave-${STORAGE_SCOPE}.json`,
     mimeType: 'application/json',
     parents: [folderId],
-    appProperties: { app: APP_NAME, type: essayType, owner: userEmail }
+    appProperties: { app: APP_NAME, type: essayType, schoolYear: PRODUCT_YEAR, owner: userEmail }
   };
 
   try {
@@ -635,7 +645,7 @@ async function createDriveFile() {
     if (!res.ok || !json.id) throw new Error(`Create failed: ${res.status} ${JSON.stringify(json)}`);
 
     fileId = json.id;
-    localStorage.setItem(`fileId-${essayType}`, fileId);
+    localStorage.setItem(`fileId-${STORAGE_SCOPE}`, fileId);
     console.log('[Drive] Created new file:', fileId);
 
     // (Optional) write initial empty JSON so subsequent PATCH media is consistent
@@ -646,7 +656,8 @@ async function createDriveFile() {
         _writingLog: [],
         _revisionCounts: {},
         _createdAt: Date.now(),
-        _essayType: essayType
+        _essayType: essayType,
+        _schoolYear: PRODUCT_YEAR
       })
     });
   } catch (error) {
@@ -678,6 +689,7 @@ function saveToDriveNow() {
     _writingLog: writingLog,
     _revisionCounts: revisionCounts,
     _essayType: essayType,
+    _schoolYear: PRODUCT_YEAR,
     _lastSavedAt: Date.now()
   };
 
@@ -731,7 +743,7 @@ function saveToDriveNow() {
   .then(async res => {
     if (res.status === 404) {
       console.warn('📁 File not found on Drive — creating a new one.');
-      localStorage.removeItem(`fileId-${essayType}`);
+      localStorage.removeItem(`fileId-${STORAGE_SCOPE}`);
       fileId = null;
       await createDriveFile();
       return saveToDriveNow();
@@ -779,13 +791,11 @@ async function getOrCreateFolder() {
 
 async function findExistingDriveFile() {
   const query = `
-    appProperties has { key='app' and value='madebymaggie-organizer' }
+    appProperties has { key='app' and value='${APP_NAME}' }
+    and appProperties has { key='type' and value='${essayType}' }
+    and appProperties has { key='schoolYear' and value='${PRODUCT_YEAR}' }
     and trashed = false
     and '${folderId}' in parents
-  and (
-       appProperties has { key='type' and value='${essayType}' }
-    or not appProperties has { key='type' }
-  )
 `;
   console.log('[Drive Query]', query);
   const res = await gapiRequest(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name)`);
@@ -1232,7 +1242,7 @@ function handleGoogleSignOut() {
 
   localStorage.removeItem('accessToken');
   localStorage.removeItem('userEmail');
-  localStorage.removeItem(`fileId-${essayType}`); // ← add this
+  localStorage.removeItem(`fileId-${STORAGE_SCOPE}`); // ← add this
 
   setTimeout(() => { location.reload(); }, 300);
 }
@@ -1247,7 +1257,7 @@ function handleClearFormOnly() {
 localStorage.removeItem('writingLog');
 
 // ✅ Clear the essayType-specific fileId to avoid reusing a blank file after clear
-localStorage.removeItem(`fileId-${essayType}`);
+localStorage.removeItem(`fileId-${STORAGE_SCOPE}`);
 fileId = null;
 
 document.querySelectorAll('[contenteditable="true"]').forEach(el => {

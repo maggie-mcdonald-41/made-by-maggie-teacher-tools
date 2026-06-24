@@ -127,6 +127,122 @@ function syncEFtoStandard() {
 }
 
 
+function getStudentLinkSettings() {
+  const params = new URLSearchParams(window.location.search);
+  const locked = params.get('student') === '1' || params.get('locked') === '1';
+  const paragraphRaw = params.get('paragraphs') || params.get('bodyParagraphs');
+  const paragraphCount = parseInt(paragraphRaw, 10);
+  const hasParagraphCount = [1, 2, 3].includes(paragraphCount);
+  const evidenceRaw = params.get('evidenceFirst');
+  const hasEvidenceFirst = evidenceRaw !== null;
+  const evidenceFirst = ['true', '1', 'yes', 'y'].includes(String(evidenceRaw).toLowerCase());
+
+  return {
+    locked: locked && (hasParagraphCount || hasEvidenceFirst),
+    hasParagraphCount,
+    paragraphCount,
+    hasEvidenceFirst,
+    evidenceFirst
+  };
+}
+
+function isStudentSettingsLocked() {
+  return getStudentLinkSettings().locked;
+}
+
+function applyStudentLinkSettingsToState() {
+  const settings = getStudentLinkSettings();
+  if (!settings.locked) return;
+
+  if (settings.hasParagraphCount) {
+    selectedBodyCount = settings.paragraphCount;
+    localStorage.setItem('bodyParagraphs', selectedBodyCount);
+  }
+
+  if (settings.hasEvidenceFirst) {
+    isEvidenceFirst = settings.evidenceFirst;
+    localStorage.setItem('isEvidenceFirst', isEvidenceFirst);
+  }
+}
+
+function applyStudentLinkLockToControls() {
+  const settings = getStudentLinkSettings();
+  if (!settings.locked) return;
+
+  applyStudentLinkSettingsToState();
+
+  const paragraphSelect = document.getElementById('paragraphCount');
+  const confirmBtn = document.getElementById('confirmParagraphCount');
+  const evidenceToggle = document.getElementById('evidenceFirstToggle');
+  const lockNotice = document.getElementById('lockedSettingsNotice');
+  const teacherTools = document.getElementById('teacherLinkTools');
+
+  if (paragraphSelect) {
+    paragraphSelect.value = selectedBodyCount;
+    paragraphSelect.disabled = true;
+    paragraphSelect.classList.add('locked-setting');
+  }
+
+  if (confirmBtn) {
+    confirmBtn.disabled = true;
+    confirmBtn.classList.add('locked-setting');
+  }
+
+  if (evidenceToggle) {
+    evidenceToggle.checked = isEvidenceFirst;
+    evidenceToggle.disabled = true;
+    evidenceToggle.closest('.toggle-switch')?.classList.add('locked-setting');
+  }
+
+  lockNotice?.classList.remove('hidden');
+  teacherTools?.classList.add('hidden');
+  document.body.classList.add('student-link-locked');
+}
+
+function buildLockedStudentLink() {
+  const url = new URL(window.location.href);
+  url.searchParams.set('student', '1');
+  url.searchParams.set('paragraphs', document.getElementById('paragraphCount')?.value || selectedBodyCount);
+  url.searchParams.set('evidenceFirst', document.getElementById('evidenceFirstToggle')?.checked ? 'true' : 'false');
+  return url.toString();
+}
+
+function initTeacherStudentLinkBuilder() {
+  const generateBtn = document.getElementById('generateStudentLinkBtn');
+  const copyBtn = document.getElementById('copyStudentLinkBtn');
+  const output = document.getElementById('studentLinkOutput');
+
+  if (!generateBtn || !copyBtn || !output) return;
+
+  const updateOutput = () => {
+    output.value = buildLockedStudentLink();
+    return output.value;
+  };
+
+  const copyOutput = () => {
+    const link = updateOutput();
+    output.select();
+
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(link)
+        .then(() => alert('✅ Student link copied!'))
+        .catch(() => alert('Link created. You can copy it from the box.'));
+    } else {
+      alert('Link created. You can copy it from the box.');
+    }
+  };
+
+  generateBtn.addEventListener('click', copyOutput);
+  copyBtn.addEventListener('click', copyOutput);
+
+  document.getElementById('paragraphCount')?.addEventListener('change', () => {
+    if (output.value) updateOutput();
+  });
+
+  document.getElementById('evidenceFirstToggle')?.addEventListener('change', () => {
+    if (output.value) updateOutput();
+  });
+}
 
 // — 5) DOM Ready / Bootstrap —
 document.addEventListener('DOMContentLoaded', () => {
@@ -154,14 +270,19 @@ box.addEventListener('input', () => {
   
 
   
-  // a) restore saved state
+  // a) restore saved state, then let teacher-created student links override it
   const savedCount = localStorage.getItem('bodyParagraphs');
-  if (savedCount) {
-    selectedBodyCount = parseInt(savedCount, 10);
-    document.getElementById('paragraphCount').value = selectedBodyCount;
+  const parsedSavedCount = parseInt(savedCount, 10);
+
+  if ([1, 2, 3].includes(parsedSavedCount)) {
+    selectedBodyCount = parsedSavedCount;
   }
 
   isEvidenceFirst = localStorage.getItem('isEvidenceFirst') === 'true';
+
+  applyStudentLinkSettingsToState();
+
+  document.getElementById('paragraphCount').value = selectedBodyCount;
   document.getElementById('evidenceFirstToggle').checked = isEvidenceFirst;
 
 window.addEventListener('load', () => {
@@ -178,6 +299,8 @@ window.addEventListener('load', () => {
   // c) initial UI render
   updateEvidenceFirstVisibility();
   updateBodyParagraphVisibility(selectedBodyCount);
+  initTeacherStudentLinkBuilder();
+  applyStudentLinkLockToControls();
 setTimeout(() => {
   syncData();
 }, 50);
@@ -196,6 +319,11 @@ setTimeout(() => {
   // d) Confirm-count listener
   document.getElementById('confirmParagraphCount')
     .addEventListener('click', () => {
+      if (isStudentSettingsLocked()) {
+        document.getElementById('paragraphCount').value = selectedBodyCount;
+        return;
+      }
+
       const newCount = parseInt(document.getElementById('paragraphCount').value, 10);
       if (newCount !== selectedBodyCount) {
         if (!confirm('⚠️ This will reset your thesis and body paragraphs. Continue?')) {
@@ -287,6 +415,11 @@ setTimeout(() => {
   // f) Evidence-First toggle listener
 document.getElementById('evidenceFirstToggle')
   .addEventListener('change', (e) => {
+    if (isStudentSettingsLocked()) {
+      e.target.checked = isEvidenceFirst;
+      return;
+    }
+
     isEvidenceFirst = e.target.checked;
 
     localStorage.setItem('isEvidenceFirst', isEvidenceFirst);

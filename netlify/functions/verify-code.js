@@ -9,18 +9,18 @@ exports.handler = async function (event, context) {
   const { code } = JSON.parse(event.body);
   const normalizedCode = code.trim().toUpperCase();
 
-  const argumentativeCodes = ["WRITE2025", "MCTEACH", "MAGGIE2025"];
-  const opinionCodes = ["OPINION2025", "GRADE3", "OP2025"];
+  const argumentativeCodes = ["WRITE2026", "MCTEACH", "MAGGIE2026"];
+  const opinionCodes = ["OPINION2026", "GRADE3", "OP2026"];
 
   // NEW: Reading Question-Type Trainer codes
-  const readingTrainerCodes = ["READING2025", "READTRAIN"];
+  const readingTrainerCodes = ["READING2026", "READTRAIN"];
 
   if (argumentativeCodes.includes(normalizedCode)) {
     return {
       statusCode: 200,
       body: JSON.stringify({
         success: true,
-        redirectPath: "./argumentative-organizer/index.html",
+        redirectPath: "./argumentative-organizer-2026-2027/index.html",
       }),
     };
   }
@@ -30,7 +30,7 @@ exports.handler = async function (event, context) {
       statusCode: 200,
       body: JSON.stringify({
         success: true,
-        redirectPath: "./opinion-organizer/index.html",
+        redirectPath: "./opinion-organizer-2026-2027/index.html",
       }),
     };
   }

@@ -522,6 +522,56 @@ select {
   display: none;
 }
 
+.teacher-link-tools {
+  background-color: rgba(255, 255, 255, 0.35);
+  border: 2px solid rgba(0, 72, 96, 0.35);
+}
+
+.teacher-link-tools input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #004860;
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 0.85rem;
+}
+
+.teacher-link-note,
+.settings-lock-notice {
+  font-size: 0.85rem;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.settings-lock-notice {
+  background: #fff8d6;
+  border: 1px solid #d6b84d;
+  border-radius: 8px;
+  color: #4f3b00;
+  padding: 8px;
+}
+
+.locked-setting {
+  opacity: 0.75;
+}
+
+body.dark-mode .teacher-link-tools {
+  background-color: #333333;
+  border-color: #666666;
+}
+
+body.dark-mode .teacher-link-tools input {
+  background-color: #1f1f1f;
+  color: #ffffff;
+  border-color: #777777;
+}
+
+body.dark-mode .settings-lock-notice {
+  background: #3b331a;
+  color: #fff2b8;
+  border-color: #7c6720;
+}
+
 .toggles {
   background-color: var(--color-aqua);
   border-radius: 20px;
@@ -690,6 +740,7 @@ input:checked + .slider::before {
 
   .utility-bar > .toggles,
   .utility-bar > .paragraph-selector,
+  .utility-bar > .teacher-link-tools,
   .utility-bar > .reader-selections,
   .utility-bar > .save-options {
     flex: 1;
