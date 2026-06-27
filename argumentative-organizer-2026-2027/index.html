@@ -36,7 +36,41 @@
     </div>
 
     <h1>🫧 Welcome to the Ultimate Argumentative Essay Organizer! 🫧</h1>
+    
+    <div class="teacher-link-tools" id="teacherLinkTools">
+        <div class="teacher-link-header">
+            <span class="teacher-link-badge">Teacher Setup</span>
+            <h2>Choose Student Options & Create a Link</h2>
+            <p>
+                Use this section before sharing the argumentative organizer with students. Choose how many body paragraphs students will write and decide whether they should use Evidence-First Mode. Then create a student link that keeps those choices locked.
+            </p>
+        </div>
 
+        <div class="teacher-link-grid">
+            <div class="teacher-link-instructions">
+                <h3>How to create the student link</h3>
+                <ol>
+                    <li>Use the setup bar below to choose the number of body paragraphs.</li>
+                    <li>Turn Evidence-First Mode on or off.</li>
+                    <li>Click <strong>Create Student Link</strong>.</li>
+                    <li>Copy and share the link with students in your LMS, email, or assignment directions.</li>
+                </ol>
+
+                <p class="teacher-link-choice-note">
+                    <strong>Want students to choose for themselves?</strong> You can still share the basic argumentative organizer link instead. The basic link lets students choose their own paragraph count and decide whether to use Evidence-First Mode.
+                </p>
+            </div>
+
+            <div class="teacher-link-create-box">
+                <h3>Student Link</h3>
+                <button class="small-btn" id="generateStudentLinkBtn" type="button">Create & Copy Student Link</button>
+                <input type="text" id="studentLinkOutput" readonly aria-label="Student link" placeholder="Your student link will appear here.">
+                <p class="teacher-link-note">
+                    Click once to create the student link and copy it to your clipboard. The link only controls the setup options. Students will still complete and save their own organizer.
+                </p>
+            </div>
+        </div>
+    </div>
 
     <!-- === Utility Bar: Toggles + Save Options + Controls === -->
     <div class="utility-bar">
@@ -70,14 +104,6 @@
             </select>
             <button class="small-btn" id="confirmParagraphCount" type="button">Confirm</button>
             <p id="lockedSettingsNotice" class="settings-lock-notice hidden">🔒 Your teacher has locked these setup options for this assignment.</p>
-        </div>
-
-        <div class="teacher-link-tools" id="teacherLinkTools">
-            <strong>Teacher Student Link</strong>
-            <button class="small-btn" id="generateStudentLinkBtn" type="button">Create Student Link</button>
-            <input type="text" id="studentLinkOutput" readonly aria-label="Student link">
-            <button class="small-btn" id="copyStudentLinkBtn" type="button">Copy Student Link</button>
-            <p class="teacher-link-note">Choose paragraphs and Evidence-First Mode above, then create a locked student link.</p>
         </div>
 
         <div class="reader-selections">

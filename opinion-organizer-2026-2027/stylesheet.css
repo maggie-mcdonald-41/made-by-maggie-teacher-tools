@@ -187,7 +187,7 @@ select {
   background-color: #FF8F85;
   padding: 15px;
   border-radius: 14px;
-  margin: 60px auto 30px;
+  margin: 18px auto 30px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   gap: 12px;
   max-width: 95%;
@@ -523,22 +523,117 @@ select {
 }
 
 .teacher-link-tools {
-  background-color: rgba(255, 255, 255, 0.35);
-  border: 2px solid rgba(0, 72, 96, 0.35);
+  width: min(95%, 1050px);
+  margin: 20px auto 18px;
+  padding: 24px;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, #ffffff 0%, #f4fffe 100%);
+  border: 3px solid #05C1B8;
+  border-radius: 24px;
+  box-shadow: 0 8px 22px rgba(0, 72, 96, 0.18);
+  color: #1e1e1e;
+}
+
+.teacher-link-header {
+  text-align: center;
+  max-width: 850px;
+  margin: 0 auto 20px;
+}
+
+.teacher-link-badge {
+  display: inline-block;
+  background: #004860;
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.teacher-link-tools h2 {
+  margin: 12px 0 8px;
+  color: #004860;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+}
+
+.teacher-link-tools h3 {
+  margin: 0 0 10px;
+  color: #004860;
+  font-size: 1.25rem;
+}
+
+.teacher-link-header p,
+.teacher-link-instructions,
+.teacher-link-note,
+.teacher-link-choice-note {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.teacher-link-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.teacher-link-instructions,
+.teacher-link-create-box {
+  background: #ffffff;
+  border: 2px solid rgba(0, 72, 96, 0.18);
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 3px 10px rgba(0, 72, 96, 0.08);
+}
+
+.teacher-link-instructions ol {
+  margin: 10px 0 14px;
+  padding-left: 1.4rem;
+}
+
+.teacher-link-instructions li {
+  margin-bottom: 8px;
+}
+
+.teacher-link-choice-note {
+  background: #fff8d6;
+  border: 1px solid #d6b84d;
+  border-radius: 12px;
+  color: #4f3b00;
+  padding: 12px;
+  margin: 14px 0 0;
+}
+
+.teacher-link-create-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: center;
+}
+
+.teacher-link-create-box .small-btn {
+  width: 100%;
+  max-width: 100%;
 }
 
 .teacher-link-tools input {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid #004860;
-  border-radius: 8px;
-  padding: 8px;
-  font-size: 0.85rem;
+  border: 2px solid #004860;
+  border-radius: 10px;
+  padding: 11px;
+  font-size: 0.95rem;
+}
+
+.teacher-link-tools input::placeholder {
+  color: #5f6f73;
 }
 
 .teacher-link-note,
 .settings-lock-notice {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   line-height: 1.35;
   margin: 0;
 }
@@ -556,20 +651,69 @@ select {
 }
 
 body.dark-mode .teacher-link-tools {
-  background-color: #333333;
-  border-color: #666666;
+  background: linear-gradient(135deg, #242424 0%, #1d3332 100%);
+  border-color: #0AD1CC;
+  color: #ffffff;
+  box-shadow: 0 8px 22px rgba(10, 209, 204, 0.12);
+}
+
+body.dark-mode .teacher-link-badge {
+  background: #84EBE6;
+  color: #00343f;
+}
+
+body.dark-mode .teacher-link-tools h2,
+body.dark-mode .teacher-link-tools h3 {
+  color: #84EBE6;
+}
+
+body.dark-mode .teacher-link-instructions,
+body.dark-mode .teacher-link-create-box {
+  background: #2f2f2f;
+  border-color: #555555;
+}
+
+body.dark-mode .teacher-link-choice-note {
+  background: #3b331a;
+  color: #fff2b8;
+  border-color: #7c6720;
 }
 
 body.dark-mode .teacher-link-tools input {
   background-color: #1f1f1f;
   color: #ffffff;
-  border-color: #777777;
+  border-color: #84EBE6;
+}
+
+body.dark-mode .teacher-link-tools input::placeholder {
+  color: #c7d9d8;
 }
 
 body.dark-mode .settings-lock-notice {
   background: #3b331a;
   color: #fff2b8;
   border-color: #7c6720;
+}
+
+@media (max-width: 768px) {
+  .teacher-link-tools {
+    padding: 18px;
+    border-radius: 18px;
+    margin-top: 14px;
+  }
+
+  .teacher-link-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .teacher-link-tools h2 {
+    font-size: 1.5rem;
+  }
+
+  .teacher-link-instructions,
+  .teacher-link-create-box {
+    padding: 14px;
+  }
 }
 
 .toggles {
@@ -740,7 +884,6 @@ input:checked + .slider::before {
 
   .utility-bar > .toggles,
   .utility-bar > .paragraph-selector,
-  .utility-bar > .teacher-link-tools,
   .utility-bar > .reader-selections,
   .utility-bar > .save-options {
     flex: 1;

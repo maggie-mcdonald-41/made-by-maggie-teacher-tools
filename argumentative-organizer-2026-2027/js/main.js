@@ -212,7 +212,7 @@ function initTeacherStudentLinkBuilder() {
   const copyBtn = document.getElementById('copyStudentLinkBtn');
   const output = document.getElementById('studentLinkOutput');
 
-  if (!generateBtn || !copyBtn || !output) return;
+  if (!generateBtn || !output) return;
 
   const updateOutput = () => {
     output.value = buildLockedStudentLink();
@@ -225,7 +225,7 @@ function initTeacherStudentLinkBuilder() {
 
     if (navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(link)
-        .then(() => alert('✅ Student link copied!'))
+        .then(() => alert('✅ Student link created and copied!'))
         .catch(() => alert('Link created. You can copy it from the box.'));
     } else {
       alert('Link created. You can copy it from the box.');
@@ -233,7 +233,7 @@ function initTeacherStudentLinkBuilder() {
   };
 
   generateBtn.addEventListener('click', copyOutput);
-  copyBtn.addEventListener('click', copyOutput);
+  copyBtn?.addEventListener('click', copyOutput);
 
   document.getElementById('paragraphCount')?.addEventListener('change', () => {
     if (output.value) updateOutput();
