@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>7th Grade Live Session Monitor | Reading Practice</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+/* ---------------------------------------------------
+   BASE COLORS + THEMING
+--------------------------------------------------- */
+:root {
+  --bg-page: linear-gradient(90deg, #84EBE6, #FFD466, #FFA69E);
+  --bg-card: #ffffff;
+  --bg-strip-odd: rgba(249, 250, 251, 0.95);
+  --bg-strip-even: rgba(239, 246, 255, 0.95);
+
+  --header-strip-1: #f9fafb;
+  --header-strip-2: #eef2ff;
+
+  --text-main: #0a2342;
+  --text-muted: #6b7280;
+
+  --border-light: rgba(148, 163, 184, 0.25);
+
+  --accent-blue: #3b82f6;
+}
+
+.dark-mode {
+  --bg-page: linear-gradient(135deg, #0f172a, #1e293b);
+  --bg-card: #1e293b;
+  --bg-strip-odd: rgba(30, 41, 59, 0.65);
+  --bg-strip-even: rgba(51, 65, 85, 0.65);
+
+  --header-strip-1: #111827;
+  --header-strip-2: #020617;
+
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+
+  --border-light: rgba(148, 163, 184, 0.35);
+}
+
+/* ---------------------------------------------------
+   PAGE BACKGROUND + SHELL
+--------------------------------------------------- */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Nunito", sans-serif;
+  color: var(--text-main);
+  background: var(--bg-page);}
+
+.monitor-shell {
+  max-width: 1600px;
+  margin: 2rem auto;
+  padding: 0 1.5rem 2rem;
+}
+
+/* ---------------------------------------------------
+   HEADER
+--------------------------------------------------- */
+.monitor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+}
+
+.monitor-header h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.monitor-meta {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.pill-button {
+  padding: 0.55rem 1.25rem;
+  border-radius: 999px;
+  background: #004860;
+  color: #fff;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.pill-button:hover {
+  filter: brightness(0.95);
+}
+
+/* ---------------------------------------------------
+   GRID CONTAINER
+--------------------------------------------------- */
+.monitor-grid {
+  padding: 1rem;
+  border-radius: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  overflow-x: auto;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+/* ---------------------------------------------------
+   TABLE
+--------------------------------------------------- */
+table.monitor-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 0.85rem;
+}
+
+.monitor-table th,
+.monitor-table td {
+  border: 1px solid var(--border-light);
+  text-align: center;
+  padding: 0.3rem 0.4rem;
+  white-space: nowrap;
+}
+
+/* Header row */
+.monitor-table thead tr {
+  background: var(--bg-card);
+}
+
+/* Default header style */
+.monitor-table th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+/* First two header cells (Student / % Correct) */
+.monitor-table th:nth-child(1),
+.monitor-table th:nth-child(2) {
+  height: 48px;
+  padding-bottom: 4px;
+  vertical-align: middle;
+}
+
+/* Bigger, readable first two columns */
+.monitor-table th:nth-child(1),
+.monitor-table td:nth-child(1) {
+  width: 18%;
+  max-width: 260px;
+  text-align: left;
+  padding-left: 0.75rem;
+  font-weight: 600;
+}
+
+.monitor-table th:nth-child(2),
+.monitor-table td:nth-child(2) {
+  width: 10%;
+  max-width: 95px;
+}
+
+/* Question columns */
+.monitor-table th:nth-child(n+3),
+.monitor-table td:nth-child(n+3) {
+  min-width: 46px;
+}
+
+/* Question header cells: tall, with vertical label centered */
+.monitor-table th:nth-child(n+3) {
+  height: 120px;
+  background: var(--header-strip-1);
+  position: sticky;
+  top: 0;
+  vertical-align: middle;
+}
+
+/* Alternate header background colors for question columns */
+.monitor-table th:nth-child(2n+3) { /* 3, 5, 7, ... */
+  background: var(--header-strip-1);
+}
+.monitor-table th:nth-child(2n+4) { /* 4, 6, 8, ... */
+  background: var(--header-strip-2);
+}
+
+/* Vertical header text using the existing .header-rotate div */
+.header-rotate {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-90deg); /* vertical text */
+  transform-origin: center center;
+  display: inline-block;
+  line-height: 1.1;
+  font-size: 0.8rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------
+   ROW STRIPING
+--------------------------------------------------- */
+.monitor-table tbody tr:nth-child(odd) {
+  background: var(--bg-strip-odd);
+}
+.monitor-table tbody tr:nth-child(even) {
+  background: var(--bg-strip-even);
+}
+
+/* ---------------------------------------------------
+   QUESTION RESULT SLOTS
+--------------------------------------------------- */
+.slot {
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  border: 1px solid rgba(148,163,184,0.45);
+  margin: 0 auto;
+  font-weight: 700;
+}
+
+.slot.empty {
+  background: #fcfcfc;
+  border-style: dashed;
+  opacity: 0.5;
+}
+
+.slot.correct {
+  background: #22c55e;
+  border-color: #15803d;
+  color: white;
+}
+
+.slot.incorrect {
+  background: #ef4444;
+  border-color: #b91c1c;
+  color: white;
+}
+
+.slot.partial {
+  background: #facc15;
+  border-color: #ca8a04;
+  color: #78350f;
+}
+
+/* ---------------------------------------------------
+   RESPONSIVE HELP
+--------------------------------------------------- */
+@media (max-width: 900px) {
+  .monitor-table th:nth-child(1),
+  .monitor-table td:nth-child(1) {
+    width: 30%;
+  }
+}
+
+/* -------------------------------
+   DARK MODE TOGGLE SWITCH
+-------------------------------- */
+
+
+.monitor-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  user-select: none;
+}
+
+.theme-toggle input {
+  display: none;
+}
+
+.toggle-slider {
+  width: 40px;
+  height: 22px;
+  background: #d1d5db;
+  border-radius: 999px;
+  position: relative;
+  transition: 0.25s ease;
+}
+
+.toggle-slider::before {
+  content: "";
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: 0.25s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+
+.theme-toggle input:checked + .toggle-slider {
+  background: #2563eb;
+}
+
+.theme-toggle input:checked + .toggle-slider::before {
+  transform: translateX(18px);
+}
+
+.toggle-label {
+  color: var(--text-main);
+}
+
+</style>
+
+</head>
+<body>
+  <div class="monitor-shell">
+<div class="monitor-header">
+  <div>
+    <h1>7th Grade Live Session Monitor</h1>
+    <div id="monitor-meta" class="monitor-meta"></div>
+  </div>
+
+  <div class="monitor-controls">
+    <label class="theme-toggle">
+      <input type="checkbox" id="theme-toggle">
+      <span class="toggle-slider"></span>
+      <span class="toggle-label">Dark Mode</span>
+    </label>
+
+    <button id="monitor-refresh" class="pill-button">Refresh now</button>
+  </div>
+</div>
+
+
+    <div id="monitor-grid" class="monitor-grid">
+      <!-- table rendered by JS -->
+    </div>
+  </div>
+
+  <script src="../standards-catalog.js"></script>
+  <script src="script.js"></script>
+  <script src="live-monitor.js"></script>
+</body>
+</html>

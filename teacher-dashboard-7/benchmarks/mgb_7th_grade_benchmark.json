@@ -1,0 +1,679 @@
+{
+  "assessmentId": "mgb_7th_grade_ia4_benchmark",
+  "title": "MGB 7th Grade IA4 Benchmark Practice",
+  "mode": "benchmark",
+  "reportingMode": "standard",
+  "grade": 7,
+  "subject": "ELA",
+  "sourceFile": "Created for MGB 7th Grade Teacher Dashboard",
+  "sections": [
+    {
+      "sectionId": "s1_moon_catcher_myth",
+      "title": "The Moon Catcher",
+      "type": "single_passage",
+      "passages": [
+        {
+          "passageId": "p1",
+          "title": "The Moon Catcher",
+          "genre": "myth",
+          "text": "<img class=\"passage-image benchmark-image moon-image\" src=\"../media/moon.png\" alt=\"Illustration of a village beneath a large moon connected to the myth The Moon Catcher.\">\n\nLong ago, before people measured months by calendars, the moon was said to travel close enough for mountain goats to brush it with their horns. Villagers in the valley depended on the moon's light to guide their planting, fishing, and travel. When the moon was full, they worked late into the evening. When it was thin, they rested and waited.\n\nIn one village lived Nalin, a young net maker who was admired for his clever fingers. His nets never tore, and his knots held through storms. At first, Nalin used his skill to help the village. He repaired fishing nets, built hammocks for children, and taught others how to twist strong rope.\n\nSoon, praise began to change him. Nalin decided that ordinary work was beneath him. \"If I can catch fish and birds,\" he boasted, \"then I can catch the moon itself.\" The elders warned him that the moon belonged to everyone and should not be trapped for one person's glory, but Nalin laughed at their concern.\n\nOn the night of the harvest moon, Nalin climbed the tallest cedar and cast his finest net into the sky. To everyone's astonishment, the glowing moon tangled in the net and stopped moving. At first, the valley cheered. The night became bright as noon, and Nalin bowed as if he had created the light himself.\n\nBut the days that followed grew strange. Tides weakened. Birds lost their direction. Farmers could not judge the proper planting time. Children became restless because night no longer felt like night. The villagers begged Nalin to release the moon, but he refused until his own shadow disappeared beneath the endless silver light.\n\nFinally, Nalin understood that a gift shared by all should not be controlled by one person's pride. He climbed the cedar and cut the net. The moon rose higher than ever before, too distant for any net to reach. From that night on, people remembered Nalin whenever moonlight touched a rope or knot, and they taught their children that talent becomes dangerous when it forgets responsibility."
+        }
+      ],
+      "questions": [
+        {
+          "id": 1,
+          "linkedPassageId": "p1",
+          "linkedPassageTab": 1,
+          "type": "multiple_choice",
+          "standards": [
+            "7.T.T.1.c"
+          ],
+          "prompt": "Which sentence best states a theme of the myth?",
+          "choices": {
+            "A": "People should avoid learning difficult skills because talent often causes conflict.",
+            "B": "Natural cycles matter only when people use them for farming and travel.",
+            "C": "A person who receives praise may become more helpful to the community.",
+            "D": "Using a gift selfishly can harm others and turn talent into a source of danger."
+          },
+          "correctAnswer": "D"
+        },
+        {
+          "id": 2,
+          "linkedPassageId": "p1",
+          "linkedPassageTab": 1,
+          "type": "two_part_multiple_choice",
+          "standards": [
+            "7.T.PM.1.a",
+            "7.T.T.1.a"
+          ],
+          "prompt": "Answer Part A and Part B about the myth.",
+          "partA": {
+            "prompt": "Which story element most clearly shows that this text is a myth?",
+            "choices": {
+              "A": "A character becomes proud after being praised by neighbors.",
+              "B": "The text explains why the moon moved farther away from people.",
+              "C": "The setting includes a village where people fish, farm, and travel.",
+              "D": "The main character uses a net that he made with careful knots."
+            },
+            "correctAnswer": "B"
+          },
+          "partB": {
+            "prompt": "Which detail best supports the answer to Part A?",
+            "choices": {
+              "A": "Nalin repairs fishing nets and teaches others how to twist strong rope.",
+              "B": "The elders warn Nalin that the moon belongs to everyone.",
+              "C": "Nalin catches the glowing moon in a net and later releases it into the sky.",
+              "D": "The villagers depend on moonlight for planting, fishing, and travel."
+            },
+            "correctAnswer": "C"
+          }
+        },
+        {
+          "id": 3,
+          "linkedPassageId": "p1",
+          "linkedPassageTab": 1,
+          "type": "multiple_choice",
+          "standards": [
+            "7.L.V.3.b"
+          ],
+          "prompt": "Read the sentence from paragraph 3. Which meaning of the word ordinary best fits the way it is used?",
+          "stimulus": "Nalin decided that ordinary work was beneath him.",
+          "choices": {
+            "A": "Unusual",
+            "B": "Common",
+            "C": "Dangerous",
+            "D": "Careless"
+          },
+          "correctAnswer": "B"
+        },
+        {
+          "id": 4,
+          "linkedPassageId": "p1",
+          "linkedPassageTab": 1,
+          "type": "multiple_choice",
+          "standards": [
+            "7.T.T.1.b"
+          ],
+          "prompt": "Which event is the best turning point because it changes the villagers' celebration into concern?",
+          "choices": {
+            "A": "The valley cheers because Nalin appears to have accomplished what no one else could do.",
+            "B": "The elders warn Nalin that the moon belongs to everyone, not just one proud catcher.",
+            "C": "Nalin climbs the tallest cedar with his finest net and waits for the moon to rise.",
+            "D": "The villagers notice weakened tides, confused birds, and uncertain planting times."
+          },
+          "correctAnswer": "D"
+        }
+      ]
+    },
+    {
+      "sectionId": "s2_green_belt_pair",
+      "title": "The Green Belt Movement / Planting Day",
+      "type": "paired_passage",
+      "passages": [
+        {
+          "passageId": "p2a",
+          "title": "The Green Belt Movement",
+          "genre": "informational_account",
+          "text": "<img class=\"passage-image benchmark-image belt-image\" src=\"../media/belt.png\" alt=\"Illustration representing Wangari Maathai and the Green Belt Movement planting trees in Kenya.\">\n\nIn the 1970s, many communities in Kenya faced problems connected to deforestation. Trees had been cleared for farms, fuel, and development. Without enough trees, soil washed away more easily, streams dried up, and families had to walk farther to find firewood and clean water.\n\nWangari Maathai, a Kenyan scientist and activist, believed that planting trees could address several problems at once. In 1977, she helped begin the Green Belt Movement. The movement encouraged women to plant tree seedlings in their communities. Planting trees was practical, but it was also political because it gave ordinary citizens a way to improve the land and speak up about decisions affecting their lives.\n\nThe work was not easy. Some leaders criticized Maathai and tried to silence the movement. Still, communities continued planting. Over time, the Green Belt Movement helped plant millions of trees and brought attention to the connection between the environment, democracy, and community responsibility.\n\nMaathai later became the first African woman to receive the Nobel Peace Prize. Her work showed that environmental action can also be a form of civic action when it helps people protect their homes, resources, and voices."
+        },
+        {
+          "passageId": "p2b",
+          "title": "Planting Day",
+          "genre": "historical_fiction",
+          "text": "<img class=\"passage-image benchmark-image planting-image\" src=\"../media/planting.png\" alt=\"Illustration of Amina planting a seedling on a hillside.\">\n\nAmina carried the seedling in both hands because its roots were wrapped in newspaper and hope. The hill above her village looked tired. Rain had carved brown lines through the soil, and the stream where her grandmother once washed clothes had thinned to a thread.\n\n\"Hold it straight,\" Mama said, kneeling beside the small hole. Amina pressed the seedling into place while her mother pushed dark soil around it. Around them, other women worked in pairs. Some laughed as they planted; others wiped sweat from their faces and kept digging.\n\nA truck passed on the road below, carrying logs toward the city. Amina looked from the logs to the fragile tree in her hands. It seemed impossible that something so small could answer something so large.\n\nMama seemed to read her thoughts. \"A tree is not only wood,\" she said. \"It is shade. It is soil staying where it belongs. It is water waiting in the ground.\" She touched Amina's wrist gently. \"And today, it is our answer.\"\n\nYears later, Amina would walk the same hill and stand beneath branches that had once fit in her palms. She would remember that planting had not felt like a speech or a protest. It had felt like work. Only later did she understand that work can become a voice when enough hands repeat it."
+        }
+      ],
+      "questions": [
+        {
+          "id": 5,
+          "linkedPassageId": "p2a",
+          "linkedPassageTab": 1,
+          "type": "multiple_choice",
+          "standards": [
+            "7.T.C.2.b"
+          ],
+          "prompt": "Which words best describe the author's tone toward the Green Belt Movement in Passage 1?",
+          "choices": {
+            "A": "Dismissive and amused",
+            "B": "Admiring and thoughtful",
+            "C": "Confused and uncertain",
+            "D": "Angry and sarcastic"
+          },
+          "correctAnswer": "B"
+        },
+        {
+          "id": 6,
+          "linkedPassageId": "p2a",
+          "linkedPassageTab": 1,
+          "type": "multiple_choice",
+          "standards": [
+            "7.T.RA.1.a"
+          ],
+          "prompt": "After reading the paired texts, a student wants to research the connection between environmental action and civic participation. Which research question would best guide that inquiry?",
+          "choices": {
+            "A": "Which tree species grows the fastest in warm climates?",
+            "B": "How did the Green Belt Movement use tree planting to help communities gain influence over local decisions?",
+            "C": "What tools are needed to plant a seedling correctly?",
+            "D": "Where are the tallest trees in Kenya located today?"
+          },
+          "correctAnswer": "B"
+        },
+        {
+          "id": 7,
+          "linkedPassageId": "p2b",
+          "linkedPassageTab": 2,
+          "type": "multiple_choice",
+          "standards": [
+            "7.T.T.1.d"
+          ],
+          "prompt": "Which statement best compares the historical account with the fictional narrative?",
+          "choices": {
+            "A": "The historical account explains the movement's background and impact, while the fictional narrative imagines how one young person might experience its meaning.",
+            "B": "The fictional narrative provides more reliable facts than the historical account because it includes sensory details.",
+            "C": "Both texts argue that planting trees solved every political problem in Kenya immediately.",
+            "D": "The historical account focuses on one child, while the fictional narrative lists dates and awards."
+          },
+          "correctAnswer": "A"
+        },
+        {
+          "id": 8,
+          "linkedPassageId": "p2a",
+          "linkedPassageTab": 1,
+          "type": "multiple_choice",
+          "standards": [
+            "7.T.SS.1.a"
+          ],
+          "prompt": "Read this sentence from the informational account. How does the author mainly develop this idea?",
+          "stimulus": "Planting trees was practical, but it was also political because it gave ordinary citizens a way to improve the land and speak up about decisions affecting their lives.",
+          "choices": {
+            "A": "By showing that tree planting addressed damaged land while also giving citizens a public voice",
+            "B": "By describing how Amina and her mother debate whether planting trees is worth the effort",
+            "C": "By comparing the Green Belt Movement with several other environmental movements across Africa",
+            "D": "By focusing on Maathai's awards to suggest that recognition was the movement's main purpose"
+          },
+          "correctAnswer": "A"
+        },
+        {
+          "id": 9,
+          "linkedPassageId": "p2b",
+          "linkedPassageTab": 2,
+          "type": "multiple_choice",
+          "standards": [
+            "7.T.SS.2.a"
+          ],
+          "prompt": "How does the phrase 'wrapped in newspaper and hope' affect the meaning of Passage 2?",
+          "choices": {
+            "A": "It suggests that Amina does not understand why the seedling matters.",
+            "B": "It makes the seedling seem both physically fragile and emotionally important.",
+            "C": "It shows that newspapers were the main reason people joined the movement.",
+            "D": "It creates a humorous tone by comparing roots to a package."
+          },
+          "correctAnswer": "B"
+        }
+      ]
+    },
+    {
+      "sectionId": "s3_library_letter",
+      "title": "Letter About Library Hours",
+      "type": "single_passage",
+      "passages": [
+        {
+          "passageId": "p3",
+          "title": "Letter to the Principal",
+          "genre": "argument_letter",
+          "text": "Dear Principal Ahmed,\n\nOne issue affecting many students at Crestview Middle School is limited access to the library after school. Currently, the library closes at 3:15 p.m., only fifteen minutes after dismissal. I am writing to ask that the library remain open until 4:30 p.m. at least three days each week.\n\nSome people may argue that most students can complete research or homework at home. However, that assumes every student has a quiet place to work, reliable internet, or someone available to help with sources. The school library already provides these supports during the day, so extending access would help students who need them most.\n\nLonger library hours would also support academic programs. Students in debate club, science fair, and advanced reading groups often need books, databases, and a calm workspace. Last month, our media specialist reported that more than forty students asked to use the library after dismissal but had to leave because it was closing.\n\nIt is true that keeping the library open longer may require scheduling an adult supervisor. Still, the school could begin with a small pilot program. For example, the library could stay open on Tuesdays, Wednesdays, and Thursdays during the months when major projects are assigned. Afterward, the school could review attendance data and decide whether the program should continue.\n\nThe library should be more than a room students pass during the day. It should be a place where students can continue learning when the final bell rings. I encourage the school to test extended library hours so that more students have access to the resources they need.\n\nSincerely,\nMarisol Chen"
+        }
+      ],
+      "questions": [
+        {
+          "id": 10,
+          "linkedPassageId": "p3",
+          "linkedPassageTab": 1,
+          "type": "multiple_choice",
+          "standards": [
+            "7.T.T.3.a"
+          ],
+          "prompt": "What claim does Marisol make in the letter?",
+          "choices": {
+            "A": "Students should be required to join debate club, science fair, or advanced reading groups.",
+            "B": "The school should keep the library open until 4:30 p.m. at least three days each week.",
+            "C": "The media specialist should stop tracking how many students visit the library.",
+            "D": "Homework should be completed only during the school day."
+          },
+          "correctAnswer": "B"
+        },
+        {
+          "id": 11,
+          "linkedPassageId": "p3",
+          "linkedPassageTab": 1,
+          "type": "multiple_choice",
+          "standards": [
+            "7.L.V.3.b"
+          ],
+          "prompt": "What does the word pilot mean as it is used in paragraph 4?",
+          "stimulus": "Still, the school could begin with a small pilot program.",
+          "choices": {
+            "A": "A temporary trial used to test whether a larger plan should continue",
+            "B": "A person responsible for guiding a vehicle or aircraft safely",
+            "C": "A school rule that becomes permanent as soon as it is announced",
+            "D": "A student activity completed independently without adult supervision"
+          },
+          "correctAnswer": "A"
+        },
+        {
+          "id": 12,
+          "linkedPassageId": "p3",
+          "linkedPassageTab": 1,
+          "type": "multiple_choice",
+          "standards": [
+            "7.T.T.3.a"
+          ],
+          "prompt": "Which sentence would most strengthen Marisol's argument?",
+          "stimulus": "Last month, our media specialist reported that more than forty students asked to use the library after dismissal but had to leave because it was closing.",
+          "choices": {
+            "A": "A survey also found that 68 percent of those students lacked reliable internet access at home.",
+            "B": "The library shelves were painted blue over the summer to make the room feel calmer.",
+            "C": "Many students say the library is a comfortable place to talk with friends after school.",
+            "D": "A sign near the entrance reminds students to return books before checking out new ones."
+          },
+          "correctAnswer": "A"
+        },
+        {
+          "id": 13,
+          "linkedPassageId": "p3",
+          "linkedPassageTab": 1,
+          "type": "dropdown",
+          "standards": [
+            "7.L.V.3.c"
+          ],
+          "prompt": "Choose the meaning of the phrase reliable internet as it is used in the letter.",
+          "stimulus": "However, that assumes every student has a quiet place to work, reliable internet, or someone available to help with sources.",
+          "dropdownLabel": "In this sentence, reliable internet means",
+          "choices": {
+            "A": "internet that works consistently when a student needs to use it",
+            "B": "internet used only for entertainment",
+            "C": "internet that is available only at school",
+            "D": "internet that students use without permission"
+          },
+          "correctAnswer": "A"
+        }
+      ]
+    },
+    {
+      "sectionId": "s4_heat_islands",
+      "title": "Urban Heat Islands",
+      "type": "single_passage",
+      "passages": [
+        {
+          "passageId": "p4",
+          "title": "Urban Heat Islands",
+          "genre": "science_informational",
+          "text": "<img class=\"passage-image benchmark-image urban-image\" src=\"../media/urban.png\" alt=\"Illustration showing an urban heat island with city pavement, buildings, and heat.\">\n\nDuring a science unit on cities and climate, students learned about urban heat islands. An urban heat island is an area of a city that becomes warmer than nearby rural areas. Dark pavement, rooftops, traffic, and fewer trees can cause cities to absorb and hold more heat.\n\nThe teacher introduced the word mitigation and explained that it means reducing the severity or harmful effects of a problem. Students studied several mitigation strategies, including planting trees, using lighter-colored roofing materials, and designing shaded public spaces."
+        }
+      ],
+      "questions": [
+        {
+          "id": 14,
+          "linkedPassageId": "p4",
+          "linkedPassageTab": 1,
+          "type": "multiple_choice",
+          "standards": [
+            "7.L.V.3.b"
+          ],
+          "prompt": "Based on the passage, what does mitigation mean?",
+          "choices": {
+            "A": "The process of measuring the temperature of rural areas",
+            "B": "A method for increasing traffic in crowded city streets",
+            "C": "A way of reducing the harmful effects of a problem",
+            "D": "The study of how buildings are arranged in a city"
+          },
+          "correctAnswer": "C"
+        }
+      ]
+    },
+    {
+      "sectionId": "s5_coral_sources",
+      "title": "Coral Reef Restoration Sources",
+      "type": "paired_sources",
+      "passages": [
+        {
+          "passageId": "p5a",
+          "title": "Encyclopedia Entry",
+          "genre": "reference_source",
+          "text": "Coral reefs are underwater ecosystems built by tiny animals called coral polyps. Reefs provide habitat for many marine species and help protect coastlines from waves. In recent decades, warming ocean temperatures, pollution, and physical damage have harmed reefs around the world. Scientists and local groups now use restoration methods such as growing coral fragments in nurseries and attaching them to damaged reefs."
+        },
+        {
+          "passageId": "p5b",
+          "title": "Field Report",
+          "genre": "field_report",
+          "text": "During a reef restoration project near the Florida Keys, divers placed nursery-grown coral fragments onto a damaged reef. The team recorded water temperature, coral survival, and the number of fish returning to the area. After six months, several fragments had attached successfully, and small fish were observed sheltering among the new coral growth. Researchers cautioned that restoration helps, but reducing pollution and warming remains necessary."
+        }
+      ],
+      "questions": [
+        {
+          "id": 15,
+          "showPassagesTogether": true,
+          "linkedPassageTab": 1,
+          "type": "multiple_choice",
+          "standards": [
+            "7.T.RA.1.b"
+          ],
+          "prompt": "A student took notes from both sources. Which note correctly paraphrases information from both sources?",
+          "choices": {
+            "A": "Coral reefs support ocean life and protect coasts; restoration teams may grow coral fragments before placing them on damaged reefs.",
+            "B": "Coral nurseries are used mostly to attract fish back to reefs after storms move rocks underwater.",
+            "C": "Restoration has ended the danger of warming seas because most coral fragments survive the first six months.",
+            "D": "Pollution can help damaged reefs recover when divers attach new coral fragments near returning fish."
+          },
+          "correctAnswer": "A"
+        }
+      ]
+    },
+    {
+      "sectionId": "s6_mla_citation",
+      "title": "Using Direct Quotes",
+      "type": "single_passage",
+      "passages": [
+        {
+          "passageId": "p6",
+          "title": "Writing Task",
+          "genre": "instructional_text",
+          "text": "Dante is writing a report about urban gardening. He is using the article \"Rooftop Gardens and City Heat,\" written by Priya Nair and published on the website City Science Today in 2024. He wants to use this sentence from paragraph 6:\n\n\"Green roofs can lower building temperatures while providing habitat for pollinators.\""
+        }
+      ],
+      "questions": [
+      {
+        "id": 16,
+        "linkedPassageId": "p6",
+        "linkedPassageTab": 1,
+        "type": "multiple_choice",
+        "standards": [
+          "7.T.RA.2.c"
+        ],
+        "prompt": "Which option correctly uses MLA-style in-text citation for this direct quote?",
+        "choices": {
+          "A": "\"Green roofs can lower building temperatures while providing habitat for pollinators\" (Nair).",
+          "B": "\"Green roofs can lower building temperatures while providing habitat for pollinators.\" (Nair)",
+          "C": "\"Green roofs can lower building temperatures while providing habitat for pollinators\" (City Science Today).",
+          "D": "Priya Nair states, \"Green roofs can lower building temperatures while providing habitat for pollinators,\" in paragraph 6."
+        },
+        "correctAnswer": "A"
+      }
+      ]
+    },
+    {
+      "sectionId": "s7_bike_lanes_draft",
+      "title": "Student Argument Draft",
+      "type": "single_passage",
+      "passages": [
+        {
+          "passageId": "p7",
+          "title": "Argumentative Essay Draft",
+          "genre": "student_writing",
+          "text": "Some people think the city should build protected bike lanes near schools. Protected bike lanes create a space between riders and cars, which can make students feel safer traveling to school. If more students are able to bike, traffic near school entrances may also decrease. This could reduce delays for buses and families during morning arrival.\n\nOpponents may argue that adding bike lanes would remove some parking spaces. That concern matters, but the city could begin with streets that already have extra curb space. The city could also collect traffic data during a trial period before making permanent changes.\n\nOverall, protected bike lanes would give students another safe transportation option while helping reduce congestion around schools."
+        }
+      ],
+      "questions": [
+        {
+          "id": 17,
+          "linkedPassageId": "p7",
+          "linkedPassageTab": 1,
+          "type": "multi_select",
+          "standards": [
+            "7.T.SS.2.c"
+          ],
+          "prompt": "Select TWO sentences that would be appropriate for the student to add because they maintain the formal style and strengthen the argument.",
+          "choices": {
+            "A": "A city transportation report could show whether protected lanes reduce crashes near schools.",
+            "B": "Bike lanes would be awesome because cars are annoying and roads are a mess.",
+            "C": "Protected lanes may also encourage healthier routines by making biking feel safer for more students.",
+            "D": "Honestly, people who dislike bike lanes just need to stop complaining.",
+            "E": "The city should paint the lanes a bright color because bright colors are my favorite."
+          },
+          "correctAnswers": [
+            "A",
+            "C"
+          ]
+        }
+      ]
+    },
+    {
+      "sectionId": "s8_writing_language_editing",
+      "title": "Writing, Language, and Editing",
+      "type": "standalone_questions",
+      "passages": [],
+      "questions": [
+        {
+          "id": 18,
+          "hidePassageTabs": true,
+          "type": "multi_select",
+          "standards": [
+            "7.T.SS.1.c"
+          ],
+          "prompt": "Read the two sentences. Which transition words or phrases could connect the ideas accurately? Select ALL THAT APPLY.",
+          "stimulus": "The robotics team had tested the design several times. The robot still tipped over when it turned quickly.",
+          "choices": {
+            "A": "However,",
+            "B": "As a result,",
+            "C": "Even so,",
+            "D": "For example,",
+            "E": "Similarly,"
+          },
+          "correctAnswers": [
+            "A",
+            "C"
+          ]
+        },
+        {
+          "id": 19,
+          "hidePassageTabs": true,
+          "type": "highlight_sentence",
+          "standards": [
+            "7.T.T.2.d"
+          ],
+          "prompt": "A student is writing an informational paragraph about the benefits of community gardens. Highlight the sentence that should be deleted because it does not support the main idea.",
+          "stimulus": "Community gardens can improve neighborhoods in several ways. They provide space for residents to grow fresh vegetables and herbs. Working in a garden can also help neighbors meet one another and build a stronger sense of community. Some gardeners prefer tomatoes, while others prefer peppers. Gardens can turn unused lots into productive green spaces. They may also support pollinators such as bees and butterflies. For these reasons, community gardens can benefit both people and local environments.",
+          "correctSelection": [
+            "Some gardeners prefer tomatoes, while others prefer peppers."
+          ]
+        },
+        {
+          "id": 20,
+          "hidePassageTabs": true,
+          "type": "multiple_choice",
+          "standards": [
+            "7.L.GC.1"
+          ],
+          "prompt": "Read the sentence. What is the correct way to punctuate it?",
+          "stimulus": "After the final rehearsal the cast gathered backstage to review the director's notes.",
+          "choices": {
+            "A": "After the final rehearsal the cast, gathered backstage to review the director's notes.",
+            "B": "After the final rehearsal, the cast gathered backstage to review the director's notes.",
+            "C": "After, the final rehearsal the cast gathered backstage to review the director's notes.",
+            "D": "After the final rehearsal the cast gathered backstage, to review the director's notes."
+          },
+          "correctAnswer": "B"
+        },
+        {
+          "id": 21,
+          "hidePassageTabs": true,
+          "type": "highlight_sentence_multi",
+          "standards": [
+            "7.T.RA.2.b"
+          ],
+          "prompt": "Highlight the two sentences that would best help answer the research question.",
+          "stemQuestion": "How do school start times affect middle school students' sleep and learning?",
+          "stimulus": "Many middle school students report feeling tired during the first class of the day. A 2023 district survey found that students at schools starting before eight in the morning slept an average of forty minutes less than students at later-starting schools. Several teachers noticed that students seemed more alert during morning discussions after the schedule changed. The cafeteria added a new breakfast option that included yogurt and fruit. Researchers often study sleep patterns because rest can affect memory, attention, and mood. Some students said they preferred after-school clubs to morning announcements.",
+          "correctSelections": [
+            "A 2023 district survey found that students at schools starting before eight in the morning slept an average of forty minutes less than students at later-starting schools.",
+            "Researchers often study sleep patterns because rest can affect memory, attention, and mood."
+          ]
+        }
+      ]
+    },
+    {
+      "sectionId": "s9_sentence_variety",
+      "title": "Improving Sentence Variety",
+      "type": "single_passage",
+      "passages": [
+        {
+          "passageId": "p8",
+          "title": "Student Paragraph",
+          "genre": "student_writing",
+          "text": "Our class visited the history museum last Friday. We saw a display about ancient trade routes. We also watched a short film about how goods, languages, and ideas moved between regions. The trip helped me understand that trade can shape culture as well as economics."
+        }
+      ],
+      "questions": [
+        {
+          "id": 22,
+          "linkedPassageId": "p8",
+          "linkedPassageTab": 1,
+          "type": "multiple_choice",
+          "standards": [
+            "7.L.GC.2.b"
+          ],
+          "prompt": "Which revision best combines the two sentences to improve sentence variety without changing the meaning?",
+          "stimulus": "We saw a display about ancient trade routes. We also watched a short film about how goods, languages, and ideas moved between regions.",
+          "choices": {
+            "A": "We saw a display about ancient trade routes, and we also watched a short film about how goods, languages, and ideas moved between regions.",
+            "B": "After seeing a display about ancient trade routes, we watched a short film about how goods, languages, and ideas moved between regions.",
+            "C": "Ancient trade routes had displays, and goods, languages, and ideas were in a film.",
+            "D": "We saw a display. We watched a short film. Goods moved. Ideas moved."
+          },
+          "correctAnswer": "B"
+        }
+      ]
+    },
+    {
+      "sectionId": "s10_narrative_conclusion",
+      "title": "Narrative Draft",
+      "type": "single_passage",
+      "passages": [
+        {
+          "passageId": "p9",
+          "title": "Narrative Draft",
+          "genre": "student_writing",
+          "text": "<img class=\"passage-image benchmark-image pepper-image\" src=\"../media/pepper.png\" alt=\"Pepper meeting her family.\">\n\nWhen I volunteered at the animal shelter, I expected to spend the afternoon filling water bowls and sweeping floors. Instead, the director handed me a nervous gray dog named Pepper and asked me to sit with her until she calmed down.\n\nAt first, Pepper trembled whenever anyone walked past the kennel. I spoke softly and kept my hand still near the gate. After several minutes, she stepped closer. By the end of the afternoon, she rested her chin on my shoe.\n\nThe next week, a family came to meet Pepper. I watched her walk toward them with her tail low but wagging. When the youngest child sat on the floor, Pepper gently placed her head in the child's lap."
+        }
+      ],
+      "questions": [
+      {
+        "id": 23,
+        "linkedPassageId": "p9",
+        "linkedPassageTab": 1,
+        "type": "multiple_choice",
+        "standards": [
+          "7.T.T.1.e"
+        ],
+        "prompt": "Which sentence would best conclude the narrative by reflecting on the experience?",
+        "choices": {
+          "A": "That day taught me that patience can make space for trust to grow.",
+          "B": "After we finished, I helped refill the water bowls and sweep near the kennels.",
+          "C": "Pepper's gray fur, small silver tag, and quiet steps made her easy to recognize.",
+          "D": "Animal shelters often depend on volunteers during weekends, summers, and school breaks."
+        },
+        "correctAnswer": "A"
+      }
+      ]
+    },
+    {
+      "sectionId": "s11_malik_storm",
+      "title": "Malik and the Storm",
+      "type": "single_passage",
+      "passages": [
+        {
+          "passageId": "p10",
+          "title": "Narrative Passage",
+          "genre": "narrative",
+          "text": "<img class=\"passage-image benchmark-image malik-image\" src=\"../media/malik.png\" alt=\"Illustration of Malik in a narrative passage setting.\">\n\n Malik had promised to perform his poem at the community center, but the storm arrived an hour before the event. Rain hammered the windows, and thunder shook the hallway lights. Malik folded his poem into his pocket and told himself that no one would come anyway.\n\nWhen he reached the center, only a few chairs were filled. His voice felt trapped behind his teeth. Then his grandmother, still wearing her raincoat, took a seat in the front row and nodded once.\n\nMalik stepped to the microphone. At first, his words came out thin and quick. Halfway through the poem, he looked up and saw people leaning forward. He slowed down. By the final line, his voice was steady enough to reach the back wall."
+        }
+      ],
+      "questions": [
+        {
+          "id": 24,
+          "linkedPassageId": "p10",
+          "linkedPassageTab": 1,
+          "type": "classify",
+          "standards": [
+            "7.T.T.1.a"
+          ],
+          "prompt": "Drag each narrative technique into the correct category based on how it is used in the passage.",
+          "instructions": "Drag each item into the correct column.",
+          "categories": [
+            {
+              "id": "used",
+              "label": "Used in the passage"
+            },
+            {
+              "id": "not_used",
+              "label": "Not used in the passage"
+            }
+          ],
+          "items": [
+            {
+              "id": "setting-conflict",
+              "text": "Stormy setting details that increase Malik's nervousness",
+              "categoryId": "used"
+            },
+            {
+              "id": "character-change",
+              "text": "Character change shown through Malik's voice becoming steadier",
+              "categoryId": "used"
+            },
+            {
+              "id": "dialogue",
+              "text": "Dialogue between Malik and his grandmother about the poem",
+              "categoryId": "not_used"
+            },
+            {
+              "id": "flashback",
+              "text": "A flashback explaining when Malik first began writing poetry",
+              "categoryId": "not_used"
+            },
+            {
+              "id": "foreshadowing",
+              "text": "A prediction that the microphone will stop working during the poem",
+              "categoryId": "not_used"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionId": "s12_roots_affixes",
+      "title": "Greek and Latin Roots and Affixes",
+      "type": "single_passage",
+      "passages": [
+        {
+          "passageId": "p11",
+          "title": "Science Vocabulary",
+          "genre": "informational",
+          "text": "During science class, students learned vocabulary used to describe light and life. The teacher explained that photosynthesis contains the Greek root photo, meaning light, and synthesis, meaning putting together. Students also examined words such as microscope, biodegradable, aquatic, and invisible to see how roots and affixes can help readers determine meaning."
+        }
+      ],
+      "questions": [
+        {
+          "id": 25,
+          "linkedPassageId": "p11",
+          "linkedPassageTab": 1,
+          "type": "multi_select",
+          "standards": [
+            "7.L.V.2.c"
+          ],
+          "prompt": "Based on your knowledge of Greek and Latin roots and affixes, which TWO explanations are accurate? Select TWO.",
+          "choices": {
+            "A": "Photosynthesis relates to using light to put materials together.",
+            "B": "Microscope means a tool used to study very small things.",
+            "C": "Biodegradable means unable to break down through natural processes.",
+            "D": "Aquatic means related to air or flight.",
+            "E": "Invisible means able to be seen clearly without help."
+          },
+          "correctAnswers": [
+            "A",
+            "B"
+          ]
+        }
+      ]
+    }
+  ]
+}

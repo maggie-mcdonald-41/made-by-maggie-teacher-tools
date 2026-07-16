@@ -284,6 +284,7 @@
 <script>
   window.GOOGLE_CLIENT_ID = "780192379486-tje7g4n83knjptkubsf8ur1g1rqb5ta6.apps.googleusercontent.com";
   window.RP_AUTH_RESTORE_MODE = "explicit";
+  window.READING_GRADE_LEVEL = "6";
 </script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -296,34 +297,54 @@
 <script src="readaloud-trainer.js" defer></script>
 <!-- Floating Read Aloud Controls -->
 <div id="rp-tts-float" class="rp-tts-float" aria-label="Read aloud controls">
-  <div class="rp-tts-row">
-    <label class="rp-tts-label" for="rp-tts-voice">🔊 Reader:</label>
-    <select id="rp-tts-voice" class="rp-tts-select" aria-label="Select reader voice"></select>
+  <div class="rp-tts-header">
+    <div class="rp-tts-title">🔊 Read Aloud</div>
+    <button
+      type="button"
+      id="rp-tts-collapse"
+      class="rp-tts-collapse-btn"
+      aria-controls="rp-tts-body"
+      aria-expanded="true"
+      aria-label="Collapse read aloud controls"
+      title="Collapse read aloud controls"
+    >
+      −
+    </button>
   </div>
 
-  <div class="rp-tts-row">
-    <label class="rp-tts-label" for="rp-tts-speed">Speed:</label>
-    <select id="rp-tts-speed" class="rp-tts-select rp-tts-speed-select" aria-label="Select reading speed">
-      <option value="0.75">Slow</option>
-      <option value="1" selected>Normal</option>
-      <option value="1.25">Fast</option>
-      <option value="1.5">Very Fast</option>
-    </select>
-  </div>
+  <div id="rp-tts-body" class="rp-tts-body">
+    <div class="rp-tts-row">
+      <label class="rp-tts-label" for="rp-tts-voice">Reader:</label>
+      <select id="rp-tts-voice" class="rp-tts-select" aria-label="Select reader voice"></select>
+    </div>
 
-  <div class="rp-tts-buttons">
-    <button type="button" id="rp-tts-read-passage" class="rp-tts-btn">📖 Passage</button>
-    <button type="button" id="rp-tts-read-question" class="rp-tts-btn">❓ Question</button>
+    <div class="rp-tts-row">
+      <label class="rp-tts-label" for="rp-tts-speed">Speed:</label>
+      <select id="rp-tts-speed" class="rp-tts-select rp-tts-speed-select" aria-label="Select reading speed">
+        <option value="0.75">Slow</option>
+        <option value="1" selected>Normal</option>
+        <option value="1.25">Fast</option>
+        <option value="1.5">Very Fast</option>
+      </select>
+    </div>
 
-    <!-- This toggles play/pause depending on state -->
-    <button type="button" id="rp-tts-toggle" class="rp-tts-btn rp-tts-btn-primary">▶️ Play</button>
+    <div class="rp-tts-buttons">
+      <button type="button" id="rp-tts-read-passage" class="rp-tts-btn">📖 Passage</button>
+      <button type="button" id="rp-tts-read-question" class="rp-tts-btn">❓ Question</button>
 
-    <button type="button" id="rp-tts-stop" class="rp-tts-btn">⏹ Stop</button>
+      <!-- This toggles play/pause depending on state -->
+      <button type="button" id="rp-tts-toggle" class="rp-tts-btn rp-tts-btn-primary">▶️ Play</button>
+
+      <button type="button" id="rp-tts-stop" class="rp-tts-btn">⏹ Stop</button>
+    </div>
   </div>
 </div>
 <footer class="app-footer">
-  © 2025 Maggie McDonald ☀️| Built for teachers, by a teacher.  <a href="/privacy.html" style="color: #84EBE6;">Privacy Policy</a>
+© <span id="current-year"></span> Maggie McDonald ☀️| Built for teachers, by a teacher. <a href="/privacy.html" style="color: #84EBE6;">Privacy Policy</a>
 </footer>
+<script>
+  document.getElementById("current-year").textContent = new Date().getFullYear();
+</script>
 </body>
 </html>
 

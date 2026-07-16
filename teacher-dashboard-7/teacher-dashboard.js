@@ -1,0 +1,4768 @@
+// teacher-dashboard.js
+// UI for viewing reading practice attempts by session / class,
+// with a left sidebar session-history panel and a CSV export
+// (one row per student × skill).
+
+// Keeps track of the *currently displayed* attempts for CSV export
+let CURRENT_ATTEMPTS = [];
+// Which student's data is being overlaid on the charts (if any)
+let CURRENT_STUDENT_FOR_CHARTS = null;
+
+// All attempts (owned + shared) hydrated for this teacher across sessions.
+// Used so the Student Detail progress chart can show growth over time.
+let ALL_VIEWER_ATTEMPTS = [];
+
+// ---- Live Monitor shared state ----
+let currentSessionCode = "";   // e.g. "MONDAY EVENING"
+let currentSetParam = "full";  // "full" or "mini1" or "mini2"
+let currentLevelParam = "on"; // "on" | "below" | "above"
+
+const READING_GRADE_LEVEL = "7";
+const DASHBOARD_BASE_PATH = "/teacher-dashboard-7";
+
+function addGradeParam(params) {
+  if (params && typeof params.set === "function") {
+    params.set("grade", READING_GRADE_LEVEL);
+    params.set("gradeLevel", READING_GRADE_LEVEL);
+  }
+  return params;
+}
+
+
+// ---------- HISTORY STORAGE KEY ----------
+const HISTORY_KEY = "rp7_teacherSessionHistory_v1";
+
+// ---------- DOM HOOKS ----------
+const sessionInput = document.getElementById("filter-session");
+const loadBtn = document.getElementById("load-attempts-btn");
+const loadStatusEl = document.getElementById("load-status");
+const sessionPill = document.getElementById("current-session-pill");
+const sessionDuplicateHelper = document.getElementById("session-duplicate-helper");
+const sessionDuplicateMessage = document.getElementById("session-duplicate-message");
+const sessionDuplicateSuggestions = document.getElementById("session-duplicate-suggestions");
+
+// New: starting sessions + link & copy
+const sessionLinkInput = document.getElementById("current-session-link");
+const copySessionLinkBtn = document.getElementById("copy-session-link-btn");
+const copyLinkStatusEl = document.getElementById("copy-link-status");
+const coTeacherLinkInput = document.getElementById("co-teacher-dashboard-link");
+const copyCoTeacherLinkBtn = document.getElementById("copy-co-teacher-link-btn");
+const copyCoTeacherStatusEl = document.getElementById("copy-co-teacher-status");
+
+// One CSV button
+const downloadCsvBtn = document.getElementById("download-csv");
+const monitorSessionBtn = document.getElementById("monitor-session-btn");
+
+// Benchmark controls
+const benchmarkSessionInput = document.getElementById("benchmark-session");
+const benchmarkSetSelect = document.getElementById("benchmark-set");
+const startBenchmarkBtn = document.getElementById("start-benchmark-btn");
+const monitorBenchmarkBtn = document.getElementById("monitor-benchmark-btn");
+
+// Filters / view summary / overlay
+const clearFiltersBtn = document.getElementById("clear-filters-btn");
+const clearStudentOverlayBtn = document.getElementById("clear-student-overlay-btn");
+const currentViewSummaryEl = document.getElementById("current-view-summary");
+
+// Export PDF
+const exportPdfBtn = document.getElementById("export-pdf-btn");
+
+// Session tags
+const mostMissedSkillEl = document.getElementById("summary-most-missed-skill");
+const mostMissedTypeEl = document.getElementById("summary-most-missed-type");
+
+// Student detail drawer
+const studentDetailPanel = document.getElementById("student-detail-panel");
+const studentDetailCloseBtn = document.getElementById("student-detail-close");
+const studentDetailNameEl = document.getElementById("student-detail-name");
+const studentDetailOverallEl = document.getElementById("student-detail-overall");
+const studentDetailAttemptsEl = document.getElementById("student-detail-attempts");
+const studentDetailNeedsWorkEl = document.getElementById("student-detail-needs-work");
+const studentDetailStrengthsEl = document.getElementById("student-detail-strengths");
+const studentDetailBenchmarkEl = document.getElementById("student-detail-benchmark");
+const summaryBenchmarkAccuracyEl = document.getElementById("summary-benchmark-accuracy");
+const summaryBenchmarkDetailsEl = document.getElementById("summary-benchmark-details");
+
+// Selected student's full attempt (question-by-question) panel
+const attemptQnPanel = document.querySelector(".student-attempt-detail-panel");
+const attemptQnSubtitleEl = document.getElementById("student-attempt-detail-subtitle");
+const attemptQnBodyEl = document.getElementById("student-attempt-detail");
+
+// Tracks the last loaded full attempt (future-friendly)
+let CURRENT_ATTEMPT_DETAIL = null;
+
+
+// Heat map
+const heatmapHeadEl = document.getElementById("skill-heatmap-head");
+const heatmapBodyEl = document.getElementById("skill-heatmap-body");
+
+// Summary DOM
+const totalAttemptsEl = document.getElementById("summary-total-attempts");
+const uniqueStudentsEl = document.getElementById("summary-unique-students");
+const summaryAccuracyEl = document.getElementById("summary-accuracy");
+const summaryCorrectTallyEl = document.getElementById("summary-correct-tally");
+const summaryAvgQuestionsEl = document.getElementById("summary-avg-questions");
+const summaryAvgCorrectEl = document.getElementById("summary-avg-correct");
+
+const attemptsSubtitleEl = document.getElementById("attempts-subtitle");
+const attemptsTableBody = document.getElementById("attempts-table-body");
+const skillsTableBody = document.getElementById("skills-table-body");
+
+let scoreBandsChart = null;
+let typeAccuracyChart = null;
+let skillAccuracyChart = null;
+let studentProgressChart = null;
+
+// Sidebar DOM
+const historySidebar = document.getElementById("history-sidebar");
+const historyToggleBtn = document.getElementById("history-sidebar-toggle");
+const historyListEl = document.getElementById("history-list");
+
+//  student search controls
+const studentSearchInput = document.getElementById("student-search-input");
+const studentSearchBtn = document.getElementById("student-search-btn");
+const studentSearchResultsEl = document.getElementById("student-search-results");
+
+// We'll use this to focus the student after loadAttempts() runs
+let PENDING_STUDENT_FOCUS_NAME = null;
+
+// history customization controls
+const historyRenameBtn = document.getElementById("history-rename-btn");
+const historyColorBtn = document.getElementById("history-color-btn");
+const historyDeleteBtn = document.getElementById("history-delete-btn");
+
+// Key format "SESSIONCODE"
+let CURRENT_HISTORY_KEY = null;
+
+// Expanded color cycle for session labels
+const HISTORY_COLOR_SEQUENCE = [
+  "",        // default / none
+  "teal",
+  "pink",
+  "gold",
+  "purple",
+  "blue",
+  "green",
+  "orange",
+  "red",
+  "indigo",
+  "mint",
+  "slate"
+];
+
+// Auth DOM
+const teacherSignInBtn = document.getElementById("teacher-signin-btn");
+const teacherSignOutBtn = document.getElementById("teacher-signout-btn");
+
+let teacherUser = null;
+
+// NEW: which teacher actually OWNS the data we’re viewing.
+// - For the main teacher: usually their own email.
+// - For co-teachers: comes from ?owner= in the dashboard link.
+let OWNER_EMAIL_FOR_VIEW = null;
+let OWNER_EMAIL_FROM_URL = false;
+
+// ✅ Session-scoped owner override (for co-teacher linked sessions)
+// If set, it applies ONLY to the currently loaded session/history item.
+let CURRENT_SESSION_OWNER_OVERRIDE = null;
+let _historyHydrateInFlight = null;
+let _historyHydrateEmail = "";
+
+// ---------- MODE TAB SWITCHING ----------
+const modeTabs = document.querySelectorAll(".mode-tab");
+const modePanels = document.querySelectorAll(".mode-panel");
+
+modeTabs.forEach((tab) => {
+  tab.addEventListener("click", () => {
+    const selectedMode = tab.dataset.mode;
+
+    modeTabs.forEach((btn) => {
+      const isActive = btn === tab;
+      btn.classList.toggle("active", isActive);
+      btn.setAttribute("aria-selected", isActive ? "true" : "false");
+    });
+
+    modePanels.forEach((panel) => {
+      const shouldShow =
+        (selectedMode === "practice" && panel.id === "practicePanel") ||
+        (selectedMode === "benchmark" && panel.id === "benchmarkPanel");
+
+      panel.classList.toggle("active", shouldShow);
+      panel.hidden = !shouldShow;
+    });
+  });
+});
+
+// ---------- BENCHMARK HELPERS ----------
+// Dropdown value -> benchmark JSON file
+const BENCHMARK_MAP = {
+  q4: "benchmarks/mgb_7th_grade_benchmark.json"
+};
+
+async function loadBenchmarkData(benchmarkKey) {
+  const filePath = BENCHMARK_MAP[benchmarkKey];
+
+  if (!filePath) {
+    throw new Error(`No benchmark file mapped for: ${benchmarkKey}`);
+  }
+
+  const res = await fetch(filePath, {
+    method: "GET",
+    headers: { Accept: "application/json" }
+  });
+
+  if (!res.ok) {
+    throw new Error(`Could not load benchmark file: ${filePath}`);
+  }
+
+  return await res.json();
+}
+
+async function startBenchmarkSession() {
+  const rawSession = (benchmarkSessionInput?.value || "").trim();
+  const benchmarkKey = benchmarkSetSelect?.value || "q4";
+
+  if (!rawSession) {
+    alert("Type a Benchmark Session name first, then click Start Benchmark.");
+    benchmarkSessionInput?.focus();
+    return;
+  }
+
+  const normalizedSession = normalizeSessionNameForComparison(rawSession);
+
+  try {
+    if (startBenchmarkBtn) {
+      startBenchmarkBtn.disabled = true;
+      startBenchmarkBtn.textContent = "Loading Benchmark…";
+    }
+
+    const benchmarkData = await loadBenchmarkData(benchmarkKey);
+
+    console.log("[Benchmark] Loaded benchmark:", benchmarkData);
+
+    if (loadStatusEl) {
+      loadStatusEl.textContent =
+        `Benchmark loaded: ${benchmarkData.title || "Benchmark"} (${normalizedSession}).`;
+    }
+
+    if (sessionPill) {
+      sessionPill.textContent = `Benchmark: ${normalizedSession}`;
+    }
+
+    // Keep this for the next wiring step.
+    window.CURRENT_BENCHMARK_SESSION = {
+      sessionCode: normalizedSession,
+      benchmarkKey,
+      benchmarkData
+    };
+
+    // Keep the dashboard's active state aligned with the Benchmark session.
+    // Without this, later Load Attempts / history behavior can still behave
+    // like the teacher is in the regular practice filters.
+    currentSessionCode = normalizedSession;
+    currentSetParam = "benchmark";
+    currentLevelParam = "benchmark";
+
+    if (sessionInput) sessionInput.value = normalizedSession;
+    if (benchmarkSessionInput) benchmarkSessionInput.value = normalizedSession;
+
+    try {
+      window.localStorage.setItem("rp7_lastSessionCode", normalizedSession);
+      window.localStorage.setItem("rp7_lastSet", "benchmark");
+      window.localStorage.setItem("rp7_lastLevel", "benchmark");
+
+      const ownerForBenchmark =
+        CURRENT_SESSION_OWNER_OVERRIDE ||
+        (teacherUser && teacherUser.email) ||
+        OWNER_EMAIL_FOR_VIEW ||
+        "";
+
+      if (ownerForBenchmark) {
+        window.localStorage.setItem(
+          "rp7_lastOwnerEmail",
+          String(ownerForBenchmark).trim().toLowerCase()
+        );
+      }
+    } catch (e) {
+      // non-fatal
+    }
+
+const studentLink = buildBenchmarkStudentLink(normalizedSession, benchmarkKey);
+const coTeacherLink = buildBenchmarkCoTeacherLink(normalizedSession, benchmarkKey);
+
+if (sessionLinkInput) {
+  sessionLinkInput.value = studentLink;
+}
+
+if (coTeacherLinkInput) {
+  coTeacherLinkInput.value = coTeacherLink;
+}
+
+if (copyLinkStatusEl) {
+  copyLinkStatusEl.textContent =
+    "Benchmark student link ready. Click Copy to share with students.";
+  copyLinkStatusEl.style.display = "inline";
+}
+
+if (copyCoTeacherStatusEl) {
+  copyCoTeacherStatusEl.textContent =
+    coTeacherLink
+      ? "Benchmark co-teacher dashboard link ready."
+      : "Sign in first to generate a co-teacher dashboard link.";
+  copyCoTeacherStatusEl.style.display = "inline";
+}
+
+enableBenchmarkMonitorButton(normalizedSession, benchmarkKey);
+
+alert("Benchmark links are ready. Copy the student link or co-teacher link as needed.");
+  } catch (err) {
+    console.error("[Benchmark] Error loading benchmark:", err);
+    alert("Could not load the benchmark JSON. Check the file name/path and try again.");
+
+    if (loadStatusEl) {
+      loadStatusEl.textContent =
+        "Could not load benchmark JSON. Check benchmarks/mgb_7th_grade_benchmark.json.";
+    }
+  } finally {
+    if (startBenchmarkBtn) {
+      startBenchmarkBtn.disabled = false;
+      startBenchmarkBtn.textContent = "🧪 Start Benchmark";
+    }
+  }
+}
+
+// ---------- UTILITIES ----------
+function normalizeSetParam(raw) {
+  const v = String(raw || "").toLowerCase().trim();
+  if (v === "mini") return "mini1"; // legacy support
+  if (v === "full" || v === "mini1" || v === "mini2" || v === "benchmark") return v;
+  return "full";
+}
+
+function getSelectedPracticeSet() {
+  const sel = document.getElementById("practice-set");
+  if (sel && sel.value) return normalizeSetParam(sel.value);
+  return normalizeSetParam(currentSetParam || "full");
+}
+
+// ---------- ATTEMPT DEDUPE HELPER (FIRST ATTEMPT PER STUDENT) ----------
+function getFirstAttemptsPerStudent(attempts) {
+  if (!Array.isArray(attempts) || !attempts.length) return [];
+
+  // Sort by timestamp so "first" is truly the earliest run
+  const sorted = attempts.slice().sort((a, b) => {
+    const aTime =
+      a.finishedAt || a.startedAt || a.createdAt || a.completedAt || "";
+    const bTime =
+      b.finishedAt || b.startedAt || b.createdAt || b.completedAt || "";
+
+    if (aTime && bTime) {
+      if (aTime < bTime) return -1;
+      if (aTime > bTime) return 1;
+    }
+    return 0;
+  });
+
+  const perStudent = new Map();
+  const noKeyAttempts = [];
+
+  for (const a of sorted) {
+    const rawId = (a.studentId || "").toString().trim();
+    const rawName = (a.studentName || "").trim();
+    const key = (rawId || rawName).toLowerCase();
+
+    if (!key) {
+      // No reliable identity → include it, but don't dedupe
+      noKeyAttempts.push(a);
+      continue;
+    }
+
+    // Only keep the FIRST attempt we see for this student
+    if (!perStudent.has(key)) {
+      perStudent.set(key, a);
+    }
+  }
+
+  // Students we can identify (deduped) + anonymous attempts (all kept)
+  return [...perStudent.values(), ...noKeyAttempts];
+}
+
+function formatPercent(numerator, denominator) {
+  if (!denominator || denominator === 0) return "0%";
+  const pct = Math.round((numerator / denominator) * 100);
+  return `${pct}%`;
+}
+
+function isBenchmarkAttempt(attempt) {
+  if (!attempt) return false;
+
+  const set = String(attempt.practiceSet || attempt.set || "").toLowerCase().trim();
+  const level = String(attempt.practiceLevel || attempt.level || "").toLowerCase().trim();
+  const type = String(attempt.assessmentType || "").toLowerCase().trim();
+
+  return set === "benchmark" || level === "benchmark" || type === "benchmark";
+}
+
+function getAttemptTotals(attempt) {
+  if (!attempt) return { correct: 0, total: 0 };
+
+  let correct = Number(attempt.numCorrect || 0);
+  let total = Number(attempt.totalQuestions || attempt.answeredCount || 0);
+
+  if ((!total || !correct) && attempt.bySkill && typeof attempt.bySkill === "object") {
+    let derivedCorrect = 0;
+    let derivedTotal = 0;
+
+    Object.values(attempt.bySkill).forEach((stats) => {
+      if (!stats) return;
+      derivedCorrect += Number(stats.correct || 0);
+      derivedTotal += Number(stats.total || 0);
+    });
+
+    if (!total && derivedTotal) total = derivedTotal;
+    if (!correct && derivedCorrect) correct = derivedCorrect;
+  }
+
+  return { correct, total };
+}
+
+function summarizeAttempts(attempts) {
+  return (attempts || []).reduce(
+    (acc, attempt) => {
+      const totals = getAttemptTotals(attempt);
+      acc.correct += totals.correct;
+      acc.total += totals.total;
+      acc.count += 1;
+      return acc;
+    },
+    { correct: 0, total: 0, count: 0 }
+  );
+}
+
+function formatDate(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  });
+}
+
+function switchDashboardTab(tabName) {
+  const selectedMode = tabName === "benchmark" ? "benchmark" : "practice";
+
+  modeTabs.forEach((tab) => {
+    const isActive = tab.dataset.mode === selectedMode;
+    tab.classList.toggle("active", isActive);
+    tab.setAttribute("aria-selected", isActive ? "true" : "false");
+  });
+
+  modePanels.forEach((panel) => {
+    const shouldShow =
+      (selectedMode === "practice" && panel.id === "practicePanel") ||
+      (selectedMode === "benchmark" && panel.id === "benchmarkPanel");
+
+    panel.classList.toggle("active", shouldShow);
+    panel.hidden = !shouldShow;
+  });
+}
+
+// ---------- ATTEMPT STATUS HELPERS ----------
+
+// Status label: Completed vs In Progress
+function formatAttemptStatus(attempt) {
+  const total = Number(
+    attempt.totalQuestions ??
+    attempt.numQuestions ??
+    0
+  );
+
+  const answered = Number(
+    attempt.answeredCount != null
+      ? attempt.answeredCount
+      : 0
+  );
+
+  // Nothing answered
+  if (!answered) {
+    return "Not Started";
+  }
+
+  // Completed if explicitly marked OR all questions answered
+  if (
+    attempt.isComplete ||
+    (total > 0 && answered >= total)
+  ) {
+    return "Completed";
+  }
+
+  // Otherwise they started but didn't finish
+  if (total > 0 && answered < total) {
+    return "In Progress";
+  }
+
+  // Safe fallback
+  return "In Progress";
+}
+
+// Answered label: "X of Y" + hint if partial
+function formatAnsweredLabel(attempt) {
+  const total = Number(
+    attempt.totalQuestions ??
+    attempt.answeredCount ??
+    0
+  );
+
+  const answered = Number(
+    attempt.answeredCount != null
+      ? attempt.answeredCount
+      : (attempt.totalQuestions ?? 0)
+  );
+
+  if (!total && !answered) return "—";
+
+  if (total > 0) {
+    if (answered < total) {
+      return `${answered} of ${total} (partial)`;
+    }
+    return `${answered} of ${total}`;
+  }
+
+  // Older data that only had answeredCount
+  return `${answered} answered`;
+}
+
+function updateViewSummary() {
+
+  if (!currentViewSummaryEl) return;
+
+  const sessionCodeRaw = sessionInput.value.trim();
+
+  const sessionPart = sessionCodeRaw
+    ? `Session: ${sessionCodeRaw}`
+    : "Session: all sessions";
+
+  let studentPart;
+  if (CURRENT_STUDENT_FOR_CHARTS) {
+    studentPart = `Student overlay: ${CURRENT_STUDENT_FOR_CHARTS}`;
+  } else {
+    studentPart = "Student overlay: none (click a row to compare)";
+  }
+
+  currentViewSummaryEl.textContent = `${sessionPart} · ${studentPart}`;
+}
+
+
+function accuracyTagClass(pct) {
+  if (pct < 40) return "tag tag-low";
+  if (pct < 70) return "tag tag-mid";
+  return "tag";
+}
+// ---------- attempt helpers (Q-by-Q panel on main dashboard) ----------
+function clearAttemptQnPanel() {
+  if (!attemptQnBodyEl || !attemptQnSubtitleEl) return;
+
+  attemptQnBodyEl.innerHTML = `
+    <p class="muted small">
+      Click a row in the Student Attempts table to see their answers
+      and the correct answers.
+    </p>
+  `;
+  attemptQnSubtitleEl.textContent =
+    "Click a row in the Student Attempts table to see their answers and the correct answers.";
+
+  CURRENT_ATTEMPT_DETAIL = null;
+}
+
+function clearSelectedStudentContext() {
+  CURRENT_STUDENT_FOR_CHARTS = null;
+  PENDING_STUDENT_FOCUS_NAME = null;
+  CURRENT_ATTEMPT_DETAIL = null;
+
+  if (typeof clearAttemptQnPanel === "function") {
+    clearAttemptQnPanel();
+  }
+
+  if (typeof renderStudentDetailPanel === "function") {
+    renderStudentDetailPanel(null, [], {});
+  }
+
+  document.querySelectorAll(".is-selected-student").forEach((row) => {
+    row.classList.remove("is-selected-student");
+  });
+
+  if (typeof updateCurrentViewSummary === "function") {
+    updateCurrentViewSummary();
+  } else if (typeof updateViewSummary === "function") {
+    updateViewSummary();
+  }
+}
+
+// Clear the Q-by-Q attempt panel (button in the "Selected student’s full attempt" panel)
+(function wireAttemptDetailClear() {
+  const btn = document.getElementById("clear-student-detail-btn");
+  if (!btn) return;
+
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    clearSelectedStudentContext();
+  });
+})();
+
+
+async function loadAttemptQnPanel(attemptSummary) {
+  if (!attemptQnBodyEl) return;
+
+  if (!attemptSummary || !attemptSummary.attemptId) {
+    clearAttemptQnPanel();
+    return;
+  }
+
+  // Temporary loading state
+  attemptQnBodyEl.innerHTML = `
+    <p class="muted small">Loading full attempt…</p>
+  `;
+
+  try {
+    const params = new URLSearchParams();
+    params.set("attemptId", attemptSummary.attemptId);
+    addGradeParam(params);
+// ✅ Use session-scoped owner override ONLY when present.
+// This prevents a co-teacher link from changing the whole dashboard context.
+const ownerEmail = (CURRENT_SESSION_OWNER_OVERRIDE || OWNER_EMAIL_FOR_VIEW || "").trim().toLowerCase();
+const isOverrideOwner =
+  !!ownerEmail && (!teacherUser || teacherUser.email !== ownerEmail);
+
+if (isOverrideOwner) {
+  params.set("ownerEmail", ownerEmail);
+} else if (teacherUser && teacherUser.email) {
+  params.set("viewerEmail", teacherUser.email);
+} else if (ownerEmail) {
+  params.set("ownerEmail", ownerEmail);
+}
+    const res = await fetch(
+      `/.netlify/functions/getReadingAttemptDetail?${params.toString()}`,
+      {
+        method: "GET",
+        headers: { Accept: "application/json" }
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error(`Server error: ${res.status}`);
+    }
+
+    const json = await res.json();
+    if (!json || !json.success || !json.attempt) {
+      throw new Error("No attempt detail returned from server");
+    }
+
+    CURRENT_ATTEMPT_DETAIL = json.attempt;
+    renderAttemptQnPanel(json.attempt);
+  } catch (err) {
+    console.error("[Dashboard] Error loading attempt detail:", err);
+    attemptQnBodyEl.innerHTML = `
+      <p class="muted small">
+        Sorry, we couldn’t load this attempt’s question-by-question view. Please try again.
+      </p>
+    `;
+  }
+}
+
+function createStandardBlock(standards = [], uniqueSuffix = "") {
+  if (!standards.length) return "";
+
+  return standards.map((std, index) => {
+    const rawLabel = String(std || "").trim();
+    if (!rawLabel) return "";
+
+    const desc = window.RP_STANDARDS_CATALOG?.getOfficialText?.(rawLabel) || "";
+    const safeId = `std-${rawLabel.replace(/[^a-zA-Z0-9_-]/g, "-")}-${uniqueSuffix}-${index}`;
+
+    // Practice attempts may store skill tags like "plot-structure" or "dok3".
+    // Only show the View Standard button when we have a real official standard description.
+    if (!desc) {
+      return `
+        <div class="standard-block skill-tag-only">
+          <div class="standard-header">
+            <span class="tag">${rawLabel}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="standard-block">
+        <div class="standard-header">
+          <span class="tag">${rawLabel}</span>
+          <button class="standard-toggle-btn" type="button" data-target="${safeId}">
+            View Standard
+          </button>
+        </div>
+        <div class="standard-description hidden" id="${safeId}">
+          ${desc}
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderAttemptQnPanel(attempt) {
+  if (!attemptQnBodyEl) return;
+
+  const questions = Array.isArray(attempt.questions) ? attempt.questions : [];
+
+  if (!questions.length) {
+    attemptQnBodyEl.innerHTML = `
+      <p class="muted small">
+        No question-level data was logged for this attempt yet.
+      </p>
+    `;
+    if (attemptQnSubtitleEl) {
+      attemptQnSubtitleEl.textContent =
+        "No question-level data was logged for this attempt yet.";
+    }
+    return;
+  }
+
+  const name = (attempt.studentName || "").trim() || "this student";
+  const totalQ = Number(
+    attempt.totalQuestions ||
+    attempt.answeredCount ||
+    questions.length
+  );
+  const numCorrect =
+    typeof attempt.numCorrect === "number"
+      ? attempt.numCorrect
+      : questions.filter((q) => q.isCorrect).length;
+  const pct = totalQ ? Math.round((numCorrect / totalQ) * 100) : null;
+
+  if (attemptQnSubtitleEl) {
+    attemptQnSubtitleEl.textContent =
+      pct != null
+        ? `${name} – ${numCorrect} of ${totalQ} correct (${pct}%).`
+        : `${name}'s answers for this attempt.`;
+  }
+
+  attemptQnBodyEl.innerHTML = "";
+
+  questions
+    .slice()
+    .sort((a, b) => {
+      const aNum = a.questionNumber ?? a.questionId ?? 0;
+      const bNum = b.questionNumber ?? b.questionId ?? 0;
+      return aNum - bNum;
+    })
+    .forEach((q) => {
+      const card = document.createElement("section");
+      card.className = "attempt-question-card";
+
+      if (q.isCorrect === true) {
+        card.classList.add("is-correct");
+      } else if (q.isCorrect === false) {
+        card.classList.add("is-incorrect");
+      }
+
+      // Header – Q#, type, primary skill, passage
+      const header = document.createElement("div");
+      header.className = "attempt-question-header";
+
+      const numSpan = document.createElement("span");
+      numSpan.className = "attempt-q-number";
+      const qNum = q.questionNumber || q.questionId;
+      numSpan.textContent = qNum ? `Q${qNum}` : "Question";
+
+      const metaSpan = document.createElement("span");
+      metaSpan.className = "attempt-q-meta";
+
+      const typeLabel = q.typeLabel || q.type || "";
+      const primarySkill =
+        q.skillTagPrimary ||
+        (Array.isArray(q.skills) && q.skills[0]) ||
+        "";
+      const metaParts = [];
+
+      if (typeLabel) metaParts.push(typeLabel);
+      if (primarySkill) metaParts.push(primarySkill);
+      if (q.linkedPassage) metaParts.push(`Passage ${q.linkedPassage}`);
+
+      metaSpan.textContent = metaParts.join(" · ");
+
+      header.appendChild(numSpan);
+      header.appendChild(metaSpan);
+
+      // Question text
+      const stemP = document.createElement("p");
+      stemP.className = "attempt-q-stem";
+      stemP.textContent =
+        q.questionText || "Question text not available for this attempt.";
+
+      // Student answer
+      const studentP = document.createElement("p");
+      studentP.className = "attempt-q-student-answer";
+      const studentLabel =
+        q.studentAnswerText || "No answer recorded for this question.";
+      studentP.innerHTML =
+        `<strong>Student answer:</strong> ${studentLabel}`;
+
+      // Correct answer
+      const correctP = document.createElement("p");
+      correctP.className = "attempt-q-correct-answer";
+      const correctLabel =
+        q.correctAnswerText ||
+        (q.isCorrect
+          ? "Student’s answer was correct."
+          : "Correct answer not recorded.");
+      correctP.innerHTML =
+        `<strong>Correct answer:</strong> ${correctLabel}`;
+
+        card.appendChild(header);
+
+        const standardWrap = document.createElement("div");
+        standardWrap.className = "attempt-q-standards";
+        standardWrap.innerHTML = createStandardBlock(
+          q.standards || q.skills || [],
+          q.questionNumber || q.questionId || qNum || "unknown"
+        );
+        card.appendChild(standardWrap);
+
+        card.appendChild(stemP);
+        card.appendChild(studentP);
+        card.appendChild(correctP);
+
+      attemptQnBodyEl.appendChild(card);
+    });
+}
+
+
+// ---------- DASHBOARD PREFERENCES ----------
+const DASHBOARD_PREFS_KEY = "readingDashboardPrefs_g7_v1";
+
+function saveDashboardPrefs() {
+  try {
+    const prefs = {
+      filterSession: sessionInput.value.trim(),
+    };
+    localStorage.setItem(DASHBOARD_PREFS_KEY, JSON.stringify(prefs));
+  } catch (e) {
+    console.warn("[Dashboard] Could not save prefs:", e);
+  }
+}
+
+function loadDashboardPrefs() {
+  try {
+    const raw = localStorage.getItem(DASHBOARD_PREFS_KEY);
+    if (!raw) return;
+    const prefs = JSON.parse(raw);
+    if (prefs.filterSession && !sessionInput.value) {
+      sessionInput.value = prefs.filterSession;
+    }
+  } catch (e) {
+    console.warn("[Dashboard] Could not load prefs:", e);
+  }
+}
+(function wirePracticeLevelSelector() {
+  const levelSelect = document.getElementById("practice-level");
+  if (!levelSelect) return;
+
+  // restore last choice
+  try {
+    const last = window.localStorage.getItem("rp7_lastLevel");
+    if (last && ["on", "below", "above"].includes(last)) {
+      levelSelect.value = last;
+      currentLevelParam = last;
+    }
+  } catch (e) {}
+
+  const refreshOutputs = () => {
+    const session = (sessionInput?.value || "").trim();
+    if (!session) return;
+
+    if (sessionLinkInput) sessionLinkInput.value = buildStudentLink(session);
+    if (coTeacherLinkInput) coTeacherLinkInput.value = buildCoTeacherLink(session);
+
+enableMonitorButton(session);
+if (typeof updateCurrentViewSummary === "function") updateCurrentViewSummary();
+
+  };
+
+  levelSelect.addEventListener("change", () => {
+    currentLevelParam = levelSelect.value || "on";
+    try {
+      window.localStorage.setItem("rp7_lastLevel", currentLevelParam);
+    } catch (e) {}
+    refreshOutputs();
+  });
+})();
+
+// --- Practice set selector should update links + monitor immediately ---
+(function wirePracticeSetSelector() {
+  const setSelect = document.getElementById("practice-set");
+  if (!setSelect) return;
+
+  const persist = () => {
+    try {
+      // store stable values: full | mini1 | mini2
+      window.localStorage.setItem("rp7_lastSet", normalizeSetParam(setSelect.value));
+    } catch (e) {}
+  };
+
+  const refreshOutputs = () => {
+    const session = (sessionInput?.value || "").trim();
+
+    if (session) {
+      const studentLink = buildStudentLink(session);
+      if (sessionLinkInput) sessionLinkInput.value = studentLink;
+
+      const coLink = buildCoTeacherLink(session);
+      if (coTeacherLinkInput) coTeacherLinkInput.value = coLink;
+    }
+
+    enableMonitorButton(session);
+    if (typeof updateCurrentViewSummary === "function") updateCurrentViewSummary();
+  };
+
+  setSelect.addEventListener("change", () => {
+    // keep shared state consistent (if you use it elsewhere)
+    currentSetParam = normalizeSetParam(setSelect.value);
+
+    persist();
+    refreshOutputs();
+  });
+
+  // restore on load (if present) — supports legacy "mini" too
+  try {
+    const last = normalizeSetParam(window.localStorage.getItem("rp7_lastSet"));
+    setSelect.value = last;
+    currentSetParam = last;
+  } catch (e) {}
+})();
+
+
+// CSV helpers
+function csvEscape(value) {
+  if (value === null || value === undefined) return "";
+  const str = String(value);
+  if (/[",\n]/.test(str)) {
+    return '"' + str.replace(/"/g, '""') + '"';
+  }
+  return str;
+}
+
+function downloadCSV(filename, rows) {
+  const csvContent = rows.map(row => row.map(csvEscape).join(",")).join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+}
+
+// ---------- HISTORY STORAGE HELPERS ----------
+function loadHistoryFromStorage() {
+  try {
+    const raw = window.localStorage.getItem(HISTORY_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    console.warn("[Dashboard] Could not parse session history:", e);
+    return [];
+  }
+}
+
+function saveHistoryToStorage(history) {
+  try {
+    window.localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  } catch (e) {
+    console.warn("[Dashboard] Could not save session history:", e);
+  }
+}
+
+function getActiveViewerEmail() {
+  return String((teacherUser && teacherUser.email) || "").trim().toLowerCase();
+}
+
+function filterHistoryForViewer(history, viewerEmail = getActiveViewerEmail()) {
+  const email = String(viewerEmail || "").trim().toLowerCase();
+
+  if (!Array.isArray(history)) return [];
+
+  // If no teacher is signed in yet, do not show locally cached history.
+  // This prevents shared-computer leakage between teachers.
+  if (!email) return [];
+
+  return history.filter((entry) => {
+    const owner = String(entry?.ownerEmail || "").trim().toLowerCase();
+
+    // Old entries without ownerEmail are hidden for safety.
+    // Server hydration will rebuild valid entries for the signed-in teacher.
+    if (!owner) return false;
+
+    return owner === email;
+  });
+}
+
+function clearDashboardForSignedOut() {
+  CURRENT_SESSION_OWNER_OVERRIDE = null;
+  OWNER_EMAIL_FOR_VIEW = OWNER_EMAIL_FROM_URL ? OWNER_EMAIL_FOR_VIEW : null;
+  ALL_VIEWER_ATTEMPTS = [];
+  CURRENT_ATTEMPTS = [];
+  CURRENT_STUDENT_FOR_CHARTS = null;
+  CURRENT_HISTORY_KEY = null;
+
+  if (sessionInput) sessionInput.value = "";
+  if (benchmarkSessionInput) benchmarkSessionInput.value = "";
+  if (sessionPill) sessionPill.textContent = "Session: all sessions";
+  if (sessionLinkInput) sessionLinkInput.value = "";
+  if (coTeacherLinkInput) coTeacherLinkInput.value = "";
+  if (loadStatusEl) loadStatusEl.textContent = "Sign in to load your sessions.";
+
+  try {
+    window.localStorage.removeItem("rp7_lastSessionCode");
+    window.localStorage.removeItem("rp7_lastSessionLink");
+    window.localStorage.removeItem("rp7_lastCoTeacherLink");
+    window.localStorage.removeItem("rp7_lastOwnerEmail");
+  } catch (e) {}
+
+  renderDashboard([]);
+  renderSessionHistory([]);
+  clearAttemptQnPanel();
+}
+// Helper for consistent keys
+function getHistoryKey(sessionCode, practiceSet = "", practiceLevel = "", ownerEmail = "") {
+  return [
+    (sessionCode || "").trim(),
+    normalizeSetParam(practiceSet || ""),
+    String(practiceLevel || "").trim().toLowerCase(),
+    String(ownerEmail || "").trim().toLowerCase()
+  ].join("__");
+}
+
+const HISTORY_DELETED_KEY = "rp7_teacherSessionHistoryDeleted_v1";
+
+function loadDeletedHistoryKeys() {
+  try {
+    const raw = window.localStorage.getItem(HISTORY_DELETED_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveDeletedHistoryKeys(keys) {
+  try {
+    window.localStorage.setItem(HISTORY_DELETED_KEY, JSON.stringify(keys));
+  } catch (e) {
+    // non-fatal
+  }
+}
+
+function normalizeSessionNameForComparison(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toUpperCase();
+}
+
+function getSessionDateSuffix() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getExistingNormalizedSessionNames() {
+  const history = filterHistoryForViewer(loadHistoryFromStorage() || []);
+  const existing = new Set();
+
+  history.forEach((entry) => {
+    const normalized = normalizeSessionNameForComparison(entry?.sessionCode || "");
+    if (normalized) existing.add(normalized);
+  });
+
+  return existing;
+}
+
+function generateUniqueSessionSuggestions(baseSessionName, count = 3) {
+  const normalizedBase = normalizeSessionNameForComparison(baseSessionName);
+  if (!normalizedBase) return [];
+
+  const existing = getExistingNormalizedSessionNames();
+  const dateSuffix = getSessionDateSuffix();
+  const suggestions = [];
+
+  let nextNumber = 1;
+  while (suggestions.length < count) {
+    const candidate =
+      nextNumber === 1
+        ? `${normalizedBase} - ${dateSuffix}`
+        : `${normalizedBase} - ${dateSuffix} - ${nextNumber}`;
+
+    if (!existing.has(candidate)) {
+      suggestions.push(candidate);
+      existing.add(candidate);
+    }
+
+    nextNumber += 1;
+  }
+
+  return suggestions;
+}
+
+function clearDuplicateSessionUI() {
+  if (sessionDuplicateHelper) sessionDuplicateHelper.hidden = true;
+  if (sessionDuplicateMessage) sessionDuplicateMessage.textContent = "";
+  if (sessionDuplicateSuggestions) sessionDuplicateSuggestions.innerHTML = "";
+}
+
+function showDuplicateSessionUI(rawSessionName) {
+  if (!sessionDuplicateHelper || !sessionDuplicateMessage || !sessionDuplicateSuggestions) {
+    return;
+  }
+
+  const suggestions = generateUniqueSessionSuggestions(rawSessionName, 3);
+
+  sessionDuplicateMessage.innerHTML = `
+    ⚠️ That session name already exists.<br>
+    Choose a unique option below, or edit the name manually.
+    After selecting a new name, click <strong>Start New Session</strong> again.
+  `;
+
+  sessionDuplicateSuggestions.innerHTML = "";
+
+  suggestions.forEach((suggestion) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "session-suggestion-chip";
+    btn.textContent = suggestion;
+
+    btn.addEventListener("click", () => {
+      sessionInput.value = suggestion;
+      sessionInput.focus();
+      sessionInput.setSelectionRange(sessionInput.value.length, sessionInput.value.length);
+
+      if (sessionDuplicateMessage) {
+        sessionDuplicateMessage.innerHTML =
+          `✔ Session name updated to <strong>${suggestion}</strong>.<br>` +
+          `Now click <strong>Start New Session</strong> to begin.`;
+      }
+
+      if (sessionDuplicateSuggestions) {
+        sessionDuplicateSuggestions.innerHTML = "";
+      }
+
+      if (typeof saveDashboardPrefs === "function") {
+        saveDashboardPrefs();
+      }
+    });
+
+    sessionDuplicateSuggestions.appendChild(btn);
+  });
+
+  sessionDuplicateHelper.hidden = false;
+}
+
+function isDuplicateSessionName(rawSessionName) {
+  const normalized = normalizeSessionNameForComparison(rawSessionName);
+  if (!normalized) return false;
+
+  const existing = getExistingNormalizedSessionNames();
+  return existing.has(normalized);
+}
+function updateHistoryActionButtonsState() {
+  const disabled = !CURRENT_HISTORY_KEY;
+  if (historyRenameBtn) historyRenameBtn.disabled = disabled;
+  if (historyColorBtn) historyColorBtn.disabled = disabled;
+  if (historyDeleteBtn) historyDeleteBtn.disabled = disabled;
+}
+
+
+/**
+ * Update history based on the latest loaded attempts.
+ */
+function updateSessionHistory(sessionCodeRaw, attempts) {
+  if (!sessionCodeRaw) return;
+
+  const sessionCode = sessionCodeRaw.trim();
+  const nowIso = new Date().toISOString();
+
+  const history = loadHistoryFromStorage() || [];
+
+const isBenchmarkSession =
+  Array.isArray(attempts) && attempts.some(isBenchmarkAttempt);
+
+const selectedSet = isBenchmarkSession ? "benchmark" : getSelectedPracticeSet();
+const selectedLevel = isBenchmarkSession ? "benchmark" : currentLevelParam || "on";
+
+  const selectedOwnerEmail = (() => {
+    let owner =
+      CURRENT_SESSION_OWNER_OVERRIDE ||
+      (teacherUser && teacherUser.email) ||
+      OWNER_EMAIL_FOR_VIEW ||
+      "";
+
+    if (!owner) {
+      try {
+        owner = window.localStorage.getItem("rp7_lastOwnerEmail") || "";
+      } catch (e) {}
+    }
+
+    return String(owner || "").trim().toLowerCase();
+  })();
+
+  // if this session was previously deleted, clear its tombstone
+  const historyKey = getHistoryKey(
+    sessionCode,
+    selectedSet,
+    selectedLevel,
+    selectedOwnerEmail
+  );
+  let deletedKeys = loadDeletedHistoryKeys();
+  if (deletedKeys.includes(historyKey)) {
+    deletedKeys = deletedKeys.filter((k) => k !== historyKey);
+    saveDeletedHistoryKeys(deletedKeys);
+  }
+
+  // ---------- DEDUPE ATTEMPTS BY STUDENT (FIRST ATTEMPT ONLY) ----------
+  let dedupedAttempts = [];
+
+  if (Array.isArray(attempts) && attempts.length > 0) {
+    const perStudent = new Map();
+    const noKeyAttempts = [];
+
+    for (const a of attempts) {
+      const rawId = (a.studentId || "").toString().trim();
+      const rawName = (a.studentName || "").trim();
+
+      // Build a stable key: prefer id, fallback to name
+      const studentKey = (rawId || rawName).toLowerCase();
+
+      if (!studentKey) {
+        // No reliable identity → include, but don't dedupe
+        noKeyAttempts.push(a);
+        continue;
+      }
+
+      // Only keep the FIRST attempt we see for this student
+      if (!perStudent.has(studentKey)) {
+        perStudent.set(studentKey, a);
+      }
+    }
+
+    dedupedAttempts = [...perStudent.values(), ...noKeyAttempts];
+  }
+
+  // ---------- AGGREGATE STATS FROM DEDUPED ATTEMPTS ----------
+  let attemptsCount = 0;
+  let totalQuestions = 0;
+  let totalCorrect = 0;
+  const uniqueStudentNames = new Set();
+
+  if (dedupedAttempts.length > 0) {
+    attemptsCount = dedupedAttempts.length;
+
+    dedupedAttempts.forEach((a) => {
+      // Use totalQuestions if present; otherwise fall back to answeredCount
+      const questionsForThisAttempt =
+        Number(a.totalQuestions || a.answeredCount || 0);
+      const correctForThisAttempt = Number(a.numCorrect || 0);
+
+      totalQuestions += questionsForThisAttempt;
+      totalCorrect += correctForThisAttempt;
+
+      if (a.studentName) {
+        uniqueStudentNames.add(String(a.studentName).trim());
+      }
+    });
+  }
+
+  const uniqueStudentsCount = uniqueStudentNames.size || attemptsCount;
+
+  // ---------- MERGE INTO HISTORY ----------
+  const idx = history.findIndex((entry) =>
+    getHistoryKey(
+      entry.sessionCode,
+      entry.practiceSet,
+      entry.practiceLevel,
+      entry.ownerEmail
+    ) === historyKey
+  );
+
+  const entry = {
+    sessionCode,
+    lastLoadedAt: nowIso,
+    attemptsCount,
+    totalQuestions,
+    totalCorrect,
+    uniqueStudentsCount,
+    practiceSet: selectedSet,     // full | mini1 | mini2 | benchmark
+    practiceLevel: selectedLevel, // below | on | above | benchmark
+    // Persist ownerEmail so history restores correct links later (owner OR co-teacher)
+    ownerEmail: selectedOwnerEmail || null
+  };
+
+  if (idx >= 0) {
+    history[idx] = { ...history[idx], ...entry };
+  } else {
+    history.push(entry);
+  }
+
+  saveHistoryToStorage(history);
+  renderSessionHistory(history);
+}
+
+
+// ---------- SERVER-HYDRATED SESSION HISTORY (owned + shared) ----------
+
+async function fetchAttemptSummaryPagesForScope(options = {}) {
+  const viewerEmail = String(options.viewerEmail || "").trim().toLowerCase();
+  const ownerEmail = String(options.ownerEmail || "").trim().toLowerCase();
+
+  const params = new URLSearchParams();
+  addGradeParam(params);
+
+  if (viewerEmail) {
+    params.set("viewerEmail", viewerEmail);
+  } else if (ownerEmail) {
+    params.set("ownerEmail", ownerEmail);
+  }
+
+  const res = await fetch(
+    `/.netlify/functions/getReadingAttempts?${params.toString()}`,
+    {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    }
+  );
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`History/search fetch failed: ${res.status} ${text}`);
+  }
+
+  const payload = await res.json().catch(() => ({}));
+  return Array.isArray(payload.attempts) ? payload.attempts : [];
+}
+
+async function hydrateSessionHistoryFromServer(viewerEmail) {
+  if (typeof fetch === "undefined") return;
+
+  const email = String(viewerEmail || "").trim().toLowerCase();
+  if (!email) return;
+
+  // ✅ Prevent duplicate hydrates (auth restore + sign-in can fire twice)
+  if (_historyHydrateInFlight && _historyHydrateEmail === email) {
+    return _historyHydrateInFlight;
+  }
+  _historyHydrateEmail = email;
+
+  _historyHydrateInFlight = (async () => {
+    try {
+const attempts = await fetchAttemptSummaryPagesForScope({
+  viewerEmail: email,
+});
+
+// Cache summary attempts for cross-session student progress graphs.
+// Full Q-by-Q details still load only when a teacher clicks a row.
+ALL_VIEWER_ATTEMPTS = attempts;
+
+console.log("[Dashboard] Hydrated session-history attempts:", {
+  total: attempts.length,
+  benchmark: attempts.filter(isBenchmarkAttempt).length,
+  practice: attempts.filter((a) => !isBenchmarkAttempt(a)).length,
+  sessions: [...new Set(attempts.map((a) => a.sessionCode).filter(Boolean))],
+  sample: attempts.slice(0, 3)
+});
+
+      if (!attempts.length) {
+        // Nothing to hydrate from server.
+        // Only show local history that belongs to the signed-in viewer.
+        const existing = filterHistoryForViewer(loadHistoryFromStorage(), email);
+        renderSessionHistory(existing);
+        return;
+      }
+// Group attempts by session + set + level + owner
+const grouped = new Map();
+
+attempts.forEach((a) => {
+  const sessionCode = (a.sessionCode || "").trim();
+  if (!sessionCode) return;
+
+  const isBenchmark = isBenchmarkAttempt(a);
+
+  const practiceSet = isBenchmark
+    ? "benchmark"
+    : normalizeSetParam(a.practiceSet || a.set || a.setType || "full");
+
+  const practiceLevel = isBenchmark
+    ? "benchmark"
+    : String(a.practiceLevel || a.level || a.levelBand || "on").toLowerCase();
+
+  const ownerEmail = String(a.ownerEmail || email || "").trim().toLowerCase();
+
+  const key = getHistoryKey(sessionCode, practiceSet, practiceLevel, ownerEmail);
+
+  if (!grouped.has(key)) {
+    grouped.set(key, {
+      sessionCode,
+      practiceSet,
+      practiceLevel,
+      ownerEmail,
+      lastLoadedAt: null,
+      rawAttempts: [],
+    });
+  }
+
+  const entry = grouped.get(key);
+  entry.rawAttempts.push(a);
+
+  const t = a.finishedAt || a.startedAt;
+  if (t && (!entry.lastLoadedAt || t > entry.lastLoadedAt)) {
+    entry.lastLoadedAt = t;
+  }
+});
+
+      // Dedupe by student (per session ) and aggregate stats
+      const serverHistory = Array.from(grouped.values()).map((entry) => {
+        const perStudent = new Map();
+        const noKeyAttempts = [];
+
+        entry.rawAttempts.forEach((a) => {
+          const rawId = (a.studentId || "").toString().trim();
+          const rawName = (a.studentName || "").trim();
+          const key = (rawId || rawName).toLowerCase();
+
+          if (!key) {
+            // No reliable identity → include, but don't dedupe
+            noKeyAttempts.push(a);
+            return;
+          }
+
+          const existing = perStudent.get(key);
+          if (!existing) {
+            perStudent.set(key, a);
+          } else {
+            // Prefer the attempt with the most questions answered/completed
+            const prevAnswered = Number(
+              existing.answeredCount || existing.totalQuestions || 0
+            );
+            const currAnswered = Number(
+              a.answeredCount || a.totalQuestions || 0
+            );
+
+            if (currAnswered >= prevAnswered) {
+              perStudent.set(key, a);
+            }
+          }
+        });
+
+        const dedupedAttempts = [...perStudent.values(), ...noKeyAttempts];
+
+        let attemptsCount = 0;
+        let totalQuestions = 0;
+        let totalCorrect = 0;
+        const uniqueStudentNames = new Set();
+
+        if (dedupedAttempts.length > 0) {
+          attemptsCount = dedupedAttempts.length;
+
+          dedupedAttempts.forEach((a) => {
+            // Use totalQuestions if present; otherwise fall back to answeredCount
+            const questionsForThisAttempt = Number(
+              a.totalQuestions || a.answeredCount || 0
+            );
+            const correctForThisAttempt = Number(a.numCorrect || 0);
+
+            totalQuestions += questionsForThisAttempt;
+            totalCorrect += correctForThisAttempt;
+
+            if (a.studentName) {
+              uniqueStudentNames.add(String(a.studentName).trim());
+            }
+          });
+        }
+
+        const uniqueStudentsCount = uniqueStudentNames.size || attemptsCount;
+    // NEW: infer practice set/level for this session (best-effort)
+    let inferredSet = "";
+    let inferredLevel = "";
+
+    // Prefer the most recent attempt that has metadata
+    const sortedForMeta = entry.rawAttempts
+      .slice()
+      .sort((a, b) => {
+        const at = (a.finishedAt || a.startedAt || "").toString();
+        const bt = (b.finishedAt || b.startedAt || "").toString();
+        return bt.localeCompare(at);
+      });
+
+    for (const a of sortedForMeta) {
+      const s = (a.practiceSet || a.set || a.setType || "").toString().trim();
+      const l = (a.practiceLevel || a.level || a.levelBand || "").toString().trim();
+      if (!inferredSet && s) inferredSet = normalizeSetParam(s);
+      if (!inferredLevel && ["below","on","above","benchmark"].includes(l.toLowerCase())) {
+        inferredLevel = l.toLowerCase();
+      }
+      if (inferredSet && inferredLevel) break;
+    }
+
+      return {
+        sessionCode: entry.sessionCode,
+        lastLoadedAt: entry.lastLoadedAt || new Date().toISOString(),
+        attemptsCount,
+        totalQuestions,
+        totalCorrect,
+        uniqueStudentsCount,
+        practiceSet: entry.practiceSet || inferredSet || undefined,
+        practiceLevel: entry.practiceLevel || inferredLevel || undefined,
+        ownerEmail: entry.ownerEmail || email || null
+      };
+      });
+
+      // Merge only local history that belongs to this signed-in teacher.
+      // This prevents another teacher's shared-browser localStorage entries
+      // from appearing in the current teacher's dashboard.
+      const localHistory = filterHistoryForViewer(loadHistoryFromStorage(), email);
+      const mergedByKey = new Map();
+
+      const addEntries = (entries) => {
+        entries.forEach((h) => {
+          const key = getHistoryKey(
+            h.sessionCode,
+            h.practiceSet,
+            h.practiceLevel,
+            h.ownerEmail
+          );
+          const existing = mergedByKey.get(key);
+
+          if (!existing) {
+            mergedByKey.set(key, h);
+          } else {
+            // keep the entry with the newer lastLoadedAt
+            const existingTime = (existing.lastLoadedAt || "").toString();
+            const newTime = (h.lastLoadedAt || "").toString();
+
+            if (newTime > existingTime) {
+              // Keep local-only fields (like ownerEmail, label, color) if server doesn’t have them
+              mergedByKey.set(key, { ...existing, ...h });
+            }
+          }
+        });
+      };
+
+      addEntries(localHistory || []);
+      addEntries(serverHistory);
+
+      const mergedHistory = Array.from(mergedByKey.values()).sort((a, b) =>
+        (b.lastLoadedAt || "").toString().localeCompare(
+          (a.lastLoadedAt || "").toString()
+        )
+      );
+
+      // NEW: respect deleted sessions on this device
+      const deletedKeys = loadDeletedHistoryKeys();
+      const filteredMerged = mergedHistory.filter((h) => {
+        const key = getHistoryKey(
+          h.sessionCode,
+          h.practiceSet,
+          h.practiceLevel,
+          h.ownerEmail
+        );
+        return !deletedKeys.includes(key);
+      });
+
+      saveHistoryToStorage(filteredMerged);
+      renderSessionHistory(filteredMerged);
+    } catch (err) {
+      console.warn(
+        "[Dashboard] Could not hydrate session history from server:",
+        err
+      );
+      // Fall back only to this signed-in teacher's local history.
+      const existing = filterHistoryForViewer(loadHistoryFromStorage(), email);
+      renderSessionHistory(existing);
+    } finally {
+      _historyHydrateInFlight = null;
+    }
+  })();
+
+  return _historyHydrateInFlight;
+}
+
+// ---------- HISTORY RENDERING ----------
+function renderSessionHistory(history) {
+  historyListEl.innerHTML = "";
+
+  const deletedKeys = loadDeletedHistoryKeys();
+  const visibleHistory = (history || []).filter((entry) => {
+    const key = getHistoryKey(
+      entry.sessionCode,
+      entry.practiceSet,
+      entry.practiceLevel,
+      entry.ownerEmail
+    );    return !deletedKeys.includes(key);
+  });
+
+  if (!visibleHistory || !visibleHistory.length) {
+    const p = document.createElement("p");
+    p.className = "history-empty muted";
+    p.textContent = "No sessions saved yet. Load a session to add it here.";
+    historyListEl.appendChild(p);
+    // If nothing is visible, clear selection + disable buttons
+    CURRENT_HISTORY_KEY = null;
+    updateHistoryActionButtonsState();
+    return;
+  }
+
+  // Keep sessions in their existing saved order so clicking a pill
+  // does not make it jump to the top on re-render.
+  const sorted = visibleHistory.slice();
+
+  const currentKey = CURRENT_HISTORY_KEY;
+
+  sorted.forEach((entry) => {
+    const accuracy = entry.totalQuestions
+      ? Math.round((entry.totalCorrect / entry.totalQuestions) * 100)
+      : 0;
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "history-item";
+
+  const key = getHistoryKey(
+  entry.sessionCode,
+  entry.practiceSet,
+  entry.practiceLevel,
+  entry.ownerEmail
+);
+    btn.dataset.key = key;
+
+    // Apply any saved color
+    if (entry.color) {
+      btn.classList.add(`history-color-${entry.color}`);
+    }
+
+    // Re-apply selection if it matches
+    if (currentKey && key === currentKey) {
+      btn.classList.add("is-selected");
+    }
+
+    const main = document.createElement("div");
+    main.className = "history-main";
+
+    const title = document.createElement("div");
+    title.className = "history-title";
+    // NEW: use label if present, otherwise the raw session code
+    title.textContent = entry.label || entry.sessionCode;
+
+    const meta = document.createElement("div");
+    meta.className = "history-meta";
+    const parts = [];
+
+    // ✅ NEW: show set + level (teacher-facing)
+    if (entry.practiceLevel) parts.push(`Level: ${entry.practiceLevel}`);
+    if (entry.practiceSet) parts.push(`Set: ${entry.practiceSet}`);
+
+    if (entry.uniqueStudentsCount) {
+      parts.push(`${entry.uniqueStudentsCount} students`);
+    }
+    if (entry.attemptsCount) {
+      parts.push(`${entry.attemptsCount} attempts`);
+    }
+    meta.textContent = parts.join(" · ");
+
+
+    main.appendChild(title);
+    main.appendChild(meta);
+
+    const pill = document.createElement("div");
+    pill.className = "history-pill";
+    pill.textContent = `${accuracy}% · ${formatDate(entry.lastLoadedAt)}`;
+
+    btn.appendChild(main);
+    btn.appendChild(pill);
+
+    btn.addEventListener("click", () => {
+      // Highlight this item
+      document.querySelectorAll(".history-item").forEach((el) => {
+        el.classList.toggle("is-selected", el === btn);
+      });
+
+      CURRENT_HISTORY_KEY = key;
+      updateHistoryActionButtonsState();
+
+      // Clear any selected student/full-attempt detail from the previous session.
+      clearSelectedStudentContext();
+
+      // Load this session into the filters and refresh dashboard
+sessionInput.value = entry.sessionCode;
+// ✅ Restore session-scoped owner override (only for this session)
+CURRENT_SESSION_OWNER_OVERRIDE = entry.ownerEmail || null;
+
+// ✅ NEW: sync set + level selectors to this session before loading
+const setSelect = document.getElementById("practice-set");
+const levelSelect = document.getElementById("practice-level");
+
+if (entry.practiceSet && setSelect) {
+  const v = normalizeSetParam(entry.practiceSet);
+  setSelect.value = v;
+  currentSetParam = v;
+  try { localStorage.setItem("rp7_lastSet", v); } catch (e) {}
+}
+
+if (entry.practiceLevel) {
+  const v = entry.practiceLevel.toLowerCase();
+
+  currentLevelParam = v;
+  try { localStorage.setItem("rp7_lastLevel", v); } catch (e) {}
+
+  if (levelSelect && ["below", "on", "above"].includes(v)) {
+    levelSelect.value = v;
+  }
+}
+
+// Rebuild links + monitor button for THIS historical session context
+const isBenchmarkHistory =
+  entry.practiceSet === "benchmark" || entry.practiceLevel === "benchmark";
+
+if (isBenchmarkHistory) {
+  switchDashboardTab("benchmark");
+} else {
+  switchDashboardTab("practice");
+}
+
+if (isBenchmarkHistory) {
+  const benchmarkKey = entry.benchmarkKey || "q4";
+
+  if (benchmarkSessionInput) benchmarkSessionInput.value = entry.sessionCode;
+  if (benchmarkSetSelect) benchmarkSetSelect.value = benchmarkKey;
+
+  if (sessionLinkInput) {
+    sessionLinkInput.value = buildBenchmarkStudentLink(entry.sessionCode, benchmarkKey);
+  }
+
+  if (coTeacherLinkInput) {
+    coTeacherLinkInput.value = buildBenchmarkCoTeacherLink(entry.sessionCode, benchmarkKey);
+  }
+
+  enableBenchmarkMonitorButton(entry.sessionCode, benchmarkKey);
+
+  currentSetParam = "benchmark";
+  currentLevelParam = "benchmark";
+
+  try {
+    localStorage.setItem("rp7_lastSet", "benchmark");
+    localStorage.setItem("rp7_lastLevel", "benchmark");
+  } catch (e) {}
+} else {
+  if (sessionLinkInput) sessionLinkInput.value = buildStudentLink(entry.sessionCode);
+  if (coTeacherLinkInput) coTeacherLinkInput.value = buildCoTeacherLink(entry.sessionCode);
+  enableMonitorButton(entry.sessionCode);
+}
+
+if (typeof updateCurrentViewSummary === "function") updateCurrentViewSummary();
+
+loadAttempts();
+
+    });
+
+    historyListEl.appendChild(btn);
+  });
+}
+// ---------- HISTORY CUSTOMIZATION HANDLERS ----------
+
+function findHistoryEntryByKey(key) {
+  if (!key) return { history: [], index: -1 };
+  const history = loadHistoryFromStorage() || [];
+  const index = history.findIndex(
+    (h) =>
+      getHistoryKey(
+        h.sessionCode,
+        h.practiceSet,
+        h.practiceLevel,
+        h.ownerEmail
+      ) === key
+  );
+  return { history, index };
+}
+
+if (historyRenameBtn) {
+  historyRenameBtn.addEventListener("click", () => {
+    if (!CURRENT_HISTORY_KEY) return;
+
+    const { history, index } = findHistoryEntryByKey(CURRENT_HISTORY_KEY);
+    if (index === -1) return;
+
+    const entry = history[index];
+    const currentLabel = entry.label || entry.sessionCode;
+    const newLabel = window.prompt(
+      "Rename this session (for your eyes only):",
+      currentLabel
+    );
+    if (!newLabel || !newLabel.trim()) return;
+
+    entry.label = newLabel.trim();
+    saveHistoryToStorage(history);
+    renderSessionHistory(history);
+  });
+}
+
+if (historyColorBtn) {
+  historyColorBtn.addEventListener("click", () => {
+    if (!CURRENT_HISTORY_KEY) return;
+
+    const { history, index } = findHistoryEntryByKey(CURRENT_HISTORY_KEY);
+    if (index === -1) return;
+
+    const entry = history[index];
+    const current = entry.color || "";
+    const currentIdx = HISTORY_COLOR_SEQUENCE.indexOf(current);
+    const nextIdx = (currentIdx + 1 + HISTORY_COLOR_SEQUENCE.length) %
+      HISTORY_COLOR_SEQUENCE.length;
+    const nextColor = HISTORY_COLOR_SEQUENCE[nextIdx];
+
+    if (!nextColor) {
+      delete entry.color; // back to default
+    } else {
+      entry.color = nextColor;
+    }
+
+    saveHistoryToStorage(history);
+    renderSessionHistory(history);
+  });
+}
+
+if (historyDeleteBtn) {
+  historyDeleteBtn.addEventListener("click", () => {
+    if (!CURRENT_HISTORY_KEY) return;
+
+    const confirmDelete = window.confirm(
+      "Remove this session from your Session History list? " +
+        "This does not delete any student data — only this shortcut on this device."
+    );
+    if (!confirmDelete) return;
+
+    const { history, index } = findHistoryEntryByKey(CURRENT_HISTORY_KEY);
+    if (index === -1) return;
+
+    const key = CURRENT_HISTORY_KEY;
+
+    // Remove from local history
+    history.splice(index, 1);
+    saveHistoryToStorage(history);
+
+    // Record the deletion so server hydration won’t re-add it
+    let deletedKeys = loadDeletedHistoryKeys();
+    if (!deletedKeys.includes(key)) {
+      deletedKeys.push(key);
+      saveDeletedHistoryKeys(deletedKeys);
+    }
+
+    CURRENT_HISTORY_KEY = null;
+    updateHistoryActionButtonsState();
+    renderSessionHistory(history);
+  });
+}
+
+// Initialize button state on first load
+updateHistoryActionButtonsState();
+
+
+// ---------- CHARTS ----------
+function updateScoreBandsChart(allAttempts, studentAttempts = [], studentName = null) {
+  const canvas = document.getElementById("chart-score-bands");
+  if (!canvas || typeof Chart === "undefined") return;
+
+const makeBandTemplate = () => ([
+  { label: "0–39%", min: 0, max: 39, count: 0, color: "#ef4444" },      // red
+  { label: "40–59%", min: 40, max: 59, count: 0, color: "#f97316" },    // orange
+  { label: "60–79%", min: 60, max: 79, count: 0, color: "#eab308" },    // yellow
+  { label: "80–89%", min: 80, max: 89, count: 0, color: "#86efac" },    // proficient - lighter green
+  { label: "90–100%", min: 90, max: 100, count: 0, color: "#15803d" }   // strong/mastery - darker green
+]);
+
+  const bandsAll = makeBandTemplate();
+  const bandsSelected = makeBandTemplate();
+
+  const bumpBand = (bands, pct) => {
+    const band = bands.find((b) => pct >= b.min && pct <= b.max);
+    if (band) band.count++;
+  };
+
+  allAttempts.forEach((a) => {
+    const total = Number(a.totalQuestions ?? a.answeredCount ?? 0);
+    if (!total) return;
+    const correct = Number(a.numCorrect ?? 0);
+    const pct = Math.round((correct / total) * 100);
+    bumpBand(bandsAll, pct);
+  });
+
+  studentAttempts.forEach((a) => {
+    const total = Number(a.totalQuestions ?? a.answeredCount ?? 0);
+    if (!total) return;
+    const correct = Number(a.numCorrect ?? 0);
+    const pct = Math.round((correct / total) * 100);
+    bumpBand(bandsSelected, pct);
+  });
+
+const labels = bandsAll.map((b) => b.label);
+const allData = bandsAll.map((b) => b.count);
+const studentData = bandsSelected.map((b) => b.count);
+const bandColors = bandsAll.map((b) => b.color);
+
+const datasets = [
+  {
+    label: "All students in view",
+    data: allData,
+    backgroundColor: bandColors,
+    borderColor: bandColors,
+    borderWidth: 1
+  }
+];
+
+  const hasStudentData =
+    studentName &&
+    Array.isArray(studentAttempts) &&
+    studentAttempts.length > 0 &&
+    studentData.some((v) => v > 0);
+
+if (hasStudentData) {
+  datasets.push({
+    label: studentName,
+    data: studentData,
+    backgroundColor: bandColors,
+    borderColor: "#0f172a",
+    borderWidth: 2
+  });
+}
+
+  const totalAll = allData.reduce((s, n) => s + n, 0);
+  if (!totalAll && !hasStudentData) {
+    if (scoreBandsChart) {
+      scoreBandsChart.destroy();
+      scoreBandsChart = null;
+    }
+    return;
+  }
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
+
+    // ✅ prevents axis labels from clipping
+    layout: { padding: { left: 12, right: 10, top: 8, bottom: 22 } },
+
+    scales: {
+      x: {
+        ticks: { autoSkip: false, maxRotation: 0, minRotation: 0 }
+      },
+      y: {
+        beginAtZero: true,
+        ticks: { precision: 0 }
+      }
+    },
+
+plugins: {
+  legend: { display: true, position: "bottom", labels: { padding: 14 } },
+  tooltip: {
+    callbacks: {
+      title: (items) => {
+        const standard = items?.[0]?.label || "";
+        const officialText =
+          window.RP_STANDARDS_CATALOG?.getOfficialText?.(standard) || standard;
+
+        return isStandardCode(standard)
+          ? `${standard}: ${officialText}`
+          : standard;
+      },
+      label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}%`
+    }
+  }
+},
+  };
+
+  if (scoreBandsChart) {
+    scoreBandsChart.data.labels = labels;
+    scoreBandsChart.data.datasets = datasets;
+    scoreBandsChart.options = options; // ✅ IMPORTANT (apply on updates)
+    scoreBandsChart.update();
+  } else {
+    scoreBandsChart = new Chart(canvas, {
+      type: "bar",
+      data: { labels, datasets },
+      options
+    });
+  }
+}
+
+function updateTypeAccuracyChart(allAttempts, studentAttempts = [], studentName = null) {
+  const canvas = document.getElementById("chart-type-accuracy");
+  if (!canvas || typeof Chart === "undefined") return;
+
+  const typeTotalsAll = {};
+  const typeTotalsStudent = {};
+
+  allAttempts.forEach((a) => {
+    if (!a.byType) return;
+    Object.entries(a.byType).forEach(([type, stats]) => {
+      if (!typeTotalsAll[type]) typeTotalsAll[type] = { correct: 0, total: 0 };
+      typeTotalsAll[type].correct += Number(stats.correct || 0);
+      typeTotalsAll[type].total += Number(stats.total || 0);
+    });
+  });
+
+  studentAttempts.forEach((a) => {
+    if (!a.byType) return;
+    Object.entries(a.byType).forEach(([type, stats]) => {
+      if (!typeTotalsStudent[type]) typeTotalsStudent[type] = { correct: 0, total: 0 };
+      typeTotalsStudent[type].correct += Number(stats.correct || 0);
+      typeTotalsStudent[type].total += Number(stats.total || 0);
+    });
+  });
+
+  const friendlyLabels = {
+    mcq: "MCQ",
+    multi: "Select All",
+    order: "Order",
+    match: "Matching",
+    highlight: "Highlight Evidence",
+    dropdown: "Inline Choice",
+    classify: "Classification",
+    partAB: "Part A/B",
+    revise: "Sentence Revision"
+  };
+
+  const allKeys = Array.from(
+    new Set([...Object.keys(typeTotalsAll), ...Object.keys(typeTotalsStudent)])
+  );
+
+  // ✅ stable ordering so the chart doesn’t “jump” on re-renders
+  allKeys.sort((a, b) => (friendlyLabels[a] || a).localeCompare(friendlyLabels[b] || b));
+
+  const labels = [];
+  const classData = [];
+  const studentData = [];
+
+  allKeys.forEach((type) => {
+    labels.push(friendlyLabels[type] || type);
+
+    const allStats = typeTotalsAll[type] || { correct: 0, total: 0 };
+    const stuStats = typeTotalsStudent[type] || { correct: 0, total: 0 };
+
+    const allPct = allStats.total ? Math.round((allStats.correct / allStats.total) * 100) : 0;
+    const stuPct = stuStats.total ? Math.round((stuStats.correct / stuStats.total) * 100) : 0;
+
+    classData.push(allPct);
+    studentData.push(stuPct);
+  });
+
+  if (!labels.length) {
+    if (typeAccuracyChart) {
+      typeAccuracyChart.destroy();
+      typeAccuracyChart = null;
+    }
+    return;
+  }
+
+  const datasets = [{ label: "All students in view", data: classData }];
+
+  const hasStudentBars = studentName && studentData.some((v) => v > 0);
+  if (hasStudentBars) {
+    datasets.push({ label: studentName, data: studentData });
+  }
+
+const options = {
+  responsive: true,
+  maintainAspectRatio: false,
+
+  onResize: (chart) => {
+    applyAdaptiveXTicks(chart, "type");
+    chart.update("none");
+  },
+
+  layout: { padding: { left: 14, right: 10, top: 8, bottom: 40 } },
+  plugins: {
+    legend: { display: true, position: "bottom", labels: { padding: 14 } }
+  },
+  scales: {
+    x: { ticks: getDefaultXAxisTicks("type") },
+    y: { min: 0, max: 100, ticks: { stepSize: 20, callback: (v) => `${v}%` } }
+  }
+};
+
+if (typeAccuracyChart) {
+  typeAccuracyChart.data.labels = labels;
+  typeAccuracyChart.data.datasets = datasets;
+  typeAccuracyChart.options = options;
+
+  applyAdaptiveXTicks(typeAccuracyChart, "type");
+  typeAccuracyChart.update();
+} else {
+  typeAccuracyChart = new Chart(canvas, { type: "bar", data: { labels, datasets }, options });
+
+  applyAdaptiveXTicks(typeAccuracyChart, "type");
+  typeAccuracyChart.update("none");
+}
+
+}
+
+function updateSkillAccuracyChart(skillTotalsAll, skillTotalsStudent = {}, studentName = null) {
+  const canvas = document.getElementById("chart-skill-accuracy");
+  if (!canvas || typeof Chart === "undefined") return;
+
+  const allKeys = Array.from(
+    new Set([
+      ...Object.keys(skillTotalsAll || {}),
+      ...Object.keys(skillTotalsStudent || {})
+    ])
+  );
+
+  allKeys.sort((a, b) => a.localeCompare(b));
+
+  const labels = [];
+  const classData = [];
+  const studentData = [];
+
+  allKeys.forEach((skill) => {
+    const allStats = (skillTotalsAll && skillTotalsAll[skill]) || { correct: 0, total: 0 };
+    const stuStats = (skillTotalsStudent && skillTotalsStudent[skill]) || { correct: 0, total: 0 };
+
+    const allPct = allStats.total ? Math.round((allStats.correct / allStats.total) * 100) : 0;
+    const stuPct = stuStats.total ? Math.round((stuStats.correct / stuStats.total) * 100) : 0;
+
+    labels.push(skill);
+    classData.push(allPct);
+    studentData.push(stuPct);
+  });
+
+  if (!labels.length) {
+    if (skillAccuracyChart) {
+      skillAccuracyChart.destroy();
+      skillAccuracyChart = null;
+    }
+    return;
+  }
+
+  const datasets = [{ label: "All students in view", data: classData }];
+
+  const hasStudentBars = studentName && studentData.some((v) => v > 0);
+  if (hasStudentBars) {
+    datasets.push({ label: studentName, data: studentData });
+  }
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: {
+      mode: "index",
+      intersect: false
+    },
+    onResize: (chart) => {
+      applyAdaptiveXTicks(chart, "skill");
+      chart.update("none");
+    },
+
+    layout: { padding: { left: 14, right: 10, top: 8, bottom: 40 } },
+plugins: {
+  legend: { display: true, position: "bottom", labels: { padding: 14 } },
+  tooltip: {
+    enabled: true,
+    callbacks: {
+      title: (items) => {
+        const standard = items?.[0]?.label || "";
+        const officialText =
+          window.RP_STANDARDS_CATALOG?.getOfficialText?.(standard) || "";
+
+        if (isStandardCode(standard) && officialText) {
+          return `${standard}: ${officialText}`;
+        }
+
+        return standard;
+      },
+      label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}%`
+    }
+  }
+},
+    scales: {
+        x: { ticks: getDefaultXAxisTicks("skill") },
+        y: { min: 0, max: 100, ticks: { stepSize: 20, callback: (v) => `${v}%` } }
+    }
+  };
+
+  if (skillAccuracyChart) {
+    skillAccuracyChart.data.labels = labels;
+    skillAccuracyChart.data.datasets = datasets;
+    skillAccuracyChart.options = options;
+
+    applyAdaptiveXTicks(skillAccuracyChart, "skill");
+    skillAccuracyChart.update();
+  } else {
+    skillAccuracyChart = new Chart(canvas, {
+      type: "bar",
+      data: { labels, datasets },
+      options
+    });
+
+    applyAdaptiveXTicks(skillAccuracyChart, "skill");
+    skillAccuracyChart.update("none");
+  }
+}
+
+
+function getAdaptiveXAxisTicks(chartWidth, mode = "skill", labelCount = 0) {
+  const compact = chartWidth < 620;
+
+  // How many pixels we have per label
+  const pxPerLabel = labelCount ? (chartWidth / labelCount) : chartWidth;
+
+  // If labels are dense, rotate vertical
+  const shouldRotateVertical =
+    (mode === "skill" && labelCount >= 12) || pxPerLabel < 45;
+
+  if (compact) {
+    return {
+      autoSkip: true,
+      maxTicksLimit: mode === "skill" ? 6 : 8,
+      maxRotation: 0,
+      minRotation: 0,
+      font: { size: 10 },
+      padding: 6,
+      callback: function (value) {
+        const label = resolveTickLabel(this, value);
+        const s = String(label);
+        return s.length > 12 ? s.slice(0, 12) + "…" : s;
+      }
+    };
+  }
+
+  if (shouldRotateVertical) {
+    return {
+      autoSkip: false,
+      maxRotation: 90,
+      minRotation: 90,
+      font: { size: 11 },
+      padding: 6,
+      callback: function (value) {
+        return resolveTickLabel(this, value);
+      }
+    };
+  }
+
+  // Wide & not dense → keep horizontal
+  return {
+    autoSkip: false,
+    maxRotation: 0,
+    minRotation: 0,
+    font: { size: 12 },
+    padding: 10,
+    callback: function (value) {
+      const label = resolveTickLabel(this, value);
+      return mode === "skill"
+        ? String(label).split("-")
+        : String(label).split(" ");
+    }
+  };
+}
+
+
+function getChartWidth(chartOrCanvas) {
+  const canvas = chartOrCanvas?.canvas || chartOrCanvas;
+  const el = canvas?.parentElement || canvas;
+  // parentElement is usually the chart card container that has the real width
+  return Math.max(0, el?.clientWidth || canvas?.clientWidth || 0);
+}
+
+function resolveTickLabel(scale, value) {
+  // Works whether value is an index (category scale) or a label string
+  const labels = scale?.getLabels ? scale.getLabels() : (scale?.chart?.data?.labels || []);
+  if (typeof value === "number") return labels[value] ?? String(value);
+
+  // If it's already the label, return it
+  const asStr = String(value);
+  const idx = labels.indexOf(asStr);
+  return idx >= 0 ? labels[idx] : asStr;
+}
+
+function applyAdaptiveXTicks(chart, mode) {
+  if (!chart?.options?.scales?.x) return;
+
+  const fs = isChartFullscreen(chart);
+
+  // Adjust layout padding depending on fullscreen vs dashboard view
+  if (chart.options.layout?.padding) {
+    chart.options.layout.padding.bottom = fs ? 110 : 40;
+  }
+
+  // Apply tick strategy
+  if (!fs) {
+    chart.options.scales.x.ticks = getDefaultXAxisTicks(mode);
+    return;
+  }
+
+  const w = getChartWidth(chart);
+  if (!w) return;
+
+  const labelCount = Array.isArray(chart.data?.labels) ? chart.data.labels.length : 0;
+  chart.options.scales.x.ticks = getAdaptiveXAxisTicks(w, mode, labelCount);
+}
+
+
+
+function isChartFullscreen(chartOrCanvas) {
+  const canvas = chartOrCanvas?.canvas || chartOrCanvas;
+  if (!canvas) return false;
+  const wrapper = canvas.closest?.(".chart-wrapper");
+  return !!(wrapper && wrapper.classList.contains("chart-wrapper-fullscreen"));
+}
+
+function getDefaultXAxisTicks(mode = "skill") {
+  return {
+    autoSkip: true,
+    maxTicksLimit: mode === "skill" ? 6 : 8,
+    maxRotation: 0,
+    minRotation: 0,
+    padding: 6,
+    font: { size: 11 },
+    callback: function (value) {
+      const label = resolveTickLabel(this, value);
+      const s = String(label);
+
+      // In small view, skill tags get long fast — keep them neat
+      if (mode === "skill") {
+        const cleaned = s.replace(/_/g, "-");
+        return cleaned.length > 14 ? cleaned.slice(0, 14) + "…" : cleaned;
+      }
+
+      return s;
+    }
+  };
+}
+
+function isStandardCode(value) {
+  return /^\d+\.[A-Z](?:\.[A-Z0-9]+)*(?:\.[a-z])?$/i.test(String(value || "").trim());
+}
+
+function getStandardAccuracyLabel(standard, stats) {
+  const total = Number(stats?.total || 0);
+  const correct = Number(stats?.correct || 0);
+  const pct = total ? Math.round((correct / total) * 100) : 0;
+  return `${standard} (${pct}%)`;
+}
+
+function renderBenchmarkStandardTag(title, standards) {
+  if (!standards.length) {
+    return `${title}: —`;
+  }
+
+  const itemsHtml = standards.map(({ standard, stats }, index) => {
+    const desc = window.RP_STANDARDS_CATALOG?.getOfficialText?.(standard) || "Official standard description not available.";
+    const safeId = `tag-std-${String(standard).replace(/[^a-zA-Z0-9_-]/g, "-")}-${index}-${title.replace(/\s+/g, "-")}`;
+
+    return `
+      <span class="benchmark-standard-mini">
+        <strong>${getStandardAccuracyLabel(standard, stats)}</strong>
+        <button class="standard-toggle-btn" type="button" data-target="${safeId}">
+          View Standard
+        </button>
+        <span class="standard-description hidden" id="${safeId}">
+          ${desc}
+        </span>
+      </span>
+    `;
+  }).join("");
+
+  return `<strong>${title}:</strong> ${itemsHtml}`;
+}
+
+// ---------- SESSION TAGS + STUDENT DETAIL + HEAT MAP ----------
+function updateSessionTagsFromAttempts(attempts) {
+  if (!mostMissedSkillEl || !mostMissedTypeEl) return;
+
+  const benchmarkAttempts = (attempts || []).filter(isBenchmarkAttempt);
+  const isBenchmarkView = benchmarkAttempts.length > 0;
+
+  // Aggregate by skill/standard
+  const skillTotals = {};
+  const typeTotals = {};
+
+  attempts.forEach(a => {
+    if (a.bySkill) {
+      Object.entries(a.bySkill).forEach(([skill, stats]) => {
+        if (!skillTotals[skill]) {
+          skillTotals[skill] = { correct: 0, total: 0 };
+        }
+        skillTotals[skill].correct += Number(stats.correct || 0);
+        skillTotals[skill].total += Number(stats.total || 0);
+      });
+    }
+
+    if (a.byType) {
+      Object.entries(a.byType).forEach(([type, stats]) => {
+        if (!typeTotals[type]) {
+          typeTotals[type] = { correct: 0, total: 0 };
+        }
+        typeTotals[type].correct += Number(stats.correct || 0);
+        typeTotals[type].total += Number(stats.total || 0);
+      });
+    }
+  });
+
+  // ✅ Benchmark Mode: show top 2 and bottom 2 standards instead of practice tags
+  if (isBenchmarkView) {
+    const standardEntries = Object.entries(skillTotals)
+      .filter(([standard, stats]) => isStandardCode(standard) && Number(stats.total || 0) > 0)
+      .map(([standard, stats]) => ({
+        standard,
+        stats,
+        pct: Number(stats.total || 0)
+          ? (Number(stats.correct || 0) / Number(stats.total || 0)) * 100
+          : 0
+      }))
+      .sort((a, b) => b.pct - a.pct);
+
+    const strongestStandards = standardEntries.slice(0, 2);
+
+    const strongestKeys = new Set(strongestStandards.map((s) => s.standard));
+
+    const priorityStandards = standardEntries
+      .slice()
+      .reverse()
+      .filter((s) => !strongestKeys.has(s.standard))
+      .slice(0, 2);
+
+    mostMissedSkillEl.innerHTML = renderBenchmarkStandardTag(
+      "📘 Strongest Standards",
+      strongestStandards
+    );
+
+    mostMissedTypeEl.innerHTML = renderBenchmarkStandardTag(
+      "🎯 Priority Standards",
+      priorityStandards
+    );
+
+    return;
+  }
+
+  // ✅ Practice Mode: keep existing behavior
+  const pickMostMissed = (totalsObj, friendlyMap) => {
+    let worstKey = null;
+    let worstPct = 101;
+
+    Object.entries(totalsObj).forEach(([key, stats]) => {
+      if (!stats.total || stats.total < 2) return;
+      const pct = (stats.correct / stats.total) * 100;
+      if (pct < worstPct) {
+        worstPct = pct;
+        worstKey = key;
+      }
+    });
+
+    if (!worstKey) return "—";
+
+    const label = friendlyMap?.[worstKey] || worstKey;
+    return `${label} (${Math.round(worstPct)}%)`;
+  };
+
+  const friendlyTypes = {
+    mcq: "MCQ",
+    multi: "Select All",
+    order: "Order",
+    match: "Matching",
+    highlight: "Highlight Evidence",
+    dropdown: "Inline Choice",
+    classify: "Classification",
+    partAB: "Part A/B",
+    revise: "Sentence Revision"
+  };
+
+  mostMissedSkillEl.textContent = pickMostMissed(skillTotals) || "—";
+  mostMissedTypeEl.textContent = pickMostMissed(typeTotals, friendlyTypes) || "—";
+}
+
+function renderStudentDetailPanel(studentName, studentAttempts, skillTotalsSelected) {
+  if (!studentDetailPanel) return;
+
+  const hasData = studentName && studentAttempts && studentAttempts.length > 0;
+
+  if (!hasData) {
+    studentDetailPanel.classList.remove("is-open");
+    studentDetailNameEl.textContent = "No student selected. Click a row in the table.";
+    studentDetailOverallEl.textContent = "Overall accuracy for this session: —.";
+    studentDetailAttemptsEl.textContent = "Attempts counted: —.";
+    studentDetailNeedsWorkEl.innerHTML = '<li class="muted">Not enough data yet.</li>';
+    studentDetailStrengthsEl.innerHTML = '<li class="muted">Not enough data yet.</li>';
+    if (studentDetailBenchmarkEl) {
+  studentDetailBenchmarkEl.textContent = "Benchmark: —.";
+}
+
+    // clear progress chart if it exists
+    if (studentProgressChart) {
+      studentProgressChart.destroy();
+      studentProgressChart = null;
+    }
+
+    // clear caption too
+    const captionEl = document.getElementById("student-detail-progress-caption");
+    if (captionEl) captionEl.textContent = "";
+
+    return;
+  }
+
+  studentDetailPanel.classList.add("is-open");
+  studentDetailNameEl.textContent = studentName;
+
+  // ===== Overall stats across all attempts (for THIS view/session) =====
+  const totals = studentAttempts.reduce(
+    (acc, a) => {
+      // Prefer explicit counts from the backend
+      let correct = typeof a.numCorrect === "number" ? a.numCorrect : 0;
+
+      // Prefer totalQuestions, then answeredCount, then derive from bySkill
+      let total = 0;
+
+      if (typeof a.totalQuestions === "number" && a.totalQuestions > 0) {
+        total = a.totalQuestions;
+      } else if (typeof a.answeredCount === "number" && a.answeredCount > 0) {
+        total = a.answeredCount;
+      }
+
+      // If we *still* don't have good totals, derive from bySkill if present
+      if ((!total || !correct) && a.bySkill && typeof a.bySkill === "object") {
+        let derivedCorrect = 0;
+        let derivedTotal = 0;
+        Object.values(a.bySkill).forEach((stats) => {
+          if (!stats) return;
+          derivedCorrect += Number(stats.correct || 0);
+          derivedTotal += Number(stats.total || 0);
+        });
+
+        if (!total && derivedTotal) total = derivedTotal;
+        if (!correct && derivedCorrect) correct = derivedCorrect;
+      }
+
+      acc.correct += correct;
+      acc.total += total;
+      return acc;
+    },
+    { correct: 0, total: 0 }
+  );
+
+  const overallPct = totals.total
+    ? Math.round((totals.correct / totals.total) * 100)
+    : 0;
+
+  studentDetailOverallEl.textContent =
+    `Overall accuracy for this session: ${overallPct}% (${totals.correct} of ${totals.total} correct).`;
+
+  studentDetailAttemptsEl.textContent =
+    `Attempts counted: ${studentAttempts.length}.`;
+
+    const allAttemptsForThisStudent = Array.isArray(ALL_VIEWER_ATTEMPTS)
+  ? ALL_VIEWER_ATTEMPTS.filter(
+      (a) => (a.studentName || "").trim().toLowerCase() === studentName.trim().toLowerCase()
+    )
+  : studentAttempts;
+
+const benchmarkAttemptsForStudent = allAttemptsForThisStudent.filter(isBenchmarkAttempt);
+const practiceAttemptsForStudent = allAttemptsForThisStudent.filter((a) => !isBenchmarkAttempt(a));
+
+const benchmarkSummary = summarizeAttempts(benchmarkAttemptsForStudent);
+const practiceSummary = summarizeAttempts(practiceAttemptsForStudent);
+
+const benchmarkPct = benchmarkSummary.total
+  ? Math.round((benchmarkSummary.correct / benchmarkSummary.total) * 100)
+  : null;
+
+const practicePct = practiceSummary.total
+  ? Math.round((practiceSummary.correct / practiceSummary.total) * 100)
+  : null;
+
+if (studentDetailBenchmarkEl) {
+  const benchmarkText = benchmarkPct === null
+    ? "Benchmark: no benchmark data yet"
+    : `Benchmark: ${benchmarkPct}% (${benchmarkSummary.correct} of ${benchmarkSummary.total})`;
+
+  const practiceText = practicePct === null
+    ? "Practice: no practice data yet"
+    : `Practice: ${practicePct}% (${practiceSummary.correct} of ${practiceSummary.total})`;
+
+  studentDetailBenchmarkEl.textContent = `${benchmarkText} · ${practiceText}`;
+}
+  // ===== Progress-over-time chart =====
+  const chartCanvas = document.getElementById("student-detail-progress-chart");
+  if (chartCanvas && typeof Chart !== "undefined") {
+    // Prefer cross-session attempts for this student if we've hydrated them
+    let attemptsForChart = [];
+
+    if (Array.isArray(ALL_VIEWER_ATTEMPTS) && ALL_VIEWER_ATTEMPTS.length) {
+      const targetName = (studentName || "").trim().toLowerCase();
+      const baseAssessment = (studentAttempts[0] && studentAttempts[0].assessmentName)
+        ? String(studentAttempts[0].assessmentName).trim()
+        : null;
+
+      attemptsForChart = ALL_VIEWER_ATTEMPTS.filter((a) => {
+        const nameNorm = (a.studentName || "").trim().toLowerCase();
+        const assessmentNorm = (a.assessmentName || "").trim();
+        if (!targetName || nameNorm !== targetName) return false;
+
+        // If we know the assessmentName for this view, keep it consistent
+        if (baseAssessment) {
+          return assessmentNorm === baseAssessment;
+        }
+        return true;
+      });
+
+      // Fallback: if for some reason nothing matched, just use this view's attempts
+      if (!attemptsForChart.length) {
+        attemptsForChart = studentAttempts.slice();
+      }
+    } else {
+      // No global cache (e.g. offline / demo mode) → just use attempts for this view
+      attemptsForChart = studentAttempts.slice();
+    }
+
+    const sortedAttempts = attemptsForChart
+      .slice()
+      .sort((a, b) => {
+        const aTime = (a.finishedAt || a.startedAt || "").toString();
+        const bTime = (b.finishedAt || b.startedAt || "").toString();
+        return aTime.localeCompare(bTime);
+      });
+
+    // ===== Progress-over-time chart =====
+    const labels = sortedAttempts.map((_, idx) => `Attempt ${idx + 1}`);
+
+    const labelDates = sortedAttempts.map((a, idx) => {
+      const when = a.finishedAt || a.startedAt;
+      return when ? formatDate(when) : `Attempt ${idx + 1}`;
+    });
+
+    // Ensure the canvas is controlled by its container, not by inline sizing
+    chartCanvas.style.width = "";
+    chartCanvas.style.height = "";
+    chartCanvas.height = 200;
+
+    const overallData = sortedAttempts.map((a) => {
+      const total = a.totalQuestions || a.answeredCount || 0;
+      const correct = a.numCorrect || 0;
+      return total ? Math.round((correct / total) * 100) : 0;
+    });
+
+    // Aggregate skills across attempts to pick top 2–3 lines
+    const aggregateBySkill = {};
+    sortedAttempts.forEach((a) => {
+      const map = a.bySkill || {};
+      Object.entries(map).forEach(([skill, stats]) => {
+        if (!aggregateBySkill[skill]) aggregateBySkill[skill] = { correct: 0, total: 0 };
+        aggregateBySkill[skill].correct += Number(stats.correct || 0);
+        aggregateBySkill[skill].total += Number(stats.total || 0);
+      });
+    });
+
+    const topSkills = Object.entries(aggregateBySkill)
+      .sort((a, b) => (b[1].total || 0) - (a[1].total || 0))
+      .slice(0, 3)
+      .map(([name]) => name);
+
+    const datasets = [
+      {
+        label: "Overall %",
+        data: overallData,
+        borderWidth: 2,
+        tension: 0.25,
+        pointRadius: 4
+      }
+    ];
+
+    topSkills.forEach((skillName) => {
+      const series = sortedAttempts.map((a) => {
+        const stats = (a.bySkill && a.bySkill[skillName]) || null;
+        if (!stats || !stats.total) return null;
+        return Math.round((stats.correct / stats.total) * 100);
+      });
+
+      datasets.push({
+        label: skillName,
+        data: series,
+        borderWidth: 1.5,
+        pointRadius: 3,
+        hidden: true
+      });
+    });
+
+    const options = {
+      responsive: true,
+      maintainAspectRatio: false,
+      devicePixelRatio: window.devicePixelRatio || 1,
+      layout: { padding: { left: 22, right: 10, top: 8, bottom: 8 } },
+      interaction: { mode: "index", intersect: false },
+      scales: {
+        y: {
+          min: 0,
+          max: 100,
+          beginAtZero: true,
+          ticks: {
+            stepSize: 20,
+            callback: (v) => `${v}%`,
+            padding: 6
+          },
+          grid: { drawBorder: true },
+          border: { display: true }
+        },
+        x: {
+          ticks: {
+            autoSkip: true,
+            maxTicksLimit: 10,
+            maxRotation: 55,
+            minRotation: 55,
+            padding: 6
+          },
+          grid: { drawBorder: true },
+          border: { display: true }
+        }
+      },
+      plugins: {
+        legend: {
+          display: true,
+          position: "top",
+          labels: { padding: 14, boxWidth: 14 },
+onClick: (e, legendItem, legend) => {
+  const chart = legend.chart;
+  const datasetIndex = legendItem.datasetIndex;
+  const meta = chart.getDatasetMeta(datasetIndex);
+
+  // toggle the whole dataset (line) on/off
+  meta.hidden = meta.hidden === null ? !chart.data.datasets[datasetIndex].hidden : null;
+
+  chart.update();
+}
+
+        },
+        tooltip: {
+          callbacks: {
+            title: (items) => {
+              const i = items?.[0]?.dataIndex ?? 0;
+              return labelDates?.[i] || `Attempt ${i + 1}`;
+            },
+            label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}%`
+          }
+        }
+      }
+    };
+
+    if (studentProgressChart) {
+      studentProgressChart.data.labels = labels;
+      studentProgressChart.data.datasets = datasets;
+      studentProgressChart.options = options;
+      studentProgressChart.update();
+    } else {
+      studentProgressChart = new Chart(chartCanvas, {
+        type: "line",
+        data: { labels, datasets },
+        options
+      });
+    }
+
+
+    // ----- Update chart caption (runs on create + update) -----
+    const captionEl = document.getElementById("student-detail-progress-caption");
+    if (captionEl) {
+      const multiAttempt = sortedAttempts.length > studentAttempts.length;
+
+      if (multiAttempt) {
+        captionEl.textContent = "Showing progress across all attempts of this assessment.";
+      } else {
+        captionEl.textContent = "Showing attempts for this session.";
+      }
+    }
+  }
+
+  // ===== Per-skill & per-type lists (Needs Work / Strengths) =====
+  const MIN_QUESTIONS = 2;
+
+  // ---- Skills: using skillTotalsSelected (already per-student) ----
+  const skillEntries = Object.entries(skillTotalsSelected || {});
+ const skillsWithPct = skillEntries
+  .filter(([skill, stats]) => {
+    const minNeeded = isStandardCode(skill) ? 1 : MIN_QUESTIONS;
+    return stats.total && stats.total >= minNeeded;
+  })
+  .map(([skill, stats]) => ({
+    skill,
+    pct: (stats.correct / stats.total) * 100,
+    total: stats.total
+  }));
+  // ---- Question types: aggregate from this student's attempts ----
+  const typeTotalsSelected = {};
+  studentAttempts.forEach((a) => {
+    const map = a.byType || {};
+    Object.entries(map).forEach(([typeKey, stats]) => {
+      if (!typeTotalsSelected[typeKey]) {
+        typeTotalsSelected[typeKey] = { correct: 0, total: 0 };
+      }
+      typeTotalsSelected[typeKey].correct += Number(stats.correct || 0);
+      typeTotalsSelected[typeKey].total += Number(stats.total || 0);
+    });
+  });
+
+  const friendlyTypeLabels = {
+    mcq: "Multiple Choice",
+    multi: "Select All",
+    order: "Order",
+    match: "Matching",
+    highlight: "Highlight Evidence",
+    dropdown: "Inline Choice",
+    classify: "Classification",
+    partAB: "Part A/B",
+    revise: "Sentence Revision"
+  };
+
+  const typesWithPct = Object.entries(typeTotalsSelected)
+    .filter(([, stats]) => stats.total && stats.total >= MIN_QUESTIONS)
+    .map(([key, stats]) => ({
+      key,
+      label: friendlyTypeLabels[key] || key,
+      pct: (stats.correct / stats.total) * 100,
+      total: stats.total
+    }));
+
+  // If no usable skills or types, bail with "not enough data"
+  if (!skillsWithPct.length && !typesWithPct.length) {
+    studentDetailNeedsWorkEl.innerHTML = '<li class="muted">Not enough data yet.</li>';
+    studentDetailStrengthsEl.innerHTML = '<li class="muted">Not enough data yet.</li>';
+    return;
+  }
+
+// ---- Sort + pick needs work & strengths for skills ----
+// Only put skills/standards in "To Strengthen" if they are actually below target.
+// This prevents high-scoring standards from being mislabeled as weaknesses.
+const sortedSkillLow = [...skillsWithPct].sort((a, b) => a.pct - b.pct);
+const sortedSkillHigh = [...skillsWithPct].sort((a, b) => b.pct - a.pct);
+
+const needsWorkSkills = sortedSkillLow
+  .filter((s) => s.pct < 70)
+  .slice(0, 2);
+
+const strengthsSkills = sortedSkillHigh
+  .filter((s) => s.pct >= 70)
+  .slice(0, 2);
+
+  // ---- Sort + pick needs work & strengths for types ----
+  const sortedTypeLow = [...typesWithPct].sort((a, b) => a.pct - b.pct);
+  const sortedTypeHigh = [...typesWithPct].sort((a, b) => b.pct - a.pct);
+
+  const needsWorkTypes = sortedTypeLow
+  .filter((t) => t.pct < 70)
+  .slice(0, 2);
+
+const strengthsTypes = sortedTypeHigh
+  .filter((t) => t.pct >= 70)
+  .slice(0, 2);
+
+const makeSkillLi = ({ skill, pct, total }) => {
+  const officialText =
+    window.RP_STANDARDS_CATALOG?.getOfficialText?.(skill) || "";
+
+  if (isStandardCode(skill) && officialText) {
+    return `
+      <li class="student-standard-detail">
+        <strong>${skill}</strong>: ${Math.round(pct)}% (${total} questions)
+        <div class="student-standard-text">${officialText}</div>
+      </li>
+    `;
+  }
+
+  return `<li>${skill}: ${Math.round(pct)}% (${total} questions)</li>`;
+};
+  const makeTypeLi = ({ label, pct, total }) =>
+    `<li>${label}: ${Math.round(pct)}% (${total} questions)</li>`;
+
+  // Build Needs Work list HTML
+  let needsWorkHtml = "";
+
+  if (needsWorkSkills.length) {
+    needsWorkHtml += '<li class="drawer-subheading">Skills</li>';
+    needsWorkHtml += needsWorkSkills.map(makeSkillLi).join("");
+  }
+  if (needsWorkTypes.length) {
+    needsWorkHtml += '<li class="drawer-subheading">Question Types</li>';
+    needsWorkHtml += needsWorkTypes.map(makeTypeLi).join("");
+  }
+  if (!needsWorkHtml) {
+    needsWorkHtml = '<li class="muted">No clear weaknesses yet.</li>';
+  }
+  studentDetailNeedsWorkEl.innerHTML = needsWorkHtml;
+
+  // Build Strengths list HTML
+  let strengthsHtml = "";
+
+  if (strengthsSkills.length) {
+    strengthsHtml += '<li class="drawer-subheading">Skills</li>';
+    strengthsHtml += strengthsSkills.map(makeSkillLi).join("");
+  }
+  if (strengthsTypes.length) {
+    strengthsHtml += '<li class="drawer-subheading">Question Types</li>';
+    strengthsHtml += strengthsTypes.map(makeTypeLi).join("");
+  }
+  if (!strengthsHtml) {
+    strengthsHtml = '<li class="muted">No clear strengths yet.</li>';
+  }
+  studentDetailStrengthsEl.innerHTML = strengthsHtml;
+}
+//end renderstudentdetailpanel
+function renderSkillHeatmap(attempts) {
+  if (!heatmapHeadEl || !heatmapBodyEl) return;
+
+  heatmapHeadEl.innerHTML = "";
+  heatmapBodyEl.innerHTML = "";
+
+  if (!attempts || !attempts.length) {
+    return;
+  }
+
+  const skillSet = new Set();
+  const studentSkillMap = {}; // student -> skill -> {correct,total}
+
+  attempts.forEach(a => {
+    const name = (a.studentName || "—").trim();
+    if (!a.bySkill) return;
+    if (!studentSkillMap[name]) studentSkillMap[name] = {};
+
+    Object.entries(a.bySkill).forEach(([skill, stats]) => {
+      skillSet.add(skill);
+      if (!studentSkillMap[name][skill]) {
+        studentSkillMap[name][skill] = { correct: 0, total: 0 };
+      }
+      studentSkillMap[name][skill].correct += stats.correct || 0;
+      studentSkillMap[name][skill].total += stats.total || 0;
+    });
+  });
+
+  const skills = Array.from(skillSet).sort((a, b) => a.localeCompare(b));
+  const students = Object.keys(studentSkillMap).sort((a, b) => a.localeCompare(b));
+
+  if (!skills.length || !students.length) return;
+
+  // Header
+  const headRow = document.createElement("tr");
+  const thStudent = document.createElement("th");
+  thStudent.textContent = "Student";
+  headRow.appendChild(thStudent);
+
+  skills.forEach(skill => {
+    const th = document.createElement("th");
+    th.textContent = skill;
+    headRow.appendChild(th);
+  });
+
+  heatmapHeadEl.appendChild(headRow);
+
+  // Rows
+  students.forEach(student => {
+    const tr = document.createElement("tr");
+    const tdName = document.createElement("td");
+    tdName.textContent = student;
+    tr.appendChild(tdName);
+
+    skills.forEach(skill => {
+      const cell = document.createElement("td");
+      const stats = studentSkillMap[student][skill];
+
+      if (!stats || !stats.total) {
+        cell.textContent = "—";
+        cell.classList.add("heat-empty");
+      } else {
+        const pct = (stats.correct / stats.total) * 100;
+        const rounded = Math.round(pct);
+        cell.textContent = `${rounded}%`;
+
+        if (pct < 60) {
+          cell.classList.add("heat-low");
+        } else if (pct < 80) {
+          cell.classList.add("heat-mid");
+        } else {
+          cell.classList.add("heat-high");
+        }
+      }
+
+      tr.appendChild(cell);
+    });
+
+    heatmapBodyEl.appendChild(tr);
+  });
+}
+
+// ---------- CORE DASHBOARD RENDERING ----------
+function renderDashboard(attempts) {
+  const assessmentLabelEl = document.getElementById("summary-assessment-name");
+  if (assessmentLabelEl) {
+    const first = attempts[0];
+    assessmentLabelEl.textContent = first?.assessmentName || "Unnamed Assessment";
+  }
+
+  // Keep a copy for CSV exports
+  CURRENT_ATTEMPTS = attempts.slice();
+  const hasData = CURRENT_ATTEMPTS.length > 0;
+  downloadCsvBtn.disabled = !hasData;
+
+    // If a pending student focus name was set (e.g. from global student search)
+  // and the current attempts contain that student, make them the selected student.
+  if (PENDING_STUDENT_FOCUS_NAME) {
+    const match = attempts.find(
+      (a) => (a.studentName || "").trim() === PENDING_STUDENT_FOCUS_NAME
+    );
+    if (match) {
+      CURRENT_STUDENT_FOR_CHARTS = PENDING_STUDENT_FOCUS_NAME;
+    }
+    PENDING_STUDENT_FOCUS_NAME = null;
+  }
+
+  const totalAttempts = attempts.length;
+  const totalCorrect = attempts.reduce(
+    (sum, a) => sum + (a.numCorrect || 0),
+    0
+  );
+
+  // Sum how many questions were actually answered across attempts
+  const totalAnswered = attempts.reduce((sum, a) => {
+    if (a.answeredCount != null) {
+      return sum + Number(a.answeredCount);
+    }
+    return sum + Number(a.totalQuestions || 0);
+  }, 0);
+
+
+  const uniqueStudentNames = new Set(
+    attempts.map(a => (a.studentName || "").trim()).filter(Boolean)
+  );
+
+  // If our selected student is no longer in this filtered set, clear the overlay
+  // and the full-attempt panel so a previous session's attempt does not stay visible.
+  const selectedStudentBeforeRender = CURRENT_STUDENT_FOR_CHARTS;
+
+  if (
+    CURRENT_STUDENT_FOR_CHARTS &&
+    !uniqueStudentNames.has(CURRENT_STUDENT_FOR_CHARTS)
+  ) {
+    CURRENT_STUDENT_FOR_CHARTS = null;
+  }
+
+  if (selectedStudentBeforeRender && !CURRENT_STUDENT_FOR_CHARTS) {
+    clearAttemptQnPanel();
+  }
+
+  // Attempts for the selected student (if any)
+  const selectedStudentAttempts = CURRENT_STUDENT_FOR_CHARTS
+    ? attempts.filter(
+        a => (a.studentName || "").trim() === CURRENT_STUDENT_FOR_CHARTS
+      )
+    : [];
+
+  // Update charts with class vs selected student
+  updateScoreBandsChart(
+    attempts,
+    selectedStudentAttempts,
+    CURRENT_STUDENT_FOR_CHARTS
+  );
+  updateTypeAccuracyChart(
+    attempts,
+    selectedStudentAttempts,
+    CURRENT_STUDENT_FOR_CHARTS
+  );
+
+  // Summary cards
+  if (totalAttemptsEl) {
+    totalAttemptsEl.textContent = totalAttempts;
+  }
+  if (uniqueStudentsEl) {
+    uniqueStudentsEl.textContent =
+      uniqueStudentNames.size === 1
+        ? "1 student"
+        : `${uniqueStudentNames.size} students`;
+  }
+
+  if (summaryAccuracyEl) {
+    summaryAccuracyEl.textContent = formatPercent(totalCorrect, totalAnswered);
+  }
+  if (summaryCorrectTallyEl) {
+    summaryCorrectTallyEl.textContent =
+      `${totalCorrect} of ${totalAnswered} questions answered correct`;
+  }
+
+  const avgQuestions = totalAttempts ? totalAnswered / totalAttempts : 0;
+  const avgCorrect = totalAttempts ? totalCorrect / totalAttempts : 0;
+  const benchmarkAttempts = attempts.filter(isBenchmarkAttempt);
+  const benchmarkSummary = summarizeAttempts(benchmarkAttempts);
+
+  if (summaryBenchmarkAccuracyEl && summaryBenchmarkDetailsEl) {
+    if (!benchmarkSummary.count || !benchmarkSummary.total) {
+      summaryBenchmarkAccuracyEl.textContent = "—";
+      summaryBenchmarkDetailsEl.textContent = "No benchmark attempts loaded";
+    } else {
+      const benchmarkPct = Math.round(
+        (benchmarkSummary.correct / benchmarkSummary.total) * 100
+      );
+
+      const benchmarkStudents = new Set(
+        benchmarkAttempts
+          .map((a) => (a.studentName || "").trim())
+          .filter(Boolean)
+      );
+
+      summaryBenchmarkAccuracyEl.textContent = `${benchmarkPct}%`;
+      summaryBenchmarkDetailsEl.textContent =
+        `${benchmarkSummary.count} attempt${benchmarkSummary.count === 1 ? "" : "s"} · ` +
+        `${benchmarkStudents.size} student${benchmarkStudents.size === 1 ? "" : "s"} · ` +
+        `${benchmarkSummary.correct} of ${benchmarkSummary.total} correct`;
+    }
+  }
+
+  if (summaryAvgQuestionsEl) {
+    summaryAvgQuestionsEl.textContent = avgQuestions.toFixed(1);
+  }
+  if (summaryAvgCorrectEl) {
+    summaryAvgCorrectEl.textContent = `${avgCorrect.toFixed(1)} correct on average`;
+  }
+
+  // Attempts table
+  attemptsTableBody.innerHTML = "";
+  if (!attempts.length) {
+    attemptsSubtitleEl.textContent = "No attempts match this filter yet.";
+  } else {
+    attemptsSubtitleEl.textContent = `${totalAttempts} attempt${
+      totalAttempts === 1 ? "" : "s"
+    } loaded.`;
+  }
+  if (!attempts.length && typeof clearAttemptQnPanel === "function") {
+    clearAttemptQnPanel();
+  }
+
+  attempts.forEach(a => {
+    const tr = document.createElement("tr");
+
+    const studentName = (a.studentName || "—").trim();
+
+    // How many were really answered on this attempt?
+    const answeredForRow =
+      a.answeredCount != null
+        ? Number(a.answeredCount)
+        : Number(a.totalQuestions || 0);
+
+    const numCorrect = Number(a.numCorrect || 0);
+
+    // Prefer server-computed accuracy (based on answered questions),
+    // but fall back to local calculation if needed (demo data).
+    const scorePct =
+      typeof a.accuracy === "number"
+        ? a.accuracy
+        : (answeredForRow
+            ? Math.round((numCorrect / answeredForRow) * 100)
+            : 0);
+
+    tr.innerHTML = `
+      <td>${studentName || "—"}</td>
+      <td>${a.sessionCode || "—"}</td>
+      <td>${formatAttemptStatus(a)}</td>
+      <td>
+        <span class="${accuracyTagClass(scorePct)}">${scorePct}%</span>
+      </td>
+      <td>${formatAnsweredLabel(a)}</td>
+      <td>${numCorrect}</td>
+      <td>${formatDate(a.startedAt)}</td>
+      <td>${formatDate(a.finishedAt)}</td>
+    `;
+
+    // Make row clickable to toggle student overlay AND load Q-by-Q panel
+    if (studentName && studentName !== "—") {
+      tr.dataset.studentName = studentName;
+
+      if (CURRENT_STUDENT_FOR_CHARTS === studentName) {
+        tr.classList.add("is-selected-student");
+      }
+
+      tr.addEventListener("click", () => {
+        // Toggle which student's data overlays the charts + drawer
+        if (CURRENT_STUDENT_FOR_CHARTS === studentName) {
+          CURRENT_STUDENT_FOR_CHARTS = null;
+        } else {
+          CURRENT_STUDENT_FOR_CHARTS = studentName;
+        }
+
+        // Re-render dashboard for charts + drawer
+        renderDashboard(attempts);
+
+        // Load THIS attempt into the full Q-by-Q panel
+        loadAttemptQnPanel(a);
+      });
+    }
+
+    attemptsTableBody.appendChild(tr);
+  });
+
+
+  // Skills aggregation – class vs selected student
+  const skillTotalsAll = {};
+  const skillTotalsSelected = {};
+
+  attempts.forEach(a => {
+    if (!a.bySkill) return;
+    const isSelected =
+      CURRENT_STUDENT_FOR_CHARTS &&
+      (a.studentName || "").trim() === CURRENT_STUDENT_FOR_CHARTS;
+
+    Object.entries(a.bySkill).forEach(([skill, stats]) => {
+      if (!skillTotalsAll[skill]) {
+        skillTotalsAll[skill] = { correct: 0, total: 0 };
+      }
+      skillTotalsAll[skill].correct += stats.correct || 0;
+      skillTotalsAll[skill].total += stats.total || 0;
+
+      if (isSelected) {
+        if (!skillTotalsSelected[skill]) {
+          skillTotalsSelected[skill] = { correct: 0, total: 0 };
+        }
+        skillTotalsSelected[skill].correct += stats.correct || 0;
+        skillTotalsSelected[skill].total += stats.total || 0;
+      }
+    });
+  });
+
+  skillsTableBody.innerHTML = "";
+  const skillEntries = Object.entries(skillTotalsAll);
+
+  // Update skill accuracy chart (class vs student)
+  updateSkillAccuracyChart(
+    skillTotalsAll,
+    skillTotalsSelected,
+    CURRENT_STUDENT_FOR_CHARTS
+  );
+
+  if (!skillEntries.length) {
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      `<td colspan="4" class="muted">No skill data to show yet.</td>`;
+    skillsTableBody.appendChild(tr);
+  } else {
+    skillEntries
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .forEach(([skill, stats]) => {
+        const pct = stats.total
+          ? Math.round((stats.correct / stats.total) * 100)
+          : 0;
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${skill}</td>
+          <td>${stats.correct}</td>
+          <td>${stats.total}</td>
+          <td><span class="${accuracyTagClass(pct)}">${pct}%</span></td>
+        `;
+        skillsTableBody.appendChild(tr);
+      });
+  }
+
+  // Update session tags (most missed skill/type)
+  updateSessionTagsFromAttempts(attempts);
+
+  // Student detail panel (if a student is selected)
+  renderStudentDetailPanel(
+    CURRENT_STUDENT_FOR_CHARTS,
+    selectedStudentAttempts,
+    skillTotalsSelected
+  );
+
+  // Heat map (all students × skills)
+  renderSkillHeatmap(attempts);
+
+  // Update the little view summary bar
+  updateViewSummary();
+}
+
+// ---------- SINGLE CSV EXPORT: one row per student × skill ----------
+function exportCombinedCSV() {
+  if (!CURRENT_ATTEMPTS.length) {
+    alert("No attempts to export yet.");
+    return;
+  }
+
+  const rows = [];
+
+  // Header row – designed for pivot tables
+  rows.push([
+    "AttemptID",
+    "StudentName",
+    "SessionCode",
+    "SkillTag",
+    "SkillCorrect",
+    "SkillTotal",
+    "SkillAccuracyPct",
+    "AttemptCorrect",
+    "AttemptTotalQuestions",
+    "AttemptAccuracyPct",
+    "StartedAt",
+    "FinishedAt"
+  ]);
+
+  CURRENT_ATTEMPTS.forEach((a) => {
+    const attemptTotalQ = a.totalQuestions || 0;
+    const attemptCorrect = a.numCorrect || 0;
+    const attemptPct = attemptTotalQ
+      ? Math.round((attemptCorrect / attemptTotalQ) * 100)
+      : 0;
+
+    // If we *somehow* have no bySkill, still include a row so the student shows up.
+    const skillsObj = a.bySkill && Object.keys(a.bySkill).length
+      ? a.bySkill
+      : { "(no-skill-tags)": { correct: attemptCorrect, total: attemptTotalQ } };
+
+    Object.entries(skillsObj).forEach(([skill, stats]) => {
+      const skillCorrect = stats.correct || 0;
+      const skillTotal = stats.total || 0;
+      const skillPct = skillTotal
+        ? Math.round((skillCorrect / skillTotal) * 100)
+        : 0;
+
+      rows.push([
+        a.attemptId || "",
+        a.studentName || "",
+        a.sessionCode || "",
+        skill,
+        skillCorrect,
+        skillTotal,
+        skillPct,
+        attemptCorrect,
+        attemptTotalQ,
+        attemptPct,
+        formatDate(a.startedAt),
+        formatDate(a.finishedAt)
+      ]);
+    });
+  });
+
+  const sessionCodeRaw = sessionInput.value.trim() || "ALL";
+
+  const safeSession = sessionCodeRaw.replace(/[^A-Z0-9]+/gi, "-");
+
+const filename = `reading-trainer-results-session-${safeSession}.csv`;
+  downloadCSV(filename, rows);
+}
+
+// ---------- GLOBAL STUDENT SEARCH (cross-session) ----------
+// ---------- GLOBAL STUDENT SEARCH (cross-session) ----------
+
+function clearStudentSearch() {
+  if (studentSearchInput) {
+    studentSearchInput.value = "";
+  }
+  // Reset the panel back to the "no search yet" state
+  renderStudentSearchResults("", []);
+}
+
+function renderStudentSearchResults(searchTerm, attempts) {
+  if (!studentSearchResultsEl) return;
+
+  studentSearchResultsEl.innerHTML = "";
+
+  const cleanTerm = (searchTerm || "").trim();
+
+  // --- No active search: show default helper text ---
+  if (!cleanTerm) {
+    const p = document.createElement("p");
+    p.className = "muted small";
+    p.innerHTML =
+      'No search yet. Type a student name above and click <strong>Search</strong>.';
+    studentSearchResultsEl.appendChild(p);
+    return;
+  }
+
+  // --- Header row with "Results for" + Clear link ---
+  const header = document.createElement("div");
+  header.className = "student-search-header";
+
+  const label = document.createElement("span");
+  label.className = "student-search-label";
+  label.textContent = `Results for "${cleanTerm}"`;
+
+  const clearBtn = document.createElement("button");
+  clearBtn.type = "button";
+  clearBtn.className = "student-search-clear";
+  clearBtn.textContent = "Clear search";
+  clearBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    clearStudentSearch();
+  });
+
+  header.appendChild(label);
+  header.appendChild(clearBtn);
+  studentSearchResultsEl.appendChild(header);
+
+  // --- No matches for this term ---
+  if (!Array.isArray(attempts) || !attempts.length) {
+    const p = document.createElement("p");
+    p.className = "student-search-empty";
+    p.textContent = `No sessions found matching "${cleanTerm}".`;
+    studentSearchResultsEl.appendChild(p);
+    return;
+  }
+
+  // Group by session + assessment so each row is "one session"
+  const byKey = new Map();
+  attempts.forEach((a) => {
+    const sessionCode = (a.sessionCode || "").trim();
+    const assessmentName = (a.assessmentName || "").trim();
+    const key = `${sessionCode}||${assessmentName}`;
+
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, a);
+      return;
+    }
+
+    // Prefer the latest finishedAt
+    const existingTime =
+      existing.finishedAt || existing.startedAt || existing.createdAt || "";
+    const newTime = a.finishedAt || a.startedAt || a.createdAt || "";
+    if (newTime && newTime > existingTime) {
+      byKey.set(key, a);
+    }
+  });
+
+  const rows = Array.from(byKey.values()).sort((a, b) => {
+    const aTime = a.finishedAt || a.startedAt || "";
+    const bTime = b.finishedAt || b.startedAt || "";
+    if (aTime && bTime) {
+      if (aTime > bTime) return -1;
+      if (aTime < bTime) return 1;
+    }
+    return 0;
+  });
+
+  const table = document.createElement("table");
+  table.className = "student-search-table";
+
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>Session</th>
+        <th>Assessment</th>
+        <th>Score (%)</th>
+        <th>Answered</th>
+        <th>Finished</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  `;
+
+  const tbody = table.querySelector("tbody");
+
+  rows.forEach((a) => {
+    const tr = document.createElement("tr");
+
+    const numCorrect = Number(a.numCorrect || 0);
+    const answered = Number(
+      a.answeredCount != null
+        ? a.answeredCount
+        : a.totalQuestions != null
+        ? a.totalQuestions
+        : 0
+    );
+    const scorePct =
+      typeof a.accuracy === "number"
+        ? Math.round(a.accuracy)
+        : answered
+        ? Math.round((numCorrect / answered) * 100)
+        : 0;
+
+    tr.innerHTML = `
+      <td>${(a.sessionCode || "—").trim()}</td>
+      <td>${(a.assessmentName || "—").trim()}</td>
+      <td><span class="${accuracyTagClass(scorePct)}">${scorePct}%</span></td>
+      <td>${formatAnsweredLabel(a)}</td>
+      <td>${formatDate(a.finishedAt || a.startedAt)}</td>
+    `;
+
+    tr.addEventListener("click", () => {
+      const studentName = (a.studentName || "").trim();
+      const sessionCode = (a.sessionCode || "").trim();
+
+      if (!sessionCode) return;
+
+      // Remember who we want to focus once loadAttempts() finishes
+      PENDING_STUDENT_FOCUS_NAME = studentName || null;
+
+      // Set filters and load that session
+      if (sessionInput) sessionInput.value = sessionCode;
+
+      // Update the pill right away so teachers see where they're going
+      if (sessionPill) {
+        sessionPill.textContent = sessionCode
+          ? `Session: ${sessionCode}`
+          : "Session: all sessions";
+      }
+
+      loadAttempts();
+      // Optional: scroll main content into view
+      const mainEl = document.querySelector(".dashboard-main");
+      if (mainEl && typeof mainEl.scrollIntoView === "function") {
+        mainEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+
+    tbody.appendChild(tr);
+  });
+
+  studentSearchResultsEl.appendChild(table);
+}
+
+
+async function runStudentSearch() {
+  if (!studentSearchInput || !studentSearchResultsEl) return;
+
+  const searchTerm = studentSearchInput.value || "";
+  const cleanTerm = searchTerm.trim();
+  if (!cleanTerm) {
+    renderStudentSearchResults("", []);
+    return;
+  }
+
+  // Show "loading" message
+  studentSearchResultsEl.innerHTML = `
+    <p class="muted small">Searching for "${cleanTerm}"…</p>
+  `;
+
+  try {
+    const ownerEmail = (CURRENT_SESSION_OWNER_OVERRIDE || OWNER_EMAIL_FOR_VIEW || "").trim().toLowerCase();
+    const useOwnerScope =
+      !!ownerEmail && (!teacherUser || teacherUser.email.toLowerCase() !== ownerEmail);
+
+    let allAttempts = [];
+
+    // Student search should always search the server-backed full attempt history,
+    // not just the locally patched cache from the most recently loaded session.
+    if (useOwnerScope) {
+      allAttempts = await fetchAttemptSummaryPagesForScope({
+        ownerEmail,
+      });
+    } else if (teacherUser && teacherUser.email) {
+      allAttempts = await fetchAttemptSummaryPagesForScope({
+        viewerEmail: teacherUser.email,
+      });
+    } else if (ownerEmail) {
+      allAttempts = await fetchAttemptSummaryPagesForScope({
+        ownerEmail,
+      });
+    }
+
+    // Refresh the shared cache so student progress graphs use the full history too.
+    ALL_VIEWER_ATTEMPTS = allAttempts;
+
+    const needle = cleanTerm.toLowerCase();
+    const matching = allAttempts.filter((a) => {
+      const name = (a.studentName || "").toLowerCase();
+      return name && name.includes(needle);
+    });
+
+    renderStudentSearchResults(cleanTerm, matching);
+  } catch (err) {
+    console.error("[Dashboard] Student search error:", err);
+    studentSearchResultsEl.innerHTML = `
+      <p class="student-search-empty">
+        Sorry, something went wrong while searching. Please try again.
+      </p>
+    `;
+  }
+}
+
+// ---------- DATA LOADING (real backend + demo fallback) ----------
+async function loadAttempts() {
+  const sessionCodeRaw = sessionInput.value.trim();
+  // Update pill
+  sessionPill.textContent = sessionCodeRaw
+    ? `Session: ${sessionCodeRaw}`
+    : "Session: all sessions";
+
+  loadBtn.disabled = true;
+  loadStatusEl.textContent = "Loading attempts…";
+
+  try {
+    const params = new URLSearchParams();
+    addGradeParam(params);
+    if (sessionCodeRaw) params.set("sessionCode", sessionCodeRaw);
+
+    // Filters (may be too strict for co-teacher links if set/level mismatch)
+    const setVal = getSelectedPracticeSet();
+    const levelVal = currentLevelParam || "";
+    const hasFilters =
+      (setVal && setVal !== "full") ||
+      (levelVal && levelVal !== "on");
+
+    if (setVal) params.set("set", setVal);
+    if (levelVal) params.set("level", levelVal);
+
+    // Determine if we're in a co-teacher view:
+    // - There is an OWNER_EMAIL_FOR_VIEW from the URL
+    // - And it's different from the currently signed-in teacher (if any)
+   const ownerEmail = (CURRENT_SESSION_OWNER_OVERRIDE || OWNER_EMAIL_FOR_VIEW || "").trim().toLowerCase();
+const useOwnerScope =
+  !!ownerEmail && (!teacherUser || teacherUser.email.toLowerCase() !== ownerEmail);
+
+if (useOwnerScope) {
+  params.set("ownerEmail", ownerEmail);
+} else if (teacherUser && teacherUser.email) {
+  params.set("viewerEmail", teacherUser.email);
+} else if (ownerEmail) {
+  params.set("ownerEmail", ownerEmail);
+}
+
+    const res = await fetch(
+      `/.netlify/functions/getReadingAttempts?${params.toString()}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error(`Server error: ${res.status}`);
+    }
+
+    let data = await res.json();
+    let rawAttempts = Array.isArray(data.attempts) ? data.attempts : [];
+    let attempts = getFirstAttemptsPerStudent(rawAttempts);
+
+    // ✅ Fallback: if filters produced no results, retry without set/level
+    if (sessionCodeRaw && hasFilters && (!attempts || attempts.length === 0)) {
+      const retryParams = new URLSearchParams();
+      addGradeParam(retryParams);
+      retryParams.set("sessionCode", sessionCodeRaw);
+
+      // keep the SAME owner/viewer scoping as the first request
+      const ownerEmail = (CURRENT_SESSION_OWNER_OVERRIDE || OWNER_EMAIL_FOR_VIEW || "").trim().toLowerCase();
+      const useOwnerScope =
+        !!ownerEmail && (!teacherUser || teacherUser.email.toLowerCase() !== ownerEmail);
+
+      if (useOwnerScope) {
+        retryParams.set("ownerEmail", ownerEmail);
+      } else if (teacherUser && teacherUser.email) {
+        retryParams.set("viewerEmail", teacherUser.email);
+      } else if (ownerEmail) {
+        retryParams.set("ownerEmail", ownerEmail);
+      }
+
+      const retryRes = await fetch(`/.netlify/functions/getReadingAttempts?${retryParams.toString()}`, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      });
+
+      if (retryRes.ok) {
+        const retryData = await retryRes.json();
+        const retryRaw = Array.isArray(retryData.attempts) ? retryData.attempts : [];
+        const retryAttempts = getFirstAttemptsPerStudent(retryRaw);
+
+        if (retryAttempts.length) {
+          attempts = retryAttempts;
+          loadStatusEl.textContent =
+            "No attempts matched the current set/level filters — showing all attempts for this session instead.";
+        }
+      }
+    }
+
+    if (!attempts.length) {
+      renderDashboard([]);
+      loadStatusEl.textContent =
+        "No attempts found yet. Once students complete the practice, load again.";
+    } else {
+      renderDashboard(attempts);
+
+      // Keep the cross-session student search cache aware of anything we just loaded.
+      // This is especially important for sessions that existed before the lightweight
+      // index was fully repaired.
+      if (Array.isArray(attempts) && attempts.length) {
+        const existing = Array.isArray(ALL_VIEWER_ATTEMPTS)
+          ? ALL_VIEWER_ATTEMPTS
+          : [];
+
+        const byAttemptId = new Map();
+
+        existing.forEach((a) => {
+          const key = a.attemptId || `${a.sessionCode || ""}_${a.studentName || ""}_${a.finishedAt || ""}`;
+          if (key) byAttemptId.set(key, a);
+        });
+
+        attempts.forEach((a) => {
+          const key = a.attemptId || `${a.sessionCode || ""}_${a.studentName || ""}_${a.finishedAt || ""}`;
+          if (key) byAttemptId.set(key, a);
+        });
+
+        ALL_VIEWER_ATTEMPTS = Array.from(byAttemptId.values());
+      }
+
+      // Hydrate session history with real attempts
+      updateSessionHistory(sessionCodeRaw, attempts);
+      loadStatusEl.textContent = `Loaded ${attempts.length} attempt${
+        attempts.length === 1 ? "" : "s"
+      } from server. (first attempt per student)`;
+    }
+
+    // Enable live monitor for this session
+    enableMonitorButton(sessionCodeRaw);
+  } catch (err) {
+    console.error("[Dashboard] Error loading attempts:", err);
+
+    // No demo fallback: show an empty state + clear message
+    renderDashboard([]);
+    loadStatusEl.textContent =
+      "Could not reach the server. Please check your connection or try again.";
+
+    // You can still allow live monitor; if the server is fully down,
+    // that page will show the same issue.
+    enableMonitorButton(sessionCodeRaw);
+  } finally {
+    loadBtn.disabled = false;
+  }
+}
+
+function enableMonitorButton(sessionCodeRaw) {
+  if (!monitorSessionBtn) return;
+
+  const session = (sessionCodeRaw || "").trim();
+
+  // No session? Turn the button off.
+  if (!session) {
+    monitorSessionBtn.disabled = true;
+    monitorSessionBtn.onclick = null;
+    return;
+  }
+
+  monitorSessionBtn.disabled = false;
+
+  monitorSessionBtn.onclick = (() => {
+    const params = new URLSearchParams();
+
+    // Live monitor expects `session`,  `set`
+    params.set("session", session.toUpperCase());
+    addGradeParam(params);
+
+    // ✅ NEW: practice set selector (full | mini1 | mini2)
+    const setParam = getSelectedPracticeSet();
+    params.set("set", setParam);
+
+    // OPTIONAL: include level if you are using it
+    const levelSelect = document.getElementById("practice-level");
+    const level = (levelSelect?.value || currentLevelParam || "").trim();
+    if (level) params.set("level", level);
+
+    // 🔑 Tie the live monitor to the SAME OWNER as the currently loaded session
+    let ownerEmail = null;
+
+    // 1) If this session was loaded via a co-teacher link, use that owner
+    if (CURRENT_SESSION_OWNER_OVERRIDE) {
+      ownerEmail = CURRENT_SESSION_OWNER_OVERRIDE;
+    } else if (teacherUser && teacherUser.email) {
+      // 2) Normal owner behavior
+      ownerEmail = teacherUser.email;
+    } else if (OWNER_EMAIL_FOR_VIEW) {
+      // 3) URL-based/fallback owner context
+      ownerEmail = OWNER_EMAIL_FOR_VIEW;
+    } else {
+      // 4) last-resort fallback (helps owners who didn't "sign in" this visit)
+      try {
+        ownerEmail = window.localStorage.getItem("rp7_lastOwnerEmail") || "";
+      } catch (e) {}
+    }
+
+    if (!ownerEmail) {
+      alert("Missing owner context for Live Monitor. Please sign in or open from a valid session link.");
+      return;
+    }
+
+    // ✅ REQUIRED: live-monitor.js reads ?owner=
+    params.set("owner", ownerEmail);
+
+    const url = `${window.location.origin}/teacher-dashboard-7/reading-practice/live-monitor.html?${params.toString()}`;
+    window.open(url, "_blank");
+  });
+}
+
+async function exportDashboardPDF() {
+  try {
+    const root = document.querySelector(".dashboard-main");
+    if (!root) return;
+
+    const canvas = await html2canvas(root, { scale: 2 });
+    const imgData = canvas.toDataURL("image/png");
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF("p", "mm", "a4");
+
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    const dateStr = new Date().toISOString().slice(0, 10);
+    pdf.save(`reading-dashboard-${dateStr}.pdf`);
+  } catch (e) {
+    console.error("[Dashboard] PDF export failed:", e);
+    alert("Sorry, something went wrong generating the PDF.");
+  }
+}
+
+// ---------- BUILD & COPY STUDENT LINK ----------
+function buildStudentLink(sessionCode) {
+  const cleanSession = (sessionCode || "").trim().toUpperCase();
+
+  // Keep the normalized value in the inputs so the teacher sees it
+  if (sessionInput) sessionInput.value = cleanSession;
+
+  if (!cleanSession) return "";
+
+  const baseUrl = `${window.location.origin}/teacher-dashboard-7/reading-practice/index.html`;
+  const params = new URLSearchParams();
+  params.set("session", cleanSession);
+  addGradeParam(params);
+
+
+  // NEW: set = full | mini1 | mini2 (from selector)
+  const setParam = getSelectedPracticeSet();
+  params.set("set", setParam);
+
+  // OPTIONAL: level (only if you’re using it)
+  const levelSelect = document.getElementById("practice-level");
+  const level = (levelSelect?.value || currentLevelParam || "").trim();
+  if (level) params.set("level", level);
+
+  // tie this student link to the correct owner (prefer session-scoped override)
+  let ownerEmail =
+    CURRENT_SESSION_OWNER_OVERRIDE ||
+    (teacherUser && teacherUser.email) ||
+    OWNER_EMAIL_FOR_VIEW ||
+    "";
+
+  if (!ownerEmail) {
+    try {
+      ownerEmail = window.localStorage.getItem("rp7_lastOwnerEmail") || "";
+    } catch (e) {}
+  }
+
+  if (ownerEmail) params.set("owner", ownerEmail);
+
+  const link = `${baseUrl}?${params.toString()}`;
+
+  try {
+    window.localStorage.setItem("rp7_lastSessionCode", cleanSession);
+    window.localStorage.setItem("rp7_lastSet", setParam);
+    if (level) window.localStorage.setItem("rp7_lastLevel", level);
+    if (ownerEmail) window.localStorage.setItem("rp7_lastOwnerEmail", ownerEmail);
+  } catch (e) {
+    // non-fatal
+  }
+
+  return link;
+}
+function buildCoTeacherLink(sessionCode) {
+  const cleanSession = (sessionCode || "").trim().toUpperCase();
+
+  if (!cleanSession) {
+    if (coTeacherLinkInput) coTeacherLinkInput.value = "";
+    return "";
+  }
+
+  const baseUrl = `${window.location.origin}/teacher-dashboard-7/teacher-dashboard.html`;
+  const params = new URLSearchParams();
+  params.set("sessionCode", cleanSession);
+  addGradeParam(params);
+
+
+  // NEW: include selected practice set (full | mini1 | mini2)
+  const setParam = getSelectedPracticeSet();
+  params.set("set", setParam);
+
+  // OPTIONAL: level (only if you’re using it)
+  const levelSelect = document.getElementById("practice-level");
+  const level = (levelSelect?.value || currentLevelParam || "").trim();
+  if (level) params.set("level", level);
+
+  // the teacher who OWNS this data (for co-teacher access)
+  // Prefer the session-scoped owner override (co-teacher view), then fall back.
+  let ownerEmail =
+    CURRENT_SESSION_OWNER_OVERRIDE ||
+    OWNER_EMAIL_FOR_VIEW ||
+    (teacherUser && teacherUser.email) ||
+    "";
+
+  // If we still don't know the owner, don't generate a link.
+  if (!ownerEmail) {
+    if (coTeacherLinkInput) coTeacherLinkInput.value = "";
+    return "";
+  }
+
+  params.set("owner", ownerEmail);
+
+  const link = `${baseUrl}?${params.toString()}`;
+
+  if (coTeacherLinkInput) coTeacherLinkInput.value = link;
+
+  try {
+    window.localStorage.setItem("rp7_lastCoTeacherLink", link);
+    window.localStorage.setItem("rp7_lastSet", setParam);
+    if (level) window.localStorage.setItem("rp7_lastLevel", level);
+  } catch (e) {
+    // non-fatal
+  }
+
+  return link;
+}
+
+function buildBenchmarkCoTeacherLink(sessionCode, benchmarkKey = "q4") {
+  const cleanSession = (sessionCode || "").trim().toUpperCase();
+
+  if (!cleanSession) {
+    if (coTeacherLinkInput) coTeacherLinkInput.value = "";
+    return "";
+  }
+
+  const baseUrl = `${window.location.origin}/teacher-dashboard/teacher-dashboard.html`;
+  const params = new URLSearchParams();
+
+  params.set("sessionCode", cleanSession);
+  addGradeParam(params);
+  params.set("mode", "benchmark");
+  params.set("benchmark", benchmarkKey);
+  params.set("set", "benchmark");
+  params.set("level", "benchmark");
+
+  let ownerEmail =
+    CURRENT_SESSION_OWNER_OVERRIDE ||
+    OWNER_EMAIL_FOR_VIEW ||
+    (teacherUser && teacherUser.email) ||
+    "";
+
+  if (!ownerEmail) {
+    try {
+      ownerEmail = window.localStorage.getItem("rp7_lastOwnerEmail") || "";
+    } catch (e) {}
+  }
+
+  ownerEmail = String(ownerEmail || "").trim().toLowerCase();
+
+  if (!ownerEmail) {
+    if (coTeacherLinkInput) coTeacherLinkInput.value = "";
+    return "";
+  }
+
+  params.set("owner", ownerEmail);
+
+  const link = `${baseUrl}?${params.toString()}`;
+
+  if (coTeacherLinkInput) {
+    coTeacherLinkInput.value = link;
+  }
+
+  try {
+    window.localStorage.setItem("rp7_lastCoTeacherLink", link);
+    window.localStorage.setItem("rp7_lastOwnerEmail", ownerEmail);
+    window.localStorage.setItem("rp7_lastSet", "benchmark");
+    window.localStorage.setItem("rp7_lastLevel", "benchmark");
+  } catch (e) {
+    // non-fatal
+  }
+
+  return link;
+}
+
+function buildBenchmarkStudentLink(sessionCode, benchmarkKey = "q4") {
+  const cleanSession = (sessionCode || "").trim().toUpperCase();
+  if (!cleanSession) return "";
+
+  const baseUrl = `${window.location.origin}/teacher-dashboard-7/reading-practice/index.html`;
+  const params = new URLSearchParams();
+
+  params.set("session", cleanSession);
+  addGradeParam(params);
+  params.set("mode", "benchmark");
+  params.set("benchmark", benchmarkKey);
+  params.set("set", "benchmark");
+  params.set("level", "benchmark");
+
+  let ownerEmail =
+    CURRENT_SESSION_OWNER_OVERRIDE ||
+    (teacherUser && teacherUser.email) ||
+    OWNER_EMAIL_FOR_VIEW ||
+    "";
+
+  if (!ownerEmail) {
+    try {
+      ownerEmail = window.localStorage.getItem("rp7_lastOwnerEmail") || "";
+    } catch (e) {}
+  }
+
+  if (ownerEmail) params.set("owner", ownerEmail);
+
+  return `${baseUrl}?${params.toString()}`;
+}
+
+function enableBenchmarkMonitorButton(sessionCodeRaw, benchmarkKey = "q4") {
+  if (!monitorBenchmarkBtn) return;
+
+  const session = (sessionCodeRaw || "").trim().toUpperCase();
+
+  if (!session) {
+    monitorBenchmarkBtn.disabled = true;
+    monitorBenchmarkBtn.onclick = null;
+    return;
+  }
+
+  monitorBenchmarkBtn.disabled = false;
+
+  monitorBenchmarkBtn.onclick = () => {
+    const params = new URLSearchParams();
+    params.set("session", session);
+    addGradeParam(params);
+    params.set("mode", "benchmark");
+    params.set("benchmark", benchmarkKey);
+    params.set("set", "benchmark");
+    params.set("level", "benchmark");
+
+    const ownerEmail =
+      CURRENT_SESSION_OWNER_OVERRIDE ||
+      (teacherUser && teacherUser.email) ||
+      OWNER_EMAIL_FOR_VIEW ||
+      "";
+
+    if (ownerEmail) params.set("owner", ownerEmail);
+
+    const url = `${window.location.origin}/teacher-dashboard-7/reading-practice/live-monitor.html?${params.toString()}`;
+    window.open(url, "_blank");
+  };
+}
+
+function startNewSession() {
+  const rawSession = sessionInput.value.trim();
+
+  if (!rawSession) {
+    alert(
+      "Type a Session Code first (for example: 6A-STARTTIME-DEC2), then click Start New Session."
+    );
+    sessionInput.focus();
+    return;
+  }
+
+  const normalizedSession = normalizeSessionNameForComparison(rawSession);
+
+  // Block duplicates before creating links / monitor state
+  if (isDuplicateSessionName(normalizedSession)) {
+    showDuplicateSessionUI(normalizedSession);
+    sessionInput.focus();
+    return;
+  }
+
+  clearDuplicateSessionUI();
+
+  // Keep the field normalized so everything stays consistent
+  sessionInput.value = normalizedSession;
+
+  // Build both links: student practice link + co-teacher dashboard link
+  const studentLink = buildStudentLink(normalizedSession);
+  const coLink = buildCoTeacherLink(normalizedSession);
+
+  // Show the student link in its box
+  if (sessionLinkInput) {
+    sessionLinkInput.value = studentLink;
+  }
+
+  // Show the co-teacher link (if present)
+  if (typeof coTeacherLinkInput !== "undefined" && coTeacherLinkInput) {
+    coTeacherLinkInput.value = coLink;
+  }
+
+  sessionPill.textContent = `Session: ${normalizedSession}`;
+
+  // Little helper text
+  if (copyLinkStatusEl) {
+    copyLinkStatusEl.textContent =
+      "Link ready. Click Copy to share with students.";
+    copyLinkStatusEl.style.display = "inline";
+  }
+
+  // Remember this session in localStorage for convenience
+  try {
+    window.localStorage.setItem("rp7_lastSessionCode", normalizedSession);
+    window.localStorage.setItem("rp7_lastSessionLink", studentLink);
+
+    const ownerEmail =
+      OWNER_EMAIL_FOR_VIEW ||
+      (teacherUser && teacherUser.email) ||
+      "";
+    if (ownerEmail) {
+      window.localStorage.setItem("rp7_lastOwnerEmail", ownerEmail);
+    }
+  } catch (e) {
+    // non-fatal
+  }
+
+  enableMonitorButton(normalizedSession);
+}
+
+(function wireLinkPreviewAutofill() {
+  const setSelect = document.getElementById("practice-set");
+  const levelSelect = document.getElementById("practice-level"); // only if you’re using level
+
+  const refresh = () => {
+    const session = (sessionInput?.value || "").trim();
+    if (!session) return;
+if (sessionLinkInput) sessionLinkInput.value = buildStudentLink(session);
+if (coTeacherLinkInput) coTeacherLinkInput.value = buildCoTeacherLink(session);
+
+enableMonitorButton(session);
+
+    if (typeof updateCurrentViewSummary === "function") updateCurrentViewSummary();
+  };
+
+  if (sessionInput) sessionInput.addEventListener("input", refresh);
+
+  // NEW: selector change instead of checkbox
+  if (setSelect) setSelect.addEventListener("change", refresh);
+
+  // OPTIONAL: only if you keep the practice-level selector
+  if (levelSelect) levelSelect.addEventListener("change", refresh);
+})();
+
+
+function copySessionLink() {
+  if (!sessionLinkInput || !sessionLinkInput.value) {
+    alert("No student link yet. Start a new session first.");
+    return;
+  }
+
+  const text = sessionLinkInput.value;
+
+  const showCopied = (message = "Copied!") => {
+    if (!copyLinkStatusEl) return;
+    copyLinkStatusEl.textContent = message;
+    copyLinkStatusEl.style.opacity = "1";
+    copyLinkStatusEl.style.visibility = "visible";
+    setTimeout(() => {
+      copyLinkStatusEl.style.opacity = "0";
+      copyLinkStatusEl.style.visibility = "hidden";
+      copyLinkStatusEl.textContent = "";
+    }, 1800);
+  };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => showCopied("Copied!"))
+      .catch(() => showCopied("Copied (fallback)."));
+  } else {
+    // Fallback: select + execCommand
+    sessionLinkInput.select();
+    try {
+      document.execCommand("copy");
+      showCopied("Copied!");
+    } catch (e) {
+      console.warn("Copy failed:", e);
+      showCopied("Unable to copy");
+    } finally {
+      sessionLinkInput.setSelectionRange(0, 0);
+      sessionLinkInput.blur();
+    }
+  }
+}
+
+function copyCoTeacherLink() {
+  if (!coTeacherLinkInput || !coTeacherLinkInput.value) {
+    alert("No co-teacher link yet. Start a new session first.");
+    return;
+  }
+
+  const text = coTeacherLinkInput.value;
+
+  const showCopied = (message = "Copied!") => {
+    if (!copyCoTeacherStatusEl) return;
+    copyCoTeacherStatusEl.textContent = message;
+    copyCoTeacherStatusEl.style.opacity = "1";
+    copyCoTeacherStatusEl.style.visibility = "visible";
+    setTimeout(() => {
+      copyCoTeacherStatusEl.style.opacity = "0";
+      copyCoTeacherStatusEl.style.visibility = "hidden";
+      copyCoTeacherStatusEl.textContent = "";
+    }, 1800);
+  };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => showCopied("Copied!"))
+      .catch(() => showCopied("Copied (fallback)."));
+  } else {
+    coTeacherLinkInput.select();
+    try {
+      document.execCommand("copy");
+      showCopied("Copied!");
+    } catch (e) {
+      console.warn("Copy failed:", e);
+      showCopied("Unable to copy");
+    } finally {
+      coTeacherLinkInput.setSelectionRange(0, 0);
+      coTeacherLinkInput.blur();
+    }
+  }
+}
+
+// ---------- AUTH WIRING ----------
+function requireTeacherSignedIn(action) {
+  return function (...args) {
+    if (!teacherUser) {
+      alert("Please sign in with Google before using the dashboard.");
+      return;
+    }
+    return action(...args);
+  };
+}
+
+// Wrap buttons that should only work when signed in
+loadBtn.addEventListener(
+  "click",
+  requireTeacherSignedIn((e) => {
+    e.preventDefault();
+    loadAttempts();
+  })
+);
+
+downloadCsvBtn.addEventListener(
+  "click",
+  requireTeacherSignedIn(exportCombinedCSV)
+);
+// Global student search (cross-session)
+if (studentSearchBtn) {
+  studentSearchBtn.addEventListener(
+    "click",
+    requireTeacherSignedIn((e) => {
+      e.preventDefault();
+      runStudentSearch();
+    })
+  );
+}
+
+if (studentSearchInput) {
+  studentSearchInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (teacherUser) {
+        runStudentSearch();
+      } else {
+        alert("Please sign in with Google before using the dashboard.");
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      clearStudentSearch();
+      studentSearchInput.blur();
+    }
+  });
+}
+
+
+if (exportPdfBtn) {
+  exportPdfBtn.addEventListener(
+    "click",
+    requireTeacherSignedIn((e) => {
+      e.preventDefault();
+      exportDashboardPDF();
+    })
+  );
+}
+
+if (clearFiltersBtn) {
+  clearFiltersBtn.addEventListener(
+    "click",
+    requireTeacherSignedIn((e) => {
+      e.preventDefault();
+      sessionInput.value = "";
+      CURRENT_STUDENT_FOR_CHARTS = null;
+      CURRENT_SESSION_OWNER_OVERRIDE = null;
+      loadAttempts();
+    })
+  );
+}
+
+// Save prefs when filters change
+sessionInput.addEventListener("input", () => {
+  clearDuplicateSessionUI();
+  saveDashboardPrefs();
+});
+// Toggle official standard descriptions
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".standard-toggle-btn");
+  if (!btn) return;
+
+  const targetId = btn.dataset.target;
+  const el = document.getElementById(targetId);
+  if (!el) return;
+
+  el.classList.toggle("hidden");
+
+  btn.textContent = el.classList.contains("hidden")
+    ? "View Standard"
+    : "Hide Standard";
+});
+
+// Clear student overlay button
+if (clearStudentOverlayBtn) {
+  clearStudentOverlayBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (!CURRENT_STUDENT_FOR_CHARTS) return;
+    CURRENT_STUDENT_FOR_CHARTS = null;
+    renderDashboard(CURRENT_ATTEMPTS);
+  });
+}
+
+// Student detail drawer close
+if (studentDetailCloseBtn && studentDetailPanel) {
+  studentDetailCloseBtn.addEventListener("click", () => {
+    studentDetailPanel.classList.remove("is-open");
+    CURRENT_STUDENT_FOR_CHARTS = null;
+    renderDashboard(CURRENT_ATTEMPTS);
+  });
+}
+
+// Start Session button (requires sign-in)
+const startSessionBtn = document.getElementById("start-session-btn");
+if (startSessionBtn) {
+  startSessionBtn.addEventListener(
+    "click",
+    requireTeacherSignedIn((e) => {
+      e.preventDefault();
+      startNewSession();
+    })
+  );
+}
+
+// Start Benchmark button (requires sign-in)
+if (startBenchmarkBtn) {
+  startBenchmarkBtn.addEventListener(
+    "click",
+    requireTeacherSignedIn((e) => {
+      e.preventDefault();
+      startBenchmarkSession();
+    })
+  );
+}
+// ====== FULLSCREEN CHARTS ======
+function initChartFullscreen() {
+  const overlay = document.getElementById("chart-fullscreen-backdrop");
+  if (!overlay) return;
+
+  let activeWrapper = null;
+
+  function closeFullscreen() {
+    if (!activeWrapper) return;
+    activeWrapper.classList.remove("chart-wrapper-fullscreen");
+    const closeBtn = activeWrapper.querySelector(".chart-fullscreen-close");
+    if (closeBtn) {
+      closeBtn.classList.remove("is-visible");
+    }
+    overlay.classList.remove("is-active");
+    activeWrapper = null;
+  }
+
+  // Close on backdrop click
+  overlay.addEventListener("click", closeFullscreen);
+
+  // Close on Escape key
+  document.addEventListener("keydown", (evt) => {
+    if (evt.key === "Escape") {
+      closeFullscreen();
+    }
+  });
+
+  // Attach to all dashboard charts
+  document.querySelectorAll(".dashboard-charts .chart-wrapper").forEach((wrapper) => {
+    // Create a close button inside each wrapper (once)
+    let closeBtn = wrapper.querySelector(".chart-fullscreen-close");
+    if (!closeBtn) {
+      closeBtn = document.createElement("button");
+      closeBtn.type = "button";
+      closeBtn.className = "chart-fullscreen-close";
+      closeBtn.setAttribute("aria-label", "Close full screen chart");
+      closeBtn.innerHTML = "&times;";
+      wrapper.appendChild(closeBtn);
+
+      closeBtn.addEventListener("click", (evt) => {
+        evt.stopPropagation(); // don’t re-trigger the wrapper click
+        closeFullscreen();
+      });
+    }
+
+    // Click chart to open fullscreen
+    wrapper.addEventListener("click", () => {
+      // If this chart is already fullscreen, ignore (or you could close here)
+      if (activeWrapper === wrapper) return;
+
+      // If some other chart is open, close it first
+      if (activeWrapper) {
+        activeWrapper.classList.remove("chart-wrapper-fullscreen");
+        const prevBtn = activeWrapper.querySelector(".chart-fullscreen-close");
+        if (prevBtn) prevBtn.classList.remove("is-visible");
+      }
+
+      activeWrapper = wrapper;
+      wrapper.classList.add("chart-wrapper-fullscreen");
+      closeBtn.classList.add("is-visible");
+      overlay.classList.add("is-active");
+      // ✅ Re-apply tick strategy now that the wrapper is fullscreen
+const canvas = wrapper.querySelector("canvas");
+if (canvas) {
+  const id = canvas.id;
+
+  const chart =
+    id === "chart-type-accuracy" ? typeAccuracyChart :
+    id === "chart-skill-accuracy" ? skillAccuracyChart :
+    id === "chart-score-bands" ? scoreBandsChart :
+    null;
+
+  if (chart) {
+    const mode = (id === "chart-type-accuracy") ? "type" : (id === "chart-skill-accuracy") ? "skill" : null;
+    if (mode) applyAdaptiveXTicks(chart, mode);
+    chart.resize();          // ensures Chart.js recalcs layout
+    chart.update("none");    // fast redraw
+  }
+}
+
+    });
+  });
+}
+
+// Try to restore last Google user for *display only* (NOT authenticated)
+(function restoreTeacherFromLocalStorage() {
+  try {
+    const raw = window.localStorage.getItem("rp_last_google_user");
+    if (!raw) return;
+
+    const parsed = JSON.parse(raw);
+    if (!parsed || !parsed.email) return;
+
+    const restoredEmail = String(parsed.email);
+
+    // ✅ UI hint only: keep Sign In visible because this is NOT real auth
+    // (Avoids the dashboard pretending the teacher is authenticated.)
+    if (teacherSignInBtn) teacherSignInBtn.style.display = "inline-flex";
+    if (teacherSignOutBtn) teacherSignOutBtn.style.display = "none";
+    if (teacherSignOutBtn) teacherSignOutBtn.textContent = "Sign out";
+
+    // ✅ You MAY set owner for link-building convenience
+    if (!OWNER_EMAIL_FOR_VIEW) OWNER_EMAIL_FOR_VIEW = restoredEmail;
+
+    // ❌ Do NOT hydrate from server here (requires real auth)
+  } catch (e) {
+    console.warn("[Dashboard] Could not restore teacher from localStorage:", e);
+  }
+})();
+
+// Sidebar collapse / expand
+historyToggleBtn.addEventListener("click", () => {
+  const isCollapsed = historySidebar.classList.toggle("collapsed");
+  historyToggleBtn.textContent = isCollapsed ? "⮞ Expand" : "⮜ Collapse";
+});
+
+// Copy Link button
+if (copySessionLinkBtn) {
+  copySessionLinkBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    copySessionLink();
+  });
+}
+if (copyCoTeacherLinkBtn) {
+  copyCoTeacherLinkBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    copyCoTeacherLink();
+  });
+}
+
+// ---------- INITIAL LOAD ----------
+// Load any saved filter prefs
+loadDashboardPrefs();
+
+// Enable click-to-fullscreen on dashboard charts
+initChartFullscreen();
+
+// Initial render: empty dashboard + any stored history
+renderDashboard([]);
+renderSessionHistory(filterHistoryForViewer(loadHistoryFromStorage()));
+
+// Use URL ?sessionCode=&owner= to pre-fill filters
+(function applyUrlFiltersOnLoad() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+
+const urlSession = params.get("sessionCode") || params.get("session");
+const urlOwner = params.get("owner") || params.get("ownerEmail");
+const urlMode = (params.get("mode") || "").toLowerCase();
+const urlBenchmarkKey = params.get("benchmark") || "q4";
+
+// NEW: set can be full | mini1 | mini2 | benchmark
+const rawSet = (params.get("set") || "").toLowerCase();
+const urlSet = normalizeSetParam(rawSet);
+const isBenchmarkUrl =
+  urlMode === "benchmark" ||
+  rawSet === "benchmark" ||
+  (params.get("level") || "").toLowerCase() === "benchmark";
+
+    // OPTIONAL: level (if you keep this feature)
+    const urlLevelRaw = (params.get("level") || "on").toLowerCase();
+    currentLevelParam = ["on", "below", "above", "benchmark"].includes(urlLevelRaw)
+      ? urlLevelRaw
+      : "on";
+
+    // Sync level selector (if present)
+    const levelSelect = document.getElementById("practice-level");
+    if (levelSelect) levelSelect.value = currentLevelParam;
+    try {
+      localStorage.setItem("rp7_lastLevel", currentLevelParam);
+    } catch (e) {}
+
+    // ✅ Co-teacher link should NOT switch the whole dashboard into "owner view".
+    // Instead, store ownerEmail ONLY for this linked session load.
+    if (urlOwner) {
+      CURRENT_SESSION_OWNER_OVERRIDE = String(urlOwner || "").trim().toLowerCase();
+
+      // Keep owner context for linked co-teacher sessions/history hydration
+      OWNER_EMAIL_FOR_VIEW = CURRENT_SESSION_OWNER_OVERRIDE;
+      OWNER_EMAIL_FROM_URL = true;
+    }
+
+
+// Prefill session + pill
+if (urlSession && sessionInput) {
+  sessionInput.value = urlSession;
+}
+
+if (urlSession && benchmarkSessionInput && isBenchmarkUrl) {
+  benchmarkSessionInput.value = urlSession;
+}
+
+if (benchmarkSetSelect && isBenchmarkUrl) {
+  benchmarkSetSelect.value = urlBenchmarkKey;
+}
+
+if (sessionPill && urlSession) {
+  sessionPill.textContent = isBenchmarkUrl
+    ? `Benchmark: ${urlSession}`
+    : `Session: ${urlSession}`;
+}
+
+if (isBenchmarkUrl) {
+  switchDashboardTab("benchmark");
+} else {
+  switchDashboardTab("practice");
+}
+
+
+    // ✅ Sync practice set from URL into selector
+    const setSelect = document.getElementById("practice-set");
+    if (setSelect) {
+      setSelect.value = urlSet;
+    }
+    currentSetParam = urlSet;
+
+    try {
+      localStorage.setItem("rp7_lastSet", urlSet);
+    } catch (e) {}
+
+    // Auto-load if a session or class was provided
+    if ((urlSession) && typeof loadAttempts === "function") {
+      loadAttempts();
+          // Remove owner/session params so refresh doesn't re-trigger link behavior
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("owner");
+      url.searchParams.delete("ownerEmail");
+      url.searchParams.delete("session");
+      url.searchParams.delete("sessionCode");
+      window.history.replaceState({}, "", url.pathname + url.search);
+    } catch (e) {}
+        }
+
+// Keep monitor button & view summary aligned after URL-prefill
+const session = (sessionInput?.value || "").trim();
+
+if (isBenchmarkUrl) {
+  if (sessionLinkInput && session) {
+    sessionLinkInput.value = buildBenchmarkStudentLink(session, urlBenchmarkKey);
+  }
+
+  if (coTeacherLinkInput && session) {
+    coTeacherLinkInput.value = buildBenchmarkCoTeacherLink(session, urlBenchmarkKey);
+  }
+
+  enableBenchmarkMonitorButton(session, urlBenchmarkKey);
+} else {
+  enableMonitorButton(session);
+}
+
+if (typeof updateCurrentViewSummary === "function") updateCurrentViewSummary();
+  } catch (e) {
+    console.warn("[Dashboard] Could not parse URL filters:", e);
+  }
+})();
+
+
+
+// Optional: restore last session info into the UI on load
+(function restoreLastSession() {
+  try {
+    const lastCode = window.localStorage.getItem("rp7_lastSessionCode");
+    const lastLink = window.localStorage.getItem("rp7_lastSessionLink");
+    const lastCoLink = window.localStorage.getItem("rp7_lastCoTeacherLink");
+    const lastOwner = window.localStorage.getItem("rp7_lastOwnerEmail");
+
+    if (lastCode && sessionInput && !sessionInput.value) {
+      sessionInput.value = lastCode;
+      sessionPill.textContent = `Session: ${lastCode}`;
+    }
+
+
+    if (lastLink && sessionLinkInput && !sessionLinkInput.value) {
+      sessionLinkInput.value = lastLink;
+    }
+
+    if (lastCoLink && coTeacherLinkInput && !coTeacherLinkInput.value) {
+      coTeacherLinkInput.value = lastCoLink;
+    }
+
+    // If we don't already have an owner (e.g. not a co-teacher URL), restore from localStorage
+    if (lastOwner && !OWNER_EMAIL_FOR_VIEW) {
+      OWNER_EMAIL_FOR_VIEW = lastOwner;
+    }
+
+    // Also re-enable the live monitor button for this session
+    if (lastCode) {
+      enableMonitorButton(lastCode);
+    }
+  } catch (e) {
+    // ignore
+  }
+})();
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (window.RP_AUTH && typeof window.RP_AUTH.initGoogleAuth === "function") {
+    window.RP_AUTH.initGoogleAuth();
+  }
+
+  const signInBtn = document.getElementById("teacher-signin-btn");
+  const gsiHost = document.getElementById("teacher-gsi-button-container");
+  const signOutBtn = document.getElementById("teacher-signout-btn");
+  const authStatusEl = document.getElementById("teacher-auth-status"); // optional
+
+  function openTeacherSignIn() {
+    // Hide your button immediately so only Google's chooser is visible
+    if (signInBtn) signInBtn.style.display = "none";
+
+    // Show GIS host (if you’re using one)
+    if (gsiHost) {
+      gsiHost.style.display = "block";
+      gsiHost.setAttribute("aria-hidden", "false");
+    }
+
+    // Trigger Google sign-in
+    if (window.RP_AUTH && typeof window.RP_AUTH.promptSignIn === "function") {
+      window.RP_AUTH.promptSignIn();
+    } else {
+      // Restore button if sign-in isn't ready
+      if (signInBtn) signInBtn.style.display = "inline-flex";
+      alert("Google sign-in is not ready yet. Please try again in a moment.");
+    }
+  }
+
+  if (signInBtn) {
+    signInBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      openTeacherSignIn();
+    });
+
+    signInBtn.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        openTeacherSignIn();
+      }
+    });
+  }
+
+  if (signOutBtn) {
+    signOutBtn.addEventListener("click", () => {
+      clearDashboardForSignedOut();
+      window.RP_AUTH?.signOut?.();
+    });
+  }
+
+  if (window.RP_AUTH && typeof window.RP_AUTH.onAuthChange === "function") {
+    window.RP_AUTH.onAuthChange((user) => {
+      teacherUser = user || null;
+      const signedIn = !!teacherUser;
+
+      // Button visibility
+      if (signInBtn) signInBtn.style.display = signedIn ? "none" : "inline-flex";
+      if (signOutBtn) signOutBtn.style.display = signedIn ? "inline-flex" : "none";
+
+      // Optional status line
+      if (authStatusEl) {
+        if (signedIn) {
+          authStatusEl.textContent = teacherUser?.email
+            ? `Signed in as ${teacherUser.email}`
+            : "Signed in";
+          authStatusEl.style.display = "";
+        } else {
+          authStatusEl.textContent = "";
+          authStatusEl.style.display = "none";
+        }
+      }
+
+      // Hide GIS host after sign-in
+      if (gsiHost && signedIn) {
+        gsiHost.style.display = "none";
+        gsiHost.setAttribute("aria-hidden", "true");
+      }
+
+      // Owner logic (your existing behavior)
+      if (signedIn && !OWNER_EMAIL_FROM_URL) {
+        OWNER_EMAIL_FOR_VIEW = teacherUser.email;
+      }
+
+      const isCoTeacherView =
+        OWNER_EMAIL_FROM_URL &&
+        OWNER_EMAIL_FOR_VIEW &&
+        teacherUser?.email &&
+        OWNER_EMAIL_FOR_VIEW !== teacherUser.email;
+
+      // While server hydration runs, show only this teacher's locally cached history.
+      // Never show unscoped localStorage history on shared devices.
+      if (signedIn) {
+        renderSessionHistory(filterHistoryForViewer(loadHistoryFromStorage(), teacherUser.email));
+      } else if (!OWNER_EMAIL_FROM_URL) {
+        renderSessionHistory([]);
+      }
+
+      // Hydrate history from server for the main teacher view.
+      if (signedIn && !isCoTeacherView && typeof hydrateSessionHistoryFromServer === "function") {
+        hydrateSessionHistoryFromServer(teacherUser.email);
+      }
+    });
+  }
+});
+
+

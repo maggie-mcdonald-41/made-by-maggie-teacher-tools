@@ -5,7 +5,13 @@
   const CLASS_FILTER = params.get("class") || "";
 
  const MODE_PARAM = (params.get("mode") || "practice").toLowerCase();
-const BENCHMARK_KEY = (params.get("benchmark") || "q4").toLowerCase();
+  const BENCHMARK_KEY = (params.get("benchmark") || "q4").toLowerCase();
+
+  const READING_GRADE_LEVEL = String(
+    params.get("grade") ||
+    params.get("gradeLevel") ||
+    "6"
+  ).trim() || "6";
 
 const RAW_SET = (params.get("set") || "full").toLowerCase();
 const SET_PARAM =
@@ -208,6 +214,8 @@ function getQuestionHeaderLabel(qId, benchmarkMeta) {
       window.location.origin
     );
     url.searchParams.set("sessionCode", SESSION_CODE);
+    url.searchParams.set("grade", READING_GRADE_LEVEL);
+    url.searchParams.set("gradeLevel", READING_GRADE_LEVEL);
     if (CLASS_FILTER) url.searchParams.set("classCode", CLASS_FILTER);
 
     // ✅ keep live monitor scoped to the exact set in the URL

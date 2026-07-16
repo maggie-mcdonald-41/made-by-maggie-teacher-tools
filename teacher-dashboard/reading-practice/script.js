@@ -4,6 +4,15 @@
 let currentHighlightColor = "yellow"; // default color
 // ====== ASSESSMENT LABEL ======
 let ASSESSMENT_NAME = "Reading Practice";
+
+const READING_GRADE_LEVEL = String(
+  window.READING_GRADE_LEVEL ||
+  new URLSearchParams(location.search).get("grade") ||
+  new URLSearchParams(location.search).get("gradeLevel") ||
+  "6"
+).trim() || "6";
+
+window.READING_GRADE_LEVEL = READING_GRADE_LEVEL;
 // ---- Read Aloud: allow app to stop speech from anywhere (safe no-op if unsupported) ----
 window.RP_TTS_STOP = function RP_TTS_STOP() {
   try {
@@ -477,10 +486,12 @@ function beginTrainerSession({ studentName, sessionCode }) {
       sessionCode: cleanSession,
       assessmentName: ASSESSMENT_NAME,
       ownerEmail, //this ties attempts to the teacher
-practiceSet: window.CURRENT_PRACTICE_SET,
-practiceLevel: window.CURRENT_PRACTICE_LEVEL,
-setType: window.CURRENT_PRACTICE_SET,
-levelBand: window.CURRENT_PRACTICE_LEVEL
+      gradeLevel: READING_GRADE_LEVEL,
+      grade: READING_GRADE_LEVEL,
+      practiceSet: window.CURRENT_PRACTICE_SET,
+      practiceLevel: window.CURRENT_PRACTICE_LEVEL,
+      setType: window.CURRENT_PRACTICE_SET,
+      levelBand: window.CURRENT_PRACTICE_LEVEL
 
     });
   }
@@ -1351,46 +1362,42 @@ function renderQuestion() {
   delete questionStemEl.dataset.highlightColor;
 
 // Passage tabs / linked passage handling
-if (q.hidePassageTabs) {
-  const p1 = document.getElementById("passage-1");
-  const p2 = document.getElementById("passage-2");
+const p1 = document.getElementById("passage-1");
+const p2 = document.getElementById("passage-2");
 
+if (q.hidePassageTabs) {
   if (p1) p1.innerHTML = "";
   if (p2) p2.innerHTML = "";
 
   if (linkedPassageLabelEl) linkedPassageLabelEl.textContent = "";
 
-} else if (q.passageTabs) {
-  const p1 = document.getElementById("passage-1");
-  const p2 = document.getElementById("passage-2");
-
-  if (p1) {
-    p1.innerHTML = q.passageTabs[1] || "";
+} else {
+  // Benchmark-style questions may provide their own passage tabs.
+  // Practice questions already have LEVEL.passages loaded, so they only need linkedPassage.
+  if (q.passageTabs) {
+    if (p1) p1.innerHTML = q.passageTabs[1] || "";
+    if (p2) p2.innerHTML = q.passageTabs[2] || "";
   }
 
-  if (p2) {
-    p2.innerHTML = q.passageTabs[2] || "";
-  }
+  const linkedPassageNumber = Number(q.linkedPassage);
 
-  if (typeof setActivePassage === "function") {
-    setActivePassage(q.linkedPassage || 1);
-  }
-
-  // Linked passage helper label
-  if (q.linkedPassage === 1 || q.linkedPassage === 2) {
+  if (linkedPassageNumber === 1 || linkedPassageNumber === 2) {
     if (linkedPassageLabelEl) {
-      linkedPassageLabelEl.textContent = `Tip: You may want to look back at Passage ${q.linkedPassage}.`;
+      linkedPassageLabelEl.textContent = `Tip: You may want to look back at Passage ${linkedPassageNumber}.`;
     }
 
     if (typeof setActivePassage === "function") {
-      setActivePassage(q.linkedPassage);
+      setActivePassage(linkedPassageNumber);
     }
   } else {
     if (linkedPassageLabelEl) linkedPassageLabelEl.textContent = "";
-  }
 
-} else {
-  if (linkedPassageLabelEl) linkedPassageLabelEl.textContent = "";
+    // If this is a benchmark-style question with custom passage tabs but no linked passage,
+    // default back to Passage 1 so the student is not left on the previous question's tab.
+    if (q.passageTabs && typeof setActivePassage === "function") {
+      setActivePassage(1);
+    }
+  }
 }
 
   // Remove old stimulus if it exists
@@ -3093,6 +3100,8 @@ async function autosaveProgress() {
     studentName: info.studentName || "",
     assessmentName: info.assessmentName || "",
     ownerEmail,
+    gradeLevel: READING_GRADE_LEVEL,
+    grade: READING_GRADE_LEVEL,
 
     // ✅ preserve the exact practice context for autosave / live monitor / history
     practiceSet: info.practiceSet || window.CURRENT_PRACTICE_SET || "full",

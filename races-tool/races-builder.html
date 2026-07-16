@@ -362,9 +362,13 @@ body:not(.dark-mode) .badge{
 </div>
 </div>
 <footer class="footer">
-<p><strong>© 2026 Maggie McDonald | Built for teachers, by a teacher | All rights reserved. Licensed for individual teacher use only</strong></p>
+<p><strong>© <span id="current-year"></span> Maggie McDonald | Built for teachers, by a teacher | All rights reserved. Licensed for individual teacher use only</strong></p>
 </footer>
 <canvas id="confetti-canvas"></canvas>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-<script src="./js/races-main.js"></script><script src="./js/races-google.js"></script></body>
+<script src="./js/races-main.js"></script><script src="./js/races-google.js"></script>
+<script>
+  document.getElementById("current-year").textContent = new Date().getFullYear();
+</script>
+</body>
 </html>

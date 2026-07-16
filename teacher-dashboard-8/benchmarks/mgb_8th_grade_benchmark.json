@@ -1,0 +1,699 @@
+{
+  "assessmentId": "mgb_8th_grade_ia4_benchmark",
+  "title": "MGB 8th Grade IA4 Benchmark Practice",
+  "mode": "benchmark",
+  "reportingMode": "standard",
+  "grade": 8,
+  "subject": "ELA",
+  "sourceFile": "Created for MGB 8th Grade Teacher Dashboard",
+  "sections": [
+    {
+      "sectionId": "s1_modern_labyrinth_story",
+      "title": "The Thread Map",
+      "type": "single_passage",
+      "passages": [
+        {
+          "passageId": "p1",
+          "title": "The Thread Map",
+          "genre": "literary_narrative",
+          "text": "<img class=\"passage-image benchmark-image mara-image\" src=\"../media/mara.png\" alt=\"Illustration of Mara using a blue thread in a maze-like archive basement.\">\n\nMara did not expect the basement of the old community center to resemble a maze, but the hallway split twice before she found the storage room. Each door looked almost identical: gray paint, brass handle, small square of cloudy glass. The building was scheduled for renovation, and the volunteers had one weekend to sort decades of photographs, meeting notes, and audio recordings before the boxes were moved to the library.\n\nHer grandmother had given her a spool of blue thread that morning. \"Tie one end near the stairs,\" she had said, smiling as if the suggestion were both a joke and a warning. \"Every important place has a way of confusing people who enter without a plan.\" Mara had laughed then, but now she looped the thread around a pipe before stepping into the dim corridor.\n\nAt first, the work seemed ordinary. Mara labeled photographs of block parties, school concerts, and neighborhood cleanups. Then she found a folder marked CLOSURE MEETING, 1986. Inside were letters from residents who had fought to keep the center open when the city wanted to sell the property. Some letters were angry; others were careful and formal. One handwritten note said, This place is not just a building. It is how we remember one another.\n\nAs Mara carried the folder toward the stairs, the power flickered and went out. The basement became a series of dark corners. For a moment she imagined the boxes multiplying around her like walls. Then her fingers brushed the blue thread. She followed it slowly, feeling the tug of each turn she had taken. The thread did not remove the darkness, but it gave the darkness a pattern.\n\nWhen Mara reached the stairwell, she did not leave immediately. She tied a second piece of thread around the folder and wrote a note for the archivist: Start with these letters. They explain why the center mattered. By evening, the volunteers were no longer sorting boxes as if they contained old paper. They were tracing a path through the neighborhood's memory, one story at a time."
+        }
+      ],
+      "questions": [
+        {
+          "id": 1,
+          "type": "multiple_choice",
+          "standards": [
+            "8.T.T.1.c",
+            "8.T.T.1.a"
+          ],
+          "prompt": "Which theme is best developed in the story?",
+          "choices": {
+            "A": "People preserve community identity when they treat ordinary records as connected stories rather than forgotten objects.",
+            "B": "People should avoid old buildings because confusing spaces often hide problems that are impossible to solve or understand clearly.",
+            "C": "Communities remain strong only when city leaders make decisions without listening to residents, volunteers, or neighborhood records.",
+            "D": "Family advice is useful mainly when it helps a character escape danger quickly instead of thinking about a larger responsibility."
+          },
+          "correctAnswer": "A",
+          "linkedPassageId": "p1",
+          "linkedPassageTab": 1
+        },
+        {
+          "id": 2,
+          "linkedPassageId": "p1",
+          "linkedPassageTab": 1,
+          "type": "two_part_multiple_choice",
+          "standards": [
+            "8.T.T.1.d",
+            "8.T.PM.1.a"
+          ],
+          "prompt": "Answer Part A and Part B about the story's use of an older story pattern.",
+          "partA": {
+            "prompt": "Which story element most clearly suggests that the text draws on an older labyrinth or quest pattern?",
+            "choices": {
+              "A": "A young character uses a thread to move through a confusing space and return with important knowledge.",
+              "B": "A group of volunteers works together to move old boxes from one public building to another before a renovation begins.",
+              "C": "A city plans to renovate a community center that contains photographs, written records, and recordings from earlier decades.",
+              "D": "A grandmother gives advice that sounds playful before the main character understands its practical and symbolic value."
+            },
+            "correctAnswer": "A"
+          },
+          "partB": {
+            "prompt": "Which detail best supports the answer to Part A?",
+            "choices": {
+              "A": "Mara did not expect the basement of the old community center to resemble a maze, but the hallway split twice before she found the storage room.",
+              "B": "She followed it slowly, feeling the tug of each turn she had taken, and the thread gave the darkness a pattern.",
+              "C": "Mara labeled photographs of block parties, school concerts, and neighborhood cleanups before finding the folder.",
+              "D": "By evening, the volunteers were tracing a path through the neighborhood's memory, one story at a time."
+            },
+            "correctAnswer": "B"
+          }
+        },
+        {
+          "id": 3,
+          "type": "multiple_choice",
+          "standards": [
+            "8.T.T.1.b",
+            "8.P.AC.1.b"
+          ],
+          "prompt": "Read the sentence from the story. How does the sentence contribute to the story's meaning?",
+          "choices": {
+            "A": "It shows that Mara avoids the basement's problems by pretending the darkness is less serious than it really is.",
+            "B": "It suggests that guidance and memory can help a person make sense of confusion without erasing difficulty.",
+            "C": "It proves that the thread has magical powers that protect Mara from the building's hidden dangers.",
+            "D": "It explains why the volunteers decide to stop sorting the boxes and leave the center immediately."
+          },
+          "correctAnswer": "B",
+          "linkedPassageId": "p1",
+          "linkedPassageTab": 1,
+          "stimulus": "The thread did not remove the darkness, but it gave the darkness a pattern."
+        },
+        {
+          "id": 4,
+          "type": "multiple_choice",
+          "standards": [
+            "8.T.T.1.a",
+            "8.T.SS.1.a"
+          ],
+          "prompt": "How do the setting and conflict work together in the story?",
+          "choices": {
+            "A": "The confusing basement mirrors the challenge of organizing community memory, making Mara's physical search connect to a larger purpose.",
+            "B": "The renovated building makes the volunteers compete against one another, showing that shared work usually weakens community trust and memory.",
+            "C": "The storage room creates a mystery about missing money, shifting the story from realistic fiction into a crime investigation with hidden clues.",
+            "D": "The city library becomes the main setting, showing that the community center is no longer important to residents or neighborhood history."
+          },
+          "correctAnswer": "A",
+          "linkedPassageId": "p1",
+          "linkedPassageTab": 1
+        }
+      ]
+    },
+    {
+      "sectionId": "s2_retelling_sources",
+      "title": "Retelling Old Stories / Ariadne's Thread",
+      "type": "paired_passage",
+      "passages": [
+        {
+          "passageId": "p2a",
+          "title": "Why Writers Retell Old Stories",
+          "genre": "informational_text",
+          "text": "<img class=\"passage-image benchmark-image writers-image\" src=\"../media/writers.png\" alt=\"Illustration representing writers adapting myths, legends, and traditional stories.\">\n\nWriters often return to myths, legends, and traditional stories because those stories contain patterns audiences still recognize. A hero may enter a dangerous place, receive help from an unexpected guide, confront a problem that tests courage or judgment, and return changed. When a modern writer borrows such a pattern, the new text can feel both familiar and surprising.\n\nRetellings are not simple copies. A writer may shift the setting, change the main character, or emphasize a theme that matters to a new audience. For example, a story based on a labyrinth may focus less on defeating a monster and more on finding a path through confusion. The older pattern gives the new story structure, while the writer's choices create a fresh perspective.\n\nBecause retellings depend on both similarity and difference, readers must pay attention to what has been preserved and what has been changed. Those changes often reveal the author's purpose. A retelling may ask readers to question who gets called heroic, whose knowledge is valued, or why a community remembers one version of events instead of another."
+        },
+        {
+          "passageId": "p2b",
+          "title": "Ariadne's Thread",
+          "genre": "myth_summary",
+          "text": "<img class=\"passage-image benchmark-image ariadne-image\" src=\"../media/ariadne.png\" alt=\"Illustration of Ariadne's thread as a guide through the Labyrinth.\">\n\nIn one ancient Greek myth, Ariadne helps Theseus enter the Labyrinth, a complicated structure built to imprison the Minotaur. Before Theseus goes inside, Ariadne gives him a ball of thread. He unwinds it as he moves through the twisting passages, and after defeating the monster, he follows the thread back out.\n\nAlthough many versions of the myth focus on Theseus as the hero, Ariadne's role is essential. Without her plan, courage alone may not have been enough. The thread becomes more than a tool; it represents memory, guidance, and the ability to return from a difficult place. Modern writers sometimes adapt this image when characters need help navigating a confusing situation, preserving knowledge, or finding a way back to what matters."
+        }
+      ],
+      "questions": [
+        {
+          "id": 5,
+          "type": "multiple_choice",
+          "standards": [
+            "8.T.T.1.d",
+            "8.T.PM.1.a"
+          ],
+          "prompt": "Which statement best explains the central idea of Passage 1?",
+          "choices": {
+            "A": "Modern retellings use recognizable patterns from older stories while changing details to create new meanings for new audiences.",
+            "B": "Modern retellings are most successful when they repeat older stories exactly and avoid changing characters, settings, themes, or points of view.",
+            "C": "Traditional stories are useful mainly because they help readers memorize names from ancient cultures and time periods without analyzing meaning.",
+            "D": "Writers retell myths because audiences prefer simple plots that contain no surprises, new perspectives, or challenging questions."
+          },
+          "correctAnswer": "A",
+          "linkedPassageId": "p2a",
+          "linkedPassageTab": 1
+        },
+        {
+          "id": 6,
+          "type": "multiple_choice",
+          "standards": [
+            "8.T.T.1.a",
+            "8.T.T.1.c"
+          ],
+          "prompt": "Which detail from Passage 2 best supports the idea that Ariadne's role is essential to the myth?",
+          "choices": {
+            "A": "The Labyrinth is described as a complicated structure built to imprison the Minotaur and challenge anyone who enters it.",
+            "B": "Theseus enters the Labyrinth, confronts the monster, and later follows the thread back out of the twisting passages.",
+            "C": "Ariadne gives Theseus the thread that allows him to find his way out after entering the Labyrinth.",
+            "D": "Modern writers sometimes adapt the image of the thread in stories about confusing situations, memory, or guidance."
+          },
+          "correctAnswer": "C",
+          "linkedPassageId": "p2b",
+          "linkedPassageTab": 2
+        },
+        {
+          "id": 7,
+          "type": "multiple_choice",
+          "standards": [
+            "8.T.C.2.a",
+            "8.T.PM.1.a"
+          ],
+          "prompt": "How do the two passages present the idea of the thread differently?",
+          "choices": {
+            "A": "Passage 1 describes the thread as a common object in ancient households, while Passage 2 explains how to make thread from fiber for daily use.",
+            "B": "Passage 1 explains how a symbol from an older story can be adapted, while Passage 2 describes the thread's role in a specific myth.",
+            "C": "Passage 1 argues that the thread is unimportant in retellings, while Passage 2 claims that Theseus succeeds without Ariadne’s planning or help.",
+            "D": "Passage 1 focuses on the thread as a scientific invention, while Passage 2 presents it as evidence from a historical document about Greece."
+          },
+          "correctAnswer": "B",
+          "linkedPassageId": "p2a",
+          "linkedPassageTab": 1
+        },
+        {
+          "id": 8,
+          "type": "multiple_choice",
+          "standards": [
+            "8.L.V.3.c",
+            "8.T.SS.2.a"
+          ],
+          "prompt": "In Passage 1, what is the effect of describing a retelling as both “familiar and surprising”?",
+          "choices": {
+            "A": "The phrase suggests that retellings combine recognizable story patterns with new choices that change how readers understand the text.",
+            "B": "The phrase suggests that retellings should confuse readers by hiding every connection to the older story being used or remembered.",
+            "C": "The phrase suggests that retellings are valuable only when readers already know every detail of the original version before reading.",
+            "D": "The phrase suggests that retellings are less creative than original stories because they rely on inherited plots instead of new ideas."
+          },
+          "correctAnswer": "A",
+          "linkedPassageId": "p2a",
+          "linkedPassageTab": 1
+        },
+        {
+          "id": 9,
+          "type": "multiple_choice",
+          "standards": [
+            "8.T.T.2.b",
+            "8.T.C.2.a"
+          ],
+          "prompt": "Which statement best compares the authors' purposes in the two passages?",
+          "choices": {
+            "A": "Passage 1 explains how retellings work as a literary strategy, while Passage 2 explains why one mythic object matters within a story pattern.",
+            "B": "Passage 1 persuades readers to stop reading myths, while Passage 2 argues that modern writers should not use ancient stories as models for new fiction.",
+            "C": "Passage 1 gives directions for writing a myth, while Passage 2 provides rules for identifying every Greek hero by name, role, and adventure.",
+            "D": "Passage 1 focuses on historical facts about Greece, while Passage 2 compares several different versions of the same myth across cultures and time periods."
+          },
+          "correctAnswer": "A",
+          "linkedPassageId": "p2a",
+          "linkedPassageTab": 1
+        }
+      ]
+    },
+    {
+      "sectionId": "s3_recommendation_labels_argument",
+      "title": "Recommendation Labels",
+      "type": "single_passage",
+      "passages": [
+        {
+          "passageId": "p3",
+          "title": "Letter to a Platform Design Team",
+          "genre": "argument_letter",
+          "text": "Dear Platform Design Team,\n\nI am writing to recommend that personalized content labels be made easier to notice and understand. Your platform already suggests videos, products, and creators based on user behavior. That personalization can be useful. However, when a recommendation is shaped by sponsorship, shopping activity, or a creator's paid relationship with a brand, users need clearer context.\n\nSome people argue that labels interrupt the experience and that users should already know platforms are businesses. That view ignores an important difference. A person may understand that a platform makes money, yet still not know whether a specific post appears because of a user's interests, a paid promotion, or a product placement. Without that information, audiences may give a recommendation more trust than it deserves.\n\nClear labels do not need to be distracting. A brief note such as \"sponsored,\" \"paid partnership,\" or \"recommended because you watched organization videos\" would help users evaluate purpose and credibility. These labels would not prevent personalization; they would make personalization more transparent.\n\nA clearer label system would also benefit responsible creators. When creators identify material connections honestly, audiences can decide how much weight to give the recommendation. Trust is not weakened by transparency. It is weakened when audiences feel that important information has been hidden.\n\nSincerely,\nJalen Brooks"
+        }
+      ],
+      "questions": [
+        {
+          "id": 10,
+          "type": "multiple_choice",
+          "standards": [
+            "8.T.T.3.a",
+            "8.T.C.1.a"
+          ],
+          "prompt": "What claim does Jalen make in the letter?",
+          "choices": {
+            "A": "Platforms should remove personalization because all recommended videos, products, and creator posts are equally misleading to audiences.",
+            "B": "Platforms should make recommendation labels clearer so users can understand the purpose and possible influence behind content.",
+            "C": "Creators should stop reviewing products because audiences cannot fairly evaluate any recommendation from another person or digital platform.",
+            "D": "Users should ignore labels because they already understand every business goal behind personalized digital platforms and sponsored content."
+          },
+          "correctAnswer": "B",
+          "linkedPassageId": "p3",
+          "linkedPassageTab": 1
+        },
+        {
+          "id": 11,
+          "type": "multiple_choice",
+          "standards": [
+            "8.T.T.3.a",
+            "8.P.AC.1.a"
+          ],
+          "prompt": "How does paragraph 2 strengthen the argument?",
+          "choices": {
+            "A": "It introduces an opposing view and explains why that view does not fully address the problem Jalen identifies.",
+            "B": "It shifts from argument to narration by describing a personal experience with a confusing product review and a shopping recommendation.",
+            "C": "It provides a list of technical terms without explaining how they connect to users’ decisions, trust, or understanding of purpose.",
+            "D": "It admits that labels are unnecessary and then changes the claim in the final two paragraphs about personalization and creators."
+          },
+          "correctAnswer": "A",
+          "linkedPassageId": "p3",
+          "linkedPassageTab": 1
+        },
+        {
+          "id": 12,
+          "type": "multiple_choice",
+          "standards": [
+            "8.T.C.2.b",
+            "8.T.RA.2.b"
+          ],
+          "prompt": "Which sentence would most improve the credibility of Jalen's argument if added after paragraph 3?",
+          "choices": {
+            "A": "A federal consumer protection agency explains that paid endorsements should be disclosed clearly when the connection is not obvious to audiences.",
+            "B": "Many students in Jalen’s homeroom say they dislike long labels because labels can make a screen look crowded or distracting during regular use by viewers.",
+            "C": "One popular creator once joked that every platform should let audiences guess which posts are sponsored or personally chosen by the creator online.",
+            "D": "A product company claims that its backpack is the most useful backpack for every student in middle school and high school across the country today."
+          },
+          "correctAnswer": "A",
+          "linkedPassageId": "p3",
+          "linkedPassageTab": 1,
+          "stimulus": "The writer wants to add evidence from a credible source about disclosure labels."
+        },
+        {
+          "id": 13,
+          "linkedPassageId": "p3",
+          "linkedPassageTab": 1,
+          "type": "dropdown",
+          "standards": [
+            "8.L.V.3.b",
+            "8.L.V.3.d"
+          ],
+          "prompt": "Choose the meaning of the word transparent as it is used in the letter.",
+          "stimulus": "These labels would not prevent personalization; they would make personalization more transparent.",
+          "dropdownLabel": "In this sentence, transparent means",
+          "choices": {
+            "A": "easy to see through because the object is made from glass or plastic",
+            "B": "easy to understand because important information is clear and available",
+            "C": "difficult to notice because the information has been moved off the screen",
+            "D": "designed to entertain users rather than explain how something works"
+          },
+          "correctAnswer": "B"
+        }
+      ]
+    },
+    {
+      "sectionId": "s4_living_shorelines",
+      "title": "Living Shorelines",
+      "type": "single_passage",
+      "passages": [
+        {
+          "passageId": "p4",
+          "title": "Living Shorelines on Georgia's Coast",
+          "genre": "science_informational",
+          "text": "<img class=\"passage-image benchmark-image shoreline-image\" src=\"../media/shoreline.png\" alt=\"Illustration of a living shoreline on Georgia's coast with marsh plants and water.\">\n\nAlong parts of Georgia's coast, waves and tides constantly reshape marsh edges. Traditionally, some property owners used hard barriers such as seawalls to hold shorelines in place. These barriers may protect a specific area for a time, but they can also reflect wave energy, increase erosion nearby, and reduce habitat for oysters, crabs, fish, and birds.\n\nA living shoreline uses natural materials such as native plants, oyster shells, sand, and carefully placed structures to reduce erosion while supporting habitat. The goal is not to freeze the coast in place. Instead, living shorelines are designed to absorb wave energy and allow marsh ecosystems to continue functioning. Choosing this approach requires scientific information, community planning, and attention to long-term maintenance."
+        }
+      ],
+      "questions": [
+        {
+          "id": 14,
+          "type": "multiple_choice",
+          "standards": [
+            "8.T.T.2.a",
+            "8.T.C.2.c"
+          ],
+          "prompt": "Which statement best analyzes how the author develops the central idea of the passage?",
+          "choices": {
+            "A": "The author contrasts hard barriers with living shorelines to show how different approaches can affect erosion, habitat, and long-term planning.",
+            "B": "The author focuses on one property owner’s experience to show that seawalls are always less expensive than natural shoreline projects for coastal communities.",
+            "C": "The author lists several coastal animals to argue that human communities should avoid making any changes near marshes or shorelines under any circumstances.",
+            "D": "The author explains wave movement mainly to show that shoreline changes are too unpredictable for communities to study, manage, or discuss responsibly."
+          },
+          "correctAnswer": "A",
+          "linkedPassageId": "p4",
+          "linkedPassageTab": 1
+        }
+      ]
+    },
+    {
+      "sectionId": "s5_research_sources_wetlands",
+      "title": "Wetland Research Sources",
+      "type": "paired_sources",
+      "passages": [
+        {
+          "passageId": "p5a",
+          "title": "Source A: County Planning Report",
+          "genre": "public_report_excerpt",
+          "text": "A county planning report explains that a proposed boardwalk could allow visitors to observe a wetland without walking directly through sensitive areas. The report includes maps of visitor paths, estimates of construction costs, and comments from residents who support and oppose the project. It was published by the county planning office this year."
+        },
+        {
+          "passageId": "p5b",
+          "title": "Source B: Travel Blog Post",
+          "genre": "blog_post_excerpt",
+          "text": "A travel blogger describes a weekend visit to several coastal parks and writes that boardwalks are always the best way to bring tourists to natural areas. The post includes photographs and personal opinions but does not identify scientific sources, construction costs, or possible effects on wildlife. It was written three years ago."
+        }
+      ],
+      "questions": [
+        {
+          "id": 15,
+          "type": "multiple_choice",
+          "standards": [
+            "8.T.RA.2.b",
+            "8.T.RA.1.b"
+          ],
+          "prompt": "A student is researching whether the county should build a wetland boardwalk. Which source would be more useful for balanced research, and why?",
+          "choices": {
+            "A": "Source A, because it is current, connected to the local proposal, and includes maps, costs, and more than one community perspective.",
+            "B": "Source B, because personal photographs are always more reliable than reports written by public planning offices or local agencies.",
+            "C": "Source A, because any government document should be accepted without considering its purpose, evidence, or possible limitations.",
+            "D": "Source B, because an older opinion post is usually the best source for analyzing current construction decisions and community concerns."
+          },
+          "correctAnswer": "A",
+          "showPassagesTogether": true,
+          "linkedPassageTab": 1
+        }
+      ]
+    },
+    {
+      "sectionId": "s6_mla_integration",
+      "title": "Using Source Evidence",
+      "type": "single_passage",
+      "passages": [
+        {
+          "passageId": "p6",
+          "title": "Writing Task",
+          "genre": "instructional_text",
+          "text": "Lena is writing a report about living shorelines. She is using an article titled \"Marsh Edges and Coastal Protection,\" written by Dr. Elena Cruz and published on the website Coastal Science Review in 2025. Lena wants to use this sentence from paragraph 4:\n\n\"Living shorelines can reduce erosion while preserving habitat for species that depend on marsh ecosystems.\""
+        }
+      ],
+      "questions": [
+        {
+          "id": 16,
+          "type": "multiple_choice",
+          "standards": [
+            "8.T.RA.2.c",
+            "8.L.GC.1.54"
+          ],
+          "prompt": "Which sentence best integrates the quotation and gives credit to the source?",
+          "choices": {
+            "A": "According to Dr. Elena Cruz, \"Living shorelines can reduce erosion while preserving habitat for species that depend on marsh ecosystems\" (par. 4).",
+            "B": "Living shorelines are definitely helpful because they reduce erosion and preserve habitat for species in marsh ecosystems, according to unnamed experts.",
+            "C": "The article says that shorelines can reduce erosion while preserving habitat, which proves that every shoreline project should be approved immediately.",
+            "D": "“Living shorelines can reduce erosion while preserving habitat for species that depend on marsh ecosystems,” but the sentence includes no source information."
+          },
+          "correctAnswer": "A",
+          "linkedPassageId": "p6",
+          "linkedPassageTab": 1
+        }
+      ]
+    },
+    {
+      "sectionId": "s7_student_argument_draft",
+      "title": "Student Argument Draft",
+      "type": "single_passage",
+      "passages": [
+        {
+          "passageId": "p7",
+          "title": "Argumentative Essay Draft",
+          "genre": "student_writing",
+          "text": "Our county should consider building a wetland boardwalk near the nature center. A boardwalk could protect fragile areas by keeping visitors on a marked path. It could also help students and families observe plants, birds, and marsh conditions without damaging the habitat.\n\nOpponents may argue that construction could disturb wildlife or cost too much. Those concerns should be taken seriously. Before approving the project, county leaders should study wildlife impacts, compare costs, and ask residents for feedback. If the design protects the wetland while improving public access, the boardwalk could support both conservation and education."
+        }
+      ],
+      "questions": [
+        {
+          "id": 17,
+          "type": "multi_select",
+          "standards": [
+            "8.T.T.3.c",
+            "8.T.SS.2.c"
+          ],
+          "prompt": "Select TWO sentences that would maintain a formal style and strengthen the student's argument with relevant reasoning or evidence.",
+          "choices": {
+            "A": "A recent county report could provide data about construction costs, visitor traffic, and possible effects on wetland habitat.",
+            "B": "The boardwalk would be awesome because boring trails are annoying and people need better places to hang out.",
+            "C": "A carefully designed path may reduce damage by directing visitors away from fragile plants and nesting areas.",
+            "D": "People who dislike boardwalks clearly do not understand nature and should stop complaining about the project.",
+            "E": "The county should build the boardwalk in my favorite color so it looks better in pictures."
+          },
+          "correctAnswers": [
+            "A",
+            "C"
+          ],
+          "linkedPassageId": "p7",
+          "linkedPassageTab": 1
+        }
+      ]
+    },
+    {
+      "sectionId": "s8_language_editing",
+      "title": "Writing, Language, and Editing",
+      "type": "standalone_questions",
+      "passages": [],
+      "questions": [
+        {
+          "id": 18,
+          "type": "multi_select",
+          "standards": [
+            "8.T.SS.1.c"
+          ],
+          "prompt": "Read the two sentences. Which transition words or phrases could connect the ideas accurately? Select ALL THAT APPLY.",
+          "choices": {
+            "A": "However,",
+            "B": "As a result,",
+            "C": "Instead,",
+            "D": "For example,",
+            "E": "Similarly,"
+          },
+          "correctAnswers": [
+            "A",
+            "C"
+          ],
+          "hidePassageTabs": true,
+          "stimulus": "The research team expected the older marsh map to match current shoreline conditions. Recent erosion had changed several sections of the coast."
+        },
+        {
+          "id": 19,
+          "hidePassageTabs": true,
+          "type": "highlight_sentence",
+          "standards": [
+            "8.T.T.2.d",
+            "8.T.SS.1.d"
+          ],
+          "prompt": "A student is writing an informational paragraph about living shorelines. Highlight the sentence that should be deleted because it does not support the main idea.",
+          "stimulus": "Living shorelines can help protect coastal areas while supporting habitat. They often use native plants, oyster shells, and other natural materials to absorb wave energy. These projects may provide places for fish, crabs, and birds to find shelter. Some students prefer field trips that include long bus rides and outdoor lunches. Communities still need to plan carefully because each shoreline has different conditions. For these reasons, living shorelines can connect erosion control with habitat protection.",
+          "correctSelection": [
+            "Some students prefer field trips that include long bus rides and outdoor lunches."
+          ]
+        },
+        {
+          "id": 20,
+          "type": "multiple_choice",
+          "standards": [
+            "8.L.GC.1.52",
+            "8.L.GC.1.56"
+          ],
+          "prompt": "Which revision uses punctuation correctly to combine and clarify the ideas?",
+          "choices": {
+            "A": "The committee reviewed three concerns: cost, habitat protection, and public access; the members disagreed at first, but eventually reached a compromise.",
+            "B": "The committee reviewed three concerns; cost, habitat protection, and public access: the members disagreed at first but eventually reached a compromise after discussion.",
+            "C": "The committee reviewed three concerns, cost, habitat protection, and public access: the members disagreed at first; but eventually reached a compromise after discussion.",
+            "D": "The committee reviewed three concerns: cost, habitat protection, and public access, the members disagreed at first; but eventually reached a compromise after discussion."
+          },
+          "correctAnswer": "A",
+          "hidePassageTabs": true,
+          "stimulus": "The committee reviewed three concerns. Cost, habitat protection, and public access. The members disagreed at first. They eventually reached a compromise."
+        },
+        {
+          "id": 21,
+          "hidePassageTabs": true,
+          "type": "highlight_sentence_multi",
+          "standards": [
+            "8.T.RA.2.a",
+            "8.T.RA.2.b"
+          ],
+          "prompt": "Highlight the two sentences that would best help answer the research question.",
+          "stemQuestion": "How can living shorelines affect both erosion control and wildlife habitat?",
+          "stimulus": "A coastal engineer explains that native plants can slow wave energy before it reaches the marsh edge. A local restaurant opened a seafood buffet near the visitor center last summer. A university study found that oyster-shell structures can reduce erosion while creating shelter for small marine animals. Several students said they liked taking photographs during the field trip. The county website lists the hours of the nature center gift shop. A planning report notes that living shoreline designs must be adjusted for water depth, wave strength, and existing habitat.",
+          "correctSelections": [
+            "A coastal engineer explains that native plants can slow wave energy before it reaches the marsh edge.",
+            "A university study found that oyster-shell structures can reduce erosion while creating shelter for small marine animals."
+          ]
+        }
+      ]
+    },
+    {
+      "sectionId": "s9_sentence_syntax",
+      "title": "Improving Sentence Variety",
+      "type": "single_passage",
+      "passages": [
+        {
+          "passageId": "p8",
+          "title": "Student Paragraph",
+          "genre": "student_writing",
+          "text": "The students visited the marsh during low tide. They recorded the locations of oyster beds. They compared their notes with an older shoreline map. Their observations helped them understand that ecosystems change over time."
+        }
+      ],
+      "questions": [
+        {
+          "id": 22,
+          "type": "multiple_choice",
+          "standards": [
+            "8.L.GC.2.b",
+            "8.L.GC.2.d"
+          ],
+          "prompt": "Which revision best combines ideas while maintaining clarity and sentence variety?",
+          "choices": {
+            "A": "During low tide, the students recorded the locations of oyster beds and compared their notes with an older shoreline map, helping them understand that ecosystems change over time.",
+            "B": "The students visited the marsh during low tide, and they recorded oyster beds, and they compared notes, and they understood ecosystems change over time through observations and maps.",
+            "C": "Recording the locations of oyster beds during low tide, an older shoreline map was compared by the students to understand how ecosystems change over time in marsh areas.",
+            "D": "The students visited the marsh, low tide recorded the oyster beds, and the map compared their notes to understand ecosystem changes over time in the area and shoreline."
+          },
+          "correctAnswer": "A",
+          "linkedPassageId": "p8",
+          "linkedPassageTab": 1
+        }
+      ]
+    },
+    {
+      "sectionId": "s10_narrative_conclusion",
+      "title": "Narrative Draft",
+      "type": "single_passage",
+      "passages": [
+        {
+          "passageId": "p9",
+          "title": "Narrative Draft",
+          "genre": "student_writing",
+          "text": "Leah had promised to read her poem at the neighborhood festival, but when the microphone squealed, every line disappeared from her mind. She looked toward the back row, where her little brother held up the hand-painted sign he had made for her. The sign said, Say the first word.\n\nLeah whispered the first word, then the next. The crowd became quieter. By the final stanza, her voice had stopped shaking. She realized that courage did not always arrive before the difficult moment; sometimes it arrived while the moment was already happening."
+        }
+      ],
+      "questions": [
+        {
+          "id": 23,
+          "type": "multiple_choice",
+          "standards": [
+            "8.T.T.1.e",
+            "8.T.T.1.c"
+          ],
+          "prompt": "Which sentence would provide the strongest conclusion while preserving the story's theme and reflective tone?",
+          "choices": {
+            "A": "After the applause faded, Leah folded the sign into her notebook, knowing that the first word had become a doorway rather than an obstacle.",
+            "B": "Leah decided she would never read another poem again because microphones were too unpredictable at outdoor festivals and community events near her neighborhood.",
+            "C": "The festival continued with several food stands, a music performance, and a long announcement from the organizer about future events and volunteer opportunities.",
+            "D": "Her brother was happy because he liked making signs, and the family went home as soon as the festival ended that evening after the readings."
+          },
+          "correctAnswer": "A",
+          "linkedPassageId": "p9",
+          "linkedPassageTab": 1
+        }
+      ]
+    },
+    {
+      "sectionId": "s11_omar_bridge_story",
+      "title": "Omar and the Bridge",
+      "type": "single_passage",
+      "passages": [
+        {
+          "passageId": "p10",
+          "title": "Narrative Passage",
+          "genre": "narrative",
+          "text": "<img class=\"passage-image benchmark-image omar-image\" src=\"../media/omar.png\" alt=\"Illustration of Omar approaching a damaged footbridge over a creek.\">\n\nOmar had crossed the footbridge hundreds of times, but that morning the missing boards looked wider than the creek below them. The town planned to replace the bridge next month, yet he needed to deliver his grandmother's medicine today. He remembered the route his older cousin had shown him through the reeds, a path that curved away from the bridge and returned near the clinic.\n\nAt first, the reeds scratched his arms and hid the trail. He almost turned back. Then he noticed the white ribbon his cousin had tied to a branch during their last walk. Another ribbon appeared twenty steps later. By the time Omar reached the clinic road, he understood that the alternate path had always been there; he had only needed to trust the signs long enough to find it."
+        }
+      ],
+      "questions": [
+        {
+          "id": 24,
+          "linkedPassageId": "p10",
+          "linkedPassageTab": 1,
+          "type": "classify",
+          "standards": [
+            "8.T.T.1.a",
+            "8.T.T.1.b"
+          ],
+          "prompt": "Drag each narrative technique into the correct category based on how it is used in the passage.",
+          "instructions": "Drag each item into the correct column.",
+          "categories": [
+            {
+              "id": "used",
+              "label": "Used in the passage"
+            },
+            {
+              "id": "not_used",
+              "label": "Not used in the passage"
+            }
+          ],
+          "items": [
+            {
+              "id": "setting-conflict",
+              "text": "A damaged bridge and hidden path create an obstacle Omar must navigate",
+              "categoryId": "used"
+            },
+            {
+              "id": "symbol",
+              "text": "White ribbons serve as signs that help Omar continue through uncertainty",
+              "categoryId": "used"
+            },
+            {
+              "id": "flashback",
+              "text": "A full flashback shows Omar's cousin tying each ribbon months earlier",
+              "categoryId": "not_used"
+            },
+            {
+              "id": "dialogue",
+              "text": "Dialogue between Omar and his grandmother explains the history of the bridge",
+              "categoryId": "not_used"
+            },
+            {
+              "id": "parallel-plot",
+              "text": "A second plot follows another character reaching the clinic by car",
+              "categoryId": "not_used"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionId": "s12_roots_affixes_vocabulary",
+      "title": "Greek and Latin Roots and Affixes",
+      "type": "single_passage",
+      "passages": [
+        {
+          "passageId": "p11",
+          "title": "Academic Vocabulary",
+          "genre": "informational",
+          "text": "During science class, students studied vocabulary connected to coastal ecosystems. They examined words such as intertidal, biodegradable, restoration, aquatic, and microhabitat. The teacher reminded students that roots and affixes can help readers determine meaning when a word appears in a new context."
+        }
+      ],
+      "questions": [
+        {
+          "id": 25,
+          "type": "multi_select",
+          "standards": [
+            "8.L.V.2.a",
+            "8.L.V.2.c"
+          ],
+          "prompt": "Based on your knowledge of roots and affixes, which TWO explanations are accurate? Select TWO.",
+          "choices": {
+            "A": "Intertidal refers to an area between tide levels because inter- can mean between.",
+            "B": "Biodegradable describes something that can break down through natural processes involving living organisms.",
+            "C": "Aquatic means related to fire or heat because aqua is connected to temperature.",
+            "D": "Microhabitat means a large region that contains every habitat on Earth because micro- means huge.",
+            "E": "Restoration means removing all earlier conditions because re- usually means never again."
+          },
+          "correctAnswers": [
+            "A",
+            "B"
+          ],
+          "linkedPassageId": "p11",
+          "linkedPassageTab": 1
+        }
+      ]
+    }
+  ]
+}

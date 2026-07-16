@@ -9,6 +9,8 @@
       sessionCode: "",
       assessmentName: "",
       ownerEmail: "",
+      gradeLevel: "",
+      grade: "",
       practiceLevel: "", // "below" | "on" | "above"
       practiceSet: "",   // "full" | "mini1" | "mini2"
       levelBand: "",   // legacy
@@ -143,6 +145,8 @@ function buildSummary() {
       sessionCode: cleanString(info.sessionCode),
       assessmentName: cleanString(info.assessmentName),
       ownerEmail,
+      gradeLevel: cleanString(info.gradeLevel || info.grade || window.READING_GRADE_LEVEL || "6"),
+      grade: cleanString(info.grade || info.gradeLevel || window.READING_GRADE_LEVEL || "6"),
 
       // ✅ NEW: backend-supported fields
       practiceLevel: normalizeLevelParam(info.practiceLevel || info.level || info.levelBand),

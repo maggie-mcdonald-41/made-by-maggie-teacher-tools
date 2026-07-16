@@ -20,6 +20,22 @@ function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
 }
 
+function normalizeGradeLevel(raw) {
+  const match = String(raw || "").trim().match(/\d+/);
+  return match ? match[0] : "";
+}
+
+function getGradeLevel(data) {
+  return (
+    normalizeGradeLevel(
+      data.gradeLevel ||
+        data.grade ||
+        (data.sessionInfo && data.sessionInfo.gradeLevel) ||
+        (data.sessionInfo && data.sessionInfo.grade)
+    ) || "6"
+  );
+}
+
 function getRawOwnerEmail(data) {
   return normalizeEmail(
     data.ownerEmail ||
@@ -187,6 +203,7 @@ function normalizeAttempt({ key, data, rawSession }) {
 
   const ownerEmail = getRawOwnerEmail(data);
   const sharedWithEmails = getRawSharedEmails(data);
+  const gradeLevel = getGradeLevel(data);
 
   const bySkill = data.bySkill || data.perSkill || {};
   const byType = data.byType || data.perType || {};
@@ -208,6 +225,8 @@ function normalizeAttempt({ key, data, rawSession }) {
 
     assessmentName,
     assessmentType,
+    gradeLevel,
+    grade: gradeLevel,
     benchmarkKey: data.benchmarkKey || data.benchmark || "",
     benchmarkId: data.benchmarkId || data.assessmentId || "",
 
@@ -265,6 +284,8 @@ exports.handler = async function (event) {
 
     const rawSet = (params.set || "").trim().toLowerCase();
     const rawLevel = (params.level || "").trim().toLowerCase();
+    const gradeLevelParam =
+      normalizeGradeLevel(params.gradeLevel || params.grade) || "6";
 
     const setParam = normalizeSetParam(rawSet);
 
@@ -330,6 +351,16 @@ exports.handler = async function (event) {
           rawSession,
         })
       );
+
+    // Grade scope. If no grade is sent, default to 6th grade so the existing
+    // dashboard remains backward-compatible and does not show 7th grade data.
+    if (gradeLevelParam) {
+      attempts = attempts.filter(
+        (attempt) =>
+          (normalizeGradeLevel(attempt.gradeLevel || attempt.grade) || "6") ===
+          gradeLevelParam
+      );
+    }
 
     // Scope after normalization.
     if (rawViewerEmail || rawOwnerEmail) {

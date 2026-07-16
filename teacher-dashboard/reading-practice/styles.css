@@ -234,10 +234,10 @@ body.dark-theme .skill-tag {
 /* Floating Squatch helper button */
 /* === SASQUATCH HELP BUTTON === */
 .sasquatch-helper {
-  position: fixed;        /* sticks it on the page */
-  right: 1.2rem;          /* right side */
-  bottom: 1.2rem;         /* adjust as needed */
-  z-index: 9999;
+  position: fixed;
+  left: 1.2rem;
+  bottom: 1.2rem;
+  z-index: 9998;
 
   background: var(--teal);
   border: none;
@@ -284,8 +284,9 @@ body.dark-theme .skill-tag {
 /* Optional: hide Squatch on very small screens */
 @media (max-width: 640px) {
   .sasquatch-helper {
-    right: 0.75rem;
-    bottom: 0.75rem;
+    left: 0.75rem;
+    right: auto;
+    bottom: 7.25rem;
     width: 46px;
     height: 46px;
   }
@@ -2333,6 +2334,57 @@ body.dark-theme .rp-modal input {
   user-select: none;
 }
 
+.rp-tts-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.rp-tts-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #111;
+}
+
+.rp-tts-collapse-btn {
+  appearance: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  background: #f7f7f7;
+  color: #111;
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.rp-tts-collapse-btn:hover {
+  filter: brightness(0.98);
+}
+
+.rp-tts-collapse-btn:focus {
+  outline: 2px solid rgba(0, 0, 0, 0.25);
+  outline-offset: 2px;
+}
+
+.rp-tts-body[hidden] {
+  display: none;
+}
+
+.rp-tts-float.is-collapsed {
+  width: auto;
+  min-width: 170px;
+  padding: 8px 10px;
+}
+
+.rp-tts-float.is-collapsed .rp-tts-header {
+  margin-bottom: 0;
+}
+
 .rp-tts-row {
   display: flex;
   align-items: center;
@@ -2440,8 +2492,24 @@ body.dark-theme .rp-tts-float {
   backdrop-filter: blur(10px);
 }
 
+body.dark-theme .rp-tts-title,
 body.dark-theme .rp-tts-label {
   color: rgba(255, 255, 255, 0.88);
+}
+
+body.dark-theme .rp-tts-collapse-btn {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+body.dark-theme .rp-tts-collapse-btn:hover {
+  filter: brightness(1.08);
+}
+
+body.dark-theme .rp-tts-collapse-btn:focus {
+  outline: 2px solid rgba(132, 235, 230, 0.55);
+  outline-offset: 2px;
 }
 
 body.dark-theme .rp-tts-select {
@@ -2474,6 +2542,32 @@ body.dark-theme .rp-tts-btn-primary {
   background: rgba(132, 235, 230, 0.20);
   border-color: rgba(132, 235, 230, 0.45);
   color: rgba(255, 255, 255, 0.95);
+}
+
+/* ================================
+   Benchmark / Practice Summary Modal - Dark Mode Fix
+   ================================ */
+
+body.dark-theme .benchmark-summary-scorebox {
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: rgba(148, 163, 184, 0.55);
+}
+
+body.dark-theme .benchmark-summary-scorebox p,
+body.dark-theme .benchmark-summary-scorebox strong {
+  color: #0f172a;
+}
+
+body.dark-theme .benchmark-summary-warning {
+  background: #fff7d6;
+  color: #1f2937;
+  border-color: #f4c430;
+}
+
+body.dark-theme .benchmark-summary-warning p,
+body.dark-theme .benchmark-summary-warning strong {
+  color: #1f2937;
 }
 
 /*CSS end*/

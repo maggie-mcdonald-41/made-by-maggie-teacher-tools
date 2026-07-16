@@ -16,6 +16,11 @@ function sanitizeFragment(value) {
     .slice(0, 64);
 }
 
+function normalizeGradeLevel(raw) {
+  const match = String(raw || "").trim().match(/\d+/);
+  return match ? match[0] : "";
+}
+
 exports.handler = async function (event) {
   if (event.httpMethod !== "GET") {
     return { statusCode: 405, body: "Method Not Allowed" };
@@ -30,6 +35,8 @@ exports.handler = async function (event) {
     const ownerEmailRaw = (qs.ownerEmail || qs.owner || "").trim();
     const viewerEmailRaw = (qs.viewerEmail || "").trim();
     const setRaw = (qs.set || "").trim().toLowerCase();
+    const gradeLevelParam =
+      normalizeGradeLevel(qs.gradeLevel || qs.grade) || "6";
 
     if (!sessionCode) {
       return {
@@ -61,6 +68,18 @@ exports.handler = async function (event) {
         };
       }
 
+      const docGrade = normalizeGradeLevel(doc.gradeLevel || doc.grade) || "6";
+      if (docGrade !== gradeLevelParam) {
+        return {
+          statusCode: 404,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            success: false,
+            error: "No progress found for that grade in this session",
+          }),
+        };
+      }
+
       return {
         statusCode: 200,
         headers: { "Content-Type": "application/json" },
@@ -82,6 +101,11 @@ exports.handler = async function (event) {
     // ---------- FILTERS ----------
     let filtered = allProgress;
 
+
+    // grade filter
+    filtered = filtered.filter(
+      (d) => (normalizeGradeLevel(d.gradeLevel || d.grade) || "6") === gradeLevelParam
+    );
 
     // set filter
     const setParam = normalizeSetParam(setRaw);

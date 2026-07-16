@@ -16,6 +16,11 @@ function normalizeSetParam(raw) {
   return "full";
 }
 
+function normalizeGradeLevel(raw) {
+  const match = String(raw || "").trim().match(/\d+/);
+  return match ? match[0] : "";
+}
+
 
 exports.handler = async function (event, context) {
   if (event.httpMethod !== "POST") {
@@ -60,6 +65,8 @@ exports.handler = async function (event, context) {
           : ""
       )
     ).trim();
+    const gradeLevel = normalizeGradeLevel(body.gradeLevel || body.grade) || "6";
+
     if (!sessionCode || !studentName) {
       return {
         statusCode: 400,
@@ -119,6 +126,8 @@ exports.handler = async function (event, context) {
       // === Assessment Metadata ===
       assessmentName,
       assessmentType,
+      gradeLevel,
+      grade: gradeLevel,
 
             // === Practice metadata ===
       practiceSet: normalizeSetParam(body.practiceSet || body.set || "full"),
@@ -172,6 +181,8 @@ exports.handler = async function (event, context) {
 
       assessmentName,
       assessmentType,
+      gradeLevel,
+      grade: gradeLevel,
       benchmarkKey: body.benchmarkKey || body.benchmark || "",
       benchmarkId: body.benchmarkId || body.assessmentId || "",
 

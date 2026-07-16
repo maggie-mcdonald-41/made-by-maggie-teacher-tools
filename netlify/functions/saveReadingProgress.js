@@ -8,6 +8,11 @@ function normalizeSetParam(raw) {
   return "full";
 }
 
+function normalizeGradeLevel(raw) {
+  const match = String(raw || "").trim().match(/\d+/);
+  return match ? match[0] : "";
+}
+
 
 function sanitizeFragment(value) {
   return String(value || "")
@@ -57,6 +62,8 @@ function buildAttemptSummaryForIndex(attemptKey, attempt) {
     attempt.assessmentType ||
     (practiceSet === "benchmark" || practiceLevel === "benchmark" ? "benchmark" : "");
 
+  const gradeLevel = normalizeGradeLevel(attempt.gradeLevel || attempt.grade) || "6";
+
   return {
     key: attemptKey,
 
@@ -75,6 +82,8 @@ function buildAttemptSummaryForIndex(attemptKey, attempt) {
 
     assessmentName: attempt.assessmentName || "",
     assessmentType,
+    gradeLevel,
+    grade: gradeLevel,
 
     practiceSet,
     practiceLevel,
@@ -150,6 +159,7 @@ function buildPartialAttemptFromProgress(
       : answeredCount;
 
   const attemptId = `${safeSession}_${safeStudentKey}`;
+  const gradeLevel = normalizeGradeLevel(payload.gradeLevel || payload.grade) || "6";
 
   // 🔐 NEW: robust ownership for partial attempts
   const ownerEmail = (
@@ -177,6 +187,8 @@ function buildPartialAttemptFromProgress(
     // Assessment metadata
     assessmentName: payload.assessmentName || "",
     assessmentType: payload.assessmentType || "",
+    gradeLevel,
+    grade: gradeLevel,
 
     practiceSet: normalizeSetParam(payload.practiceSet || payload.set || "full"),
     practiceLevel: String(payload.practiceLevel || payload.level || "on").toLowerCase(),
@@ -219,6 +231,7 @@ exports.handler = async function (event, context) {
 
     const safeSession = sanitizeFragment(sessionCode);
     const safeStudentKey = sanitizeFragment(studentKey);
+    const gradeLevel = normalizeGradeLevel(payload.gradeLevel || payload.grade) || "6";
 
     const key = `session/${safeSession}/${safeStudentKey}.json`;
 
@@ -230,6 +243,8 @@ exports.handler = async function (event, context) {
       sessionCode,
 
       studentName: payload.studentName || "",
+      gradeLevel,
+      grade: gradeLevel,
 
       startedAt: payload.startedAt || null,
       lastSavedAt: payload.lastSavedAt || new Date().toISOString(),

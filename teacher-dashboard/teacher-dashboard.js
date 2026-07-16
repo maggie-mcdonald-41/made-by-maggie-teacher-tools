@@ -17,6 +17,16 @@ let currentSessionCode = "";   // e.g. "MONDAY EVENING"
 let currentSetParam = "full";  // "full" or "mini1" or "mini2"
 let currentLevelParam = "on"; // "on" | "below" | "above"
 
+const READING_GRADE_LEVEL = "6";
+
+function addGradeParam(params) {
+  if (params && typeof params.set === "function") {
+    params.set("grade", READING_GRADE_LEVEL);
+    params.set("gradeLevel", READING_GRADE_LEVEL);
+  }
+  return params;
+}
+
 
 // ---------- HISTORY STORAGE KEY ----------
 const HISTORY_KEY = "rp_teacherSessionHistory_v1";
@@ -594,6 +604,7 @@ async function loadAttemptQnPanel(attemptSummary) {
   try {
     const params = new URLSearchParams();
     params.set("attemptId", attemptSummary.attemptId);
+    addGradeParam(params);
 // ✅ Use session-scoped owner override ONLY when present.
 // This prevents a co-teacher link from changing the whole dashboard context.
 const ownerEmail = (CURRENT_SESSION_OWNER_OVERRIDE || OWNER_EMAIL_FOR_VIEW || "").trim().toLowerCase();
@@ -1281,6 +1292,7 @@ async function fetchAttemptSummaryPagesForScope(options = {}) {
   const ownerEmail = String(options.ownerEmail || "").trim().toLowerCase();
 
   const params = new URLSearchParams();
+  addGradeParam(params);
 
   if (viewerEmail) {
     params.set("viewerEmail", viewerEmail);
@@ -3537,6 +3549,7 @@ async function loadAttempts() {
 
   try {
     const params = new URLSearchParams();
+    addGradeParam(params);
     if (sessionCodeRaw) params.set("sessionCode", sessionCodeRaw);
 
     // Filters (may be too strict for co-teacher links if set/level mismatch)
@@ -3585,6 +3598,7 @@ if (useOwnerScope) {
     // ✅ Fallback: if filters produced no results, retry without set/level
     if (sessionCodeRaw && hasFilters && (!attempts || attempts.length === 0)) {
       const retryParams = new URLSearchParams();
+      addGradeParam(retryParams);
       retryParams.set("sessionCode", sessionCodeRaw);
 
       // keep the SAME owner/viewer scoping as the first request
@@ -3689,6 +3703,7 @@ function enableMonitorButton(sessionCodeRaw) {
 
   monitorSessionBtn.onclick = (() => {
     const params = new URLSearchParams();
+    addGradeParam(params);
 
     // Live monitor expects `session`,  `set`
     params.set("session", session.toUpperCase());
@@ -3768,6 +3783,7 @@ function buildStudentLink(sessionCode) {
 
   const baseUrl = `${window.location.origin}/teacher-dashboard/reading-practice/index.html`;
   const params = new URLSearchParams();
+  addGradeParam(params);
   params.set("session", cleanSession);
 
 
@@ -3818,6 +3834,7 @@ function buildCoTeacherLink(sessionCode) {
 
   const baseUrl = `${window.location.origin}/teacher-dashboard/teacher-dashboard.html`;
   const params = new URLSearchParams();
+  addGradeParam(params);
   params.set("sessionCode", cleanSession);
 
 
@@ -3871,6 +3888,7 @@ function buildBenchmarkCoTeacherLink(sessionCode, benchmarkKey = "q4") {
 
   const baseUrl = `${window.location.origin}/teacher-dashboard/teacher-dashboard.html`;
   const params = new URLSearchParams();
+  addGradeParam(params);
 
   params.set("sessionCode", cleanSession);
   params.set("mode", "benchmark");
@@ -3923,6 +3941,7 @@ function buildBenchmarkStudentLink(sessionCode, benchmarkKey = "q4") {
 
   const baseUrl = `${window.location.origin}/teacher-dashboard/reading-practice/index.html`;
   const params = new URLSearchParams();
+  addGradeParam(params);
 
   params.set("session", cleanSession);
   params.set("mode", "benchmark");
@@ -3962,6 +3981,7 @@ function enableBenchmarkMonitorButton(sessionCodeRaw, benchmarkKey = "q4") {
 
   monitorBenchmarkBtn.onclick = () => {
     const params = new URLSearchParams();
+    addGradeParam(params);
     params.set("session", session);
     params.set("mode", "benchmark");
     params.set("benchmark", benchmarkKey);

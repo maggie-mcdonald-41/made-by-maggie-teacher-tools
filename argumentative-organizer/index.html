@@ -100,9 +100,12 @@
       </a>
 
       <footer>
-        <p><strong>© 2026 Maggie McDonald | Built for teachers, by a teacher | All rights reserved.</strong></p>
+        <p><strong>© <span id="current-year"></span> Maggie McDonald | Built for teachers, by a teacher | All rights reserved.</strong></p>
       </footer>
     </section>
   </main>
+  <script>
+  document.getElementById("current-year").textContent = new Date().getFullYear();
+</script>
 </body>
 </html>

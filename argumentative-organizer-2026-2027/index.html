@@ -1362,7 +1362,7 @@
         </style>
     </div>
   <footer class="footer">
-    <p><strong>© 2025 Maggie McDonald | Built for teachers, by a teacher | All rights reserved. Licensed for individual teacher use only</strong></p>
+    <p><strong>© <span id="current-year"></span> Maggie McDonald | Built for teachers, by a teacher | All rights reserved. Licensed for individual teacher use only</strong></p>
   
 </footer>
   <!-- Canvas for confetti -->
@@ -1388,6 +1388,10 @@
   <script src="js/completion-messages.js" defer></script>
   <script src="js/event-handlers.js" defer></script>
   <script src="js/main.js" defer></script>
+<script>
+  document.getElementById("current-year").textContent = new Date().getFullYear();
+</script>
+
 </body>
 
 </html>

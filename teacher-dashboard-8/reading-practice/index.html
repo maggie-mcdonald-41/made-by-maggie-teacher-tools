@@ -1,0 +1,349 @@
+<!-- reading-practice ---- index.html start -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>8th Grade Reading Test-Style Question Trainer | Made by Maggie</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Brand-ish Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <!-- Student Identity Modal -->
+<div id="rp-identity-modal" class="rp-modal-backdrop" aria-hidden="true">
+  <div class="rp-modal">
+    <h2 class="rp-modal-title">Before we start…</h2>
+    <p class="rp-modal-text">
+      Tell the trainer who you are so your teacher can see your progress.
+    </p>
+
+<div class="rp-modal-section">
+
+
+  <!-- Official Google Sign-In button renders here (no auto-click) -->
+  <div
+    id="rp-gsi-button-container"
+    class="rp-gsi-button-container"
+    style="margin-top: 12px;"
+  ></div>
+
+  <p class="rp-modal-helper">
+    This helps save your work across devices and keeps your name the same every time.
+  </p>
+</div>
+
+
+    <div class="rp-modal-divider">
+      <span>or</span>
+    </div>
+
+    <div class="rp-modal-section">
+      <label for="rp-id-name">Your name</label>
+      <input id="rp-id-name" type="text" autocomplete="name" />
+
+      <button id="rp-id-continue" class="rp-modal-continue-btn">
+        Continue without Google
+      </button>
+
+      <p id="rp-id-error" class="rp-modal-error" aria-live="polite"></p>
+    </div>
+  </div>
+</div>
+
+<!-- Student Attempt Summary Modal -->
+<div id="benchmark-summary-modal" class="rp-modal-backdrop" aria-hidden="true">
+  <div class="rp-modal benchmark-summary-card">
+    <h2 class="rp-modal-title">Practice Complete! 🎉</h2>
+    <p class="rp-modal-text">
+      Here is a quick look at how you did on this attempt.
+    </p>
+
+    <div id="benchmark-summary-body"></div>
+
+    <button id="benchmark-summary-close" class="rp-modal-continue-btn" type="button">
+      Keep Reviewing
+    </button>
+  </div>
+</div>
+
+  <div class="app-shell">
+    <!-- PAGE HEADER -->
+    <header class="app-header">
+      <!-- Left Side: Logo + Title -->
+      <div class="app-title-group with-logo">
+        <img src="../media/your-logo.png" alt="Made by Maggie Logo" class="app-logo">
+
+        <div class="title-text">
+          <h1 class="main-title">8th Grade Reading Test-Style Question Trainer</h1>
+          <p class="app-subtitle">Made by Maggie Teaching Tools · 8th Grade Test-Style Practice</p>        </div>
+        <span class="app-pill">Practice</span>
+      </div>
+<!-- Right Side: Dark Mode + Dyslexia Font Toggles -->
+<div class="header-right">
+  <label class="theme-switch">
+    <input type="checkbox" id="theme-toggle" />
+    <span class="theme-slider"></span>
+    <span class="theme-label">Dark Mode</span>
+  </label>
+
+  <label class="theme-switch">
+    <input type="checkbox" id="dyslexia-toggle" />
+    <span class="theme-slider"></span>
+    <span class="theme-label">Dyslexia Font</span>
+  </label>
+</div>
+
+    </header>
+
+    <!-- Session Info Bar (under the header) -->
+    <section class="rp-session-bar">
+      <div class="rp-session-group">
+        <label for="rp-student-name">Student Name</label>
+        <input
+          id="rp-student-name"
+          type="text"
+          placeholder="First name + last initial"
+        />
+      </div>
+
+      <div class="rp-session-group">
+        <label for="rp-class-code">Class / Period</label>
+        <input
+          id="rp-class-code"
+          type="text"
+          placeholder="e.g. 8A, 8B, Per 3"
+        />
+      </div>
+
+      <div class="rp-session-group">
+        <label for="rp-session-code">Session Code</label>
+        <input
+          id="rp-session-code"
+          type="text"
+          placeholder="Your teacher will give you this"
+        />
+      </div>
+
+<div class="rp-session-actions">
+  <div class="rp-session-buttons">
+    <button id="rp-start-session" class="btn primary" type="button">
+      Start Session
+    </button>
+
+    <button id="rp-google-signin" class="btn subtle" type="button">
+      Sign in with Google (optional)
+    </button>
+  </div>
+
+  <p id="rp-session-status" class="rp-session-status">
+    Enter your name, class, and session code, then click <strong>Start Session</strong>.
+  </p>
+  <p id="rp-auth-status" class="rp-session-status" style="font-size:0.8rem;">
+    Google sign-in saves your progress across devices. Local saving is also enabled.
+  </p>
+</div>
+<div id="rp-cached-user-box" style="display:none; margin-top:8px; font-size:0.8rem;">
+  <span id="rp-cached-user-label"></span><br>
+  <button id="rp-use-cached-user" class="btn subtle" type="button">
+    Continue with this account
+  </button>
+  <button id="rp-clear-cached-user" class="btn subtle" type="button">
+    Use a different account
+  </button>
+</div>
+
+
+
+    </section>
+
+    <main class="rp-layout">
+      <!-- LEFT: PASSAGE PANEL -->
+      <section class="passage-panel" aria-label="Reading passages">
+        <div class="passage-tabs" role="tablist">
+          <button class="passage-tab active" data-passage="1" role="tab" aria-selected="true">
+            Passage 1
+          </button>
+          <button class="passage-tab" data-passage="2" role="tab" aria-selected="false">
+            Passage 2
+          </button>
+        </div>
+      <!-- NEW: Passage Highlight Tools -->
+      <div class="highlight-toolbar" id="passage-highlight-toolbar" aria-label="Passage highlighting tools">
+        <span class="highlight-label">Passage highlighter:</span>
+        <button type="button" class="hl-color-btn active" data-color="yellow" aria-label="Yellow highlighter"></button>
+        <button type="button" class="hl-color-btn" data-color="green" aria-label="Green highlighter"></button>
+        <button type="button" class="hl-color-btn" data-color="blue" aria-label="Blue highlighter"></button>
+        <button type="button" class="hl-color-btn" data-color="pink" aria-label="Pink highlighter"></button>
+      </div>
+    <button id="clear-passage-highlights" class="btn subtle">
+      Clear Passage Highlights
+    </button>
+    <div class="passage-scroll">
+      <!-- Passage 1 (content injected by JS) -->
+      <article id="passage-1" class="passage active" data-passage="1"></article>
+
+      <!-- Passage 2 (content injected by JS) -->
+      <article id="passage-2" class="passage" data-passage="2"></article>
+    </div>
+    </section>
+
+      <!-- RIGHT: QUESTION PANEL -->
+      <section class="question-panel" aria-label="Question panel">
+<div class="question-header">
+  <div class="question-meta">
+    <span class="pill pill-progress" id="question-progress-pill">
+      Question <span id="question-number">1</span> of <span id="question-total">25</span>
+    </span>
+    <span id="question-type-label" class="question-type-label">Multiple Choice</span>
+  </div>
+  <!--Later add
+      <div class="question-header-right">
+      <div id="streak-indicator" class="streak-indicator">
+        🔥 Streak: <span id="streak-count">0</span>
+      </div>-->
+  <div id="linked-passage-label" class="linked-passage-label">
+    <!-- Filled in by JS if a question is tied to a specific passage -->
+  </div>
+</div>
+<!-- NEW: Overall set progress bar (same as organizers) -->
+<div class="progress-wrapper">
+  <div class="progress-bar" id="progress-bar"></div>
+  <div class="progress-message" id="progress-message"></div>
+</div>
+
+<!-- scrollable question picker -->
+<div class="question-nav-strip" id="question-nav-strip" aria-label="Jump to question"></div>
+<!-- NEW: Question Tools Row -->
+<div class="question-tools-row">
+  <div class="highlight-toolbar" id="question-highlight-toolbar" aria-label="Question highlighting tools">
+    <span class="highlight-label">Question highlighter:</span>
+    <button type="button" class="hl-color-btn active" data-color="yellow" aria-label="Yellow highlighter"></button>
+    <button type="button" class="hl-color-btn" data-color="green" aria-label="Green highlighter"></button>
+    <button type="button" class="hl-color-btn" data-color="blue" aria-label="Blue highlighter"></button>
+    <button type="button" class="hl-color-btn" data-color="pink" aria-label="Pink highlighter"></button>
+  </div>
+  <button id="clear-question-highlights" class="btn subtle">
+  Clear Question Highlights
+</button>
+  <span class="question-tools-hint">
+    Tip: Shift-click or right-click an answer choice to cross it out.
+  </span>
+</div>
+<!-- later add
+<div id="question-skill-tags"
+     class="question-skill-tags"
+     aria-label="Skills you are practicing">
+</div>
+-->
+        <div class="question-body">
+          <div id="question-stem" class="question-stem">
+            <!-- Filled by JS -->
+          </div>
+          <div id="question-instructions" class="question-instructions">
+            <!-- Filled by JS -->
+          </div>
+
+          <div id="question-options" class="question-options">
+            <!-- Filled by JS: choices, drag areas, highlight sentences, etc. -->
+          </div>
+
+          <div id="question-feedback" class="question-feedback" aria-live="polite">
+            <!-- Immediate feedback appears here -->
+          </div>
+        </div>
+
+        <div class="question-footer">
+          <button id="check-answer-btn" class="btn primary" disabled>
+            Check Answer
+          </button>
+          <button id="next-question-btn" class="btn secondary" disabled>
+            Next Question
+          </button>
+        </div>
+      </section>
+    </main>
+<button id="sasquatch-helper" class="sasquatch-helper" type="button">
+  <img 
+    src="../media/sasquatch-head.png" 
+    alt="" 
+    class="sasquatch-icon"
+  />
+  <span class="sr-only">Squatch says: Keep going, you’ve got this!</span>
+</button>
+
+
+  </div>
+<script>
+  window.GOOGLE_CLIENT_ID = "780192379486-tje7g4n83knjptkubsf8ur1g1rqb5ta6.apps.googleusercontent.com";
+  window.RP_AUTH_RESTORE_MODE = "explicit";
+  window.READING_GRADE_LEVEL = "8";
+</script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="level-loader.js" defer></script>
+<script src="../reading-google-auth.js" defer></script>
+
+<script src="../standards-catalog.js"></script>
+<script src="reporting.js" defer></script>
+<script src="script.js" defer></script>
+<script src="readaloud-trainer.js" defer></script>
+<!-- Floating Read Aloud Controls -->
+<div id="rp-tts-float" class="rp-tts-float" aria-label="Read aloud controls">
+  <div class="rp-tts-header">
+    <div class="rp-tts-title">🔊 Read Aloud</div>
+    <button
+      type="button"
+      id="rp-tts-collapse"
+      class="rp-tts-collapse-btn"
+      aria-controls="rp-tts-body"
+      aria-expanded="true"
+      aria-label="Collapse read aloud controls"
+      title="Collapse read aloud controls"
+    >
+      −
+    </button>
+  </div>
+
+  <div id="rp-tts-body" class="rp-tts-body">
+    <div class="rp-tts-row">
+      <label class="rp-tts-label" for="rp-tts-voice">Reader:</label>
+      <select id="rp-tts-voice" class="rp-tts-select" aria-label="Select reader voice"></select>
+    </div>
+
+    <div class="rp-tts-row">
+      <label class="rp-tts-label" for="rp-tts-speed">Speed:</label>
+      <select id="rp-tts-speed" class="rp-tts-select rp-tts-speed-select" aria-label="Select reading speed">
+        <option value="0.75">Slow</option>
+        <option value="1" selected>Normal</option>
+        <option value="1.25">Fast</option>
+        <option value="1.5">Very Fast</option>
+      </select>
+    </div>
+
+    <div class="rp-tts-buttons">
+      <button type="button" id="rp-tts-read-passage" class="rp-tts-btn">📖 Passage</button>
+      <button type="button" id="rp-tts-read-question" class="rp-tts-btn">❓ Question</button>
+
+      <!-- This toggles play/pause depending on state -->
+      <button type="button" id="rp-tts-toggle" class="rp-tts-btn rp-tts-btn-primary">▶️ Play</button>
+
+      <button type="button" id="rp-tts-stop" class="rp-tts-btn">⏹ Stop</button>
+    </div>
+  </div>
+</div>
+<footer class="app-footer">
+© <span id="current-year"></span> Maggie McDonald ☀️| Built for teachers, by a teacher. <a href="/privacy.html" style="color: #84EBE6;">Privacy Policy</a>
+</footer>
+<script>
+  document.getElementById("current-year").textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
+
+  <!-- index.html end -->
