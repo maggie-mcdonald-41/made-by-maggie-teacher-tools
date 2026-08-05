@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CER Writing Response Builder</title>
+<script async="" defer="" src="https://apis.google.com/js/api.js"></script>
+<script async="" defer="" src="https://accounts.google.com/gsi/client"></script>
+<style>
+  html { scroll-behavior: smooth; }
+  :root {
+    --color-blue-dark: #004860;
+    --color-teal: #05C1B8;
+    --color-teal-light: #0AD1CC;
+    --color-aqua: #84EBE6;
+    --color-orange: #FF9900;
+    --color-yellow: #FFB800;
+    --color-yellow-light: #FFD466;
+    --color-red: #FF5D52;
+    --color-peach: #FF8F85;
+    --color-pink: #FFA69E;
+    --card: #ffffff;
+    --bg: #f6fbff;
+    --text: #123;
+    --muted: #4b5b66;
+    --border: rgba(0,0,0,.12);
+    --shadow: 0 8px 20px rgba(0,0,0,.08);
+  }
+
+  body {
+    margin: 0;
+    color: var(--text);
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background:
+      radial-gradient(900px 520px at 12% 10%, rgba(5,193,184,.18), transparent 55%),
+      radial-gradient(900px 520px at 88% 14%, rgba(255,184,0,.18), transparent 55%),
+      radial-gradient(900px 520px at 20% 88%, rgba(255,93,82,.16), transparent 55%),
+      radial-gradient(900px 520px at 92% 88%, rgba(132,235,230,.18), transparent 55%),
+      linear-gradient(180deg, #f7fbff 0%, #f4fbff 45%, #ffffff 100%);
+    background-attachment: fixed;
+  }
+
+  body.dark-mode {
+    --bg:#121619;
+    --text:#f1f1f1;
+    --card:#1c242b;
+    --muted:#c9d3db;
+    --border: rgba(255,255,255,.14);
+    background: var(--bg);
+  }
+
+  .progress-wrapper{
+    position: fixed;
+    top:0;
+    left:0;
+    width:100%;
+    padding:10px 16px;
+    background:#e0f0ff;
+    z-index:1000;
+    box-shadow:0 2px 6px rgba(0,0,0,.1);
+  }
+  body.dark-mode .progress-wrapper{ background:#2a3b4c; }
+
+  .progress-bar{
+    height:12px;
+    width:0%;
+    border-radius:999px;
+    background: linear-gradient(90deg, #00c6ff, #0072ff);
+    transition: width .25s ease;
+  }
+  body.dark-mode .progress-bar{ background: linear-gradient(90deg, #66fcf1, #45a29e); }
+
+  .progress-message{
+    text-align:center;
+    margin-top:6px;
+    font-weight:700;
+    color: var(--color-pink);
+  }
+
+  .wrap{ max-width: 980px; margin: 86px auto 80px; padding: 0 16px; }
+  h1{ margin: 10px 0 8px; font-size: 2rem; color: var(--color-blue-dark); }
+  body.dark-mode h1{ color: var(--color-aqua); }
+  .sub{ color: var(--muted); margin: 0 0 16px; line-height:1.45; }
+
+  .utility{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+    justify-content:space-between;
+    padding: 12px;
+    border:1px solid var(--border);
+    background: var(--card);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+  }
+
+  .toggles{ display:flex; gap:10px; flex-wrap:wrap; }
+  .toggle{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,.5);
+  }
+  body.dark-mode .toggle{ background: rgba(0,0,0,.15); }
+
+  .actions{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+
+  button{
+    cursor:pointer;
+    border:none;
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-weight: 700;
+    background: var(--color-teal);
+    color:#001b1a;
+  }
+  button.secondary{
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  button:active{ transform: translateY(1px); }
+
+  .grid{ display:grid; grid-template-columns: 1fr; gap: 14px; margin-top: 14px; }
+
+  .card{
+    background: var(--card);
+    border:1px solid var(--border);
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    padding: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  body:not(.dark-mode) .card::before{
+    content:"";
+    position:absolute;
+    inset:-2px;
+    background: radial-gradient(700px 160px at 18% 0%, rgba(255,255,255,.65), transparent 55%);
+    pointer-events:none;
+  }
+
+  .card[data-cer]{ border-top-width: 6px; }
+  .card[data-cer="claim"]{ border-top-color: var(--color-teal); }
+  .card[data-cer="evidence"]{ border-top-color: var(--color-yellow); }
+  .card[data-cer="reasoning"]{ border-top-color: var(--color-red); }
+
+  body:not(.dark-mode) .badge{
+    background: rgba(255,255,255,.65);
+    border: 1px solid rgba(0,0,0,.08);
+    box-shadow: 0 6px 14px rgba(0,0,0,.06);
+  }
+
+  .row2{ display:grid; grid-template-columns: 1fr 2fr; gap: 12px; }
+  @media (max-width: 760px){ .row2{ grid-template-columns: 1fr; } }
+
+  label{ display:block; font-weight:800; margin-bottom: 6px; }
+  input[type="text"], textarea{
+    width:100%;
+    box-sizing:border-box;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    font-size: 1rem;
+    background: transparent;
+    color: var(--text);
+  }
+  textarea{ min-height: 84px; resize: vertical; }
+
+  .section-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .badge{
+    font-weight:900;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(5,193,184,.18);
+    border: 1px solid rgba(5,193,184,.35);
+  }
+
+  .editable{
+    min-height: 92px;
+    border-radius: 14px;
+    border: 1px dashed rgba(0,0,0,.25);
+    padding: 10px 12px;
+    background: rgba(255,255,255,.55);
+    outline: none;
+    line-height: 1.45;
+    white-space: pre-wrap;
+  }
+  body.dark-mode .editable{
+    background: rgba(0,0,0,.18);
+    border-color: rgba(255,255,255,.22);
+  }
+  .editable:focus{
+    border-style: solid;
+    border-color: var(--color-teal);
+    box-shadow: 0 0 0 3px rgba(5,193,184,.22);
+  }
+
+  details{
+    border:1px solid var(--border);
+    border-radius: 14px;
+    padding: 10px 12px;
+    margin-top: 10px;
+  }
+  summary{ cursor:pointer; font-weight: 900; }
+
+  .starter-bar{ display:flex; flex-wrap:wrap; gap:8px; margin: 10px 0 8px; }
+  .chip{
+    padding: 8px 10px;
+    border-radius: 999px;
+    background: rgba(255,184,0,.18);
+    border: 1px solid rgba(255,184,0,.35);
+    color: var(--text);
+    font-weight: 800;
+  }
+
+  .mirror-panel{
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 10px 12px;
+    background: rgba(132,235,230,.10);
+    margin-bottom: 10px;
+  }
+  body.dark-mode .mirror-panel{
+    background: rgba(255,255,255,.04);
+  }
+  .mirror-label{
+    display:block;
+    font-weight: 800;
+    margin-bottom: 4px;
+    color: var(--muted);
+  }
+
+  .cer-steps{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 12px;
+  }
+  @media (max-width: 760px){
+    .cer-steps{ grid-template-columns: 1fr; }
+  }
+
+  .cer-step{
+    border:1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px;
+    background: rgba(255,255,255,.55);
+  }
+  body.dark-mode .cer-step{
+    background: rgba(255,255,255,.03);
+  }
+
+  .footer-tools{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; }
+  .checklist{ display:grid; gap: 6px; margin-top: 10px; }
+  .checklist label{ font-weight: 700; display:flex; gap:8px; align-items:flex-start; }
+
+  .tiny{ font-size: .9rem; color: var(--muted); }
+
+  #loading-msg{
+    position:fixed;
+    left:50%;
+    top:70px;
+    transform: translateX(-50%);
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: rgba(0,0,0,.75);
+    color:#fff;
+    z-index: 2000;
+    display:none;
+  }
+
+  @font-face{
+    font-family: "OpenDyslexic";
+    src: url("./OpenDyslexic-Regular.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  body.dyslexia-mode, body.dyslexia-mode *{
+    font-family: "OpenDyslexic", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif !important;
+    letter-spacing: 0.2px;
+  }
+
+  details.tips{
+    margin-top: 10px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 14px;
+    padding: 10px 12px;
+  }
+
+  details.tips summary{
+    cursor: pointer;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .section-controls{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top: 12px;
+    justify-content:flex-end;
+  }
+
+  #confetti-canvas{
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+    display:block;
+  }
+
+  .voice-row{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    flex-wrap:wrap;
+    margin-top: 10px;
+    justify-content:flex-start;
+  }
+
+  .voice-select{
+    padding: 8px 10px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    box-shadow: 0 2px 6px rgba(0,0,0,.06);
+    min-width: 240px;
+  }
+
+  .footer {
+    text-align: center;
+    padding: 2rem 1rem;
+    font-size: 1.25rem;
+    background-color: var(--color-blue-dark);
+    color: #fff;
+    font-weight: bold;
+  }
+
+.cer-header-image{
+  margin: 18px 0;
+  padding: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.cer-header-image img{
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+}
+
+</style>
+</head>
+<body>
+<div class="progress-wrapper">
+  <div class="progress-bar" id="progress-bar"></div>
+  <div class="progress-message" id="progress-message"></div>
+</div>
+
+<div id="loading-msg"></div>
+
+<div class="wrap">
+  <h1>🧠 CER Writing Response Builder 🧠</h1>
+  <p class="sub">
+    ✨Supports student writing without generating answers for them. This scaffolded organizer helps students work through the
+    <strong>Claim, Evidence, Reasoning</strong> process step by step with examples, writing support, auto-fill carryover, and an easy workflow.
+    Student work automatically saves locally so they can continue writing across multiple days. Optional Google Drive saving and
+    Google Docs export make it easy to store, review, and track student writing over time. The teacher export also includes writing insights such as
+    time taken, paste activity, revisions, and tool use.
+  </p>
+
+  <div class="cer-header-image">
+    <img
+      src="/images/cer.png"
+      alt="CER strategy: Claim, Evidence, and Reasoning"
+    />
+  </div>
+
+  <div class="utility">
+    <div class="toggles">
+      <label class="toggle"><input id="darkToggle" type="checkbox"/> <span>Dark Mode 🌙</span></label>
+      <label class="toggle"><input id="dyslexiaToggle" type="checkbox"/> <span>Dyslexia Font 🔤</span></label>
+    </div>
+
+    <div class="actions">
+      <button id="googleSignIn">Sign in with Google</button>
+      <button class="secondary" id="googleSignOut">Sign out</button>
+      <button class="secondary" id="clearAll">Clear</button>
+    </div>
+
+    <div class="voice-row">
+      <label class="tiny" for="voiceSelect"><strong>Reader Voice:</strong></label>
+      <select aria-label="Select a read-aloud voice" class="voice-select" id="voiceSelect"></select>
+    </div>
+  </div>
+
+  <div class="grid">
+    <section class="card">
+      <div class="row2">
+        <div>
+          <label for="textTitle">Text / source / investigation title</label>
+          <input id="textTitle" placeholder="Ex: Fish Cheeks / Water Cycle Lab / Primary Source A" type="text"/>
+          <p class="tiny">Used in sentence starters like: “According to <em>[Title]</em>...”</p>
+        </div>
+        <div>
+          <label for="questionPrompt">Question / prompt</label>
+          <textarea id="questionPrompt" placeholder="Paste the CER question or prompt here..."></textarea>
+        </div>
+      </div>
+
+      <details>
+        <summary>👩‍🏫 Teacher Tips</summary>
+        <div class="tiny" style="margin-top:8px; line-height:1.45;">
+          <p><strong>Goal:</strong> Students use a clear claim, relevant evidence, and reasoning that explains how the evidence supports the claim.</p>
+          <p><strong>Best use:</strong> This organizer works well for ELA, science, and social studies responses.</p>
+          <p><strong>Example (Teacher model):</strong> The narrator feels embarrassed because she is worried that Robert will judge her family. According to <em>Fish Cheeks</em>, “I was stunned into silence for the rest of the night.” This evidence supports the claim because her silence shows how uncomfortable and ashamed she feels during the dinner. Her reaction helps explain why she is so focused on how others might view her family’s traditions.</p>
+          <p><strong>Important:</strong> This tool provides structure, sentence starters, and feedback — it does <em>not</em> write answers for students.</p>
+        </div>
+      </details>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div class="badge">CER Strategy</div>
+        <div class="tiny">Claim • Evidence • Reasoning</div>
+      </div>
+
+      <div class="cer-steps">
+        <div class="cer-step">
+          <strong>1. Claim</strong>
+          <p class="tiny">Answer the question clearly. Make a direct statement that responds to the prompt.</p>
+        </div>
+        <div class="cer-step">
+          <strong>2. Evidence</strong>
+          <p class="tiny">Use a quote, detail, fact, data point, or accurate paraphrase from the text, source, or investigation.</p>
+        </div>
+        <div class="cer-step">
+          <strong>3. Reasoning</strong>
+          <p class="tiny">Explain how the evidence proves or supports your claim. This is where students do the thinking.</p>
+        </div>
+      </div>
+    </section>
+
+<section class="card" data-cer="claim">
+  <div class="section-head">
+    <div class="badge">C — Claim: Restate + Answer</div>
+  </div>
+
+  <p class="tiny">
+    Begin by turning the question into a statement. Then add your clear answer or conclusion.
+    Your claim should make sense even if the reader cannot see the original question.
+  </p>
+
+  <div class="mirror-panel">
+    <span class="mirror-label">Question or prompt you are answering</span>
+    <div class="tiny" id="claimPromptMirror">
+      Your question or prompt will appear here.
+    </div>
+  </div>
+
+  <div class="cer-steps">
+    <div class="cer-step">
+      <strong>1. Find the key words</strong>
+      <p class="tiny">
+        Identify the important person, topic, event, relationship, or idea named in the question.
+      </p>
+    </div>
+
+    <div class="cer-step">
+      <strong>2. Restate the question</strong>
+      <p class="tiny">
+        Turn the question into the beginning of a statement. Do not copy the question word for word.
+      </p>
+    </div>
+
+    <div class="cer-step">
+      <strong>3. Add your answer</strong>
+      <p class="tiny">
+        Complete the statement with your answer, conclusion, or position.
+      </p>
+    </div>
+  </div>
+
+  <details class="tips">
+    <summary>See an example</summary>
+
+    <div class="tiny" style="margin-top:8px; line-height:1.45;">
+      <p>
+        <strong>Question:</strong>
+        Why does the narrator feel embarrassed in <em>Fish Cheeks</em>?
+      </p>
+
+      <p>
+        <strong>Restated question:</strong>
+        In <em>Fish Cheeks</em>, the narrator feels embarrassed because...
+      </p>
+
+      <p>
+        <strong>Complete claim:</strong>
+        In <em>Fish Cheeks</em>, the narrator feels embarrassed because she worries that Robert will judge her family and their traditions.
+      </p>
+    </div>
+  </details>
+
+  <p class="tiny" style="margin-top:12px;">
+    <strong>Choose a beginning only when it fits your question:</strong>
+  </p>
+
+  <div class="starter-bar">
+    <button
+      class="chip"
+      data-insert="claimBox"
+      data-template="In {TITLE}, ">
+      In [Title], …
+    </button>
+
+    <button
+      class="chip"
+      data-insert="claimBox"
+      data-template="Based on the text, ">
+      Based on the text, …
+    </button>
+
+    <button
+      class="chip"
+      data-insert="claimBox"
+      data-template="The author shows that ">
+      The author shows that…
+    </button>
+
+    <button
+      class="chip"
+      data-insert="claimBox"
+      data-template="The investigation demonstrates that ">
+      The investigation demonstrates that…
+    </button>
+  </div>
+
+  <label for="claimBox">Write your complete claim</label>
+
+  <div
+    class="editable"
+    contenteditable="true"
+    data-label="Claim"
+    id="claimBox"
+    spellcheck="true"
+    aria-describedby="claimRequirements">
+  </div>
+
+  <div class="tiny" id="claimRequirements" style="margin-top:10px;">
+    Before moving on, check that your claim:
+    <ul style="margin:6px 0 0; padding-left:22px;">
+      <li>uses important words or ideas from the question,</li>
+      <li>turns the question into a statement, and</li>
+      <li>includes your actual answer or conclusion.</li>
+    </ul>
+  </div>
+
+  <div class="section-controls">
+    <button class="secondary" data-read="claimBox" type="button">
+      🔊 Read my writing
+    </button>
+
+    <button class="secondary" data-stop="speech" type="button">
+      ⏹ Stop
+    </button>
+
+    <button class="secondary" data-coach="claimBox">
+      Check My Claim
+    </button>
+  </div>
+</section>
+
+    <section class="card">
+      <div class="section-head"><div class="badge">Carry Forward</div></div>
+      <div class="mirror-panel">
+        <span class="mirror-label">Your current claim</span>
+        <div class="tiny" id="claimMirrorEvidence">Your claim will appear here as you write.</div>
+      </div>
+    </section>
+
+    <section class="card" data-cer="evidence">
+      <div class="section-head"><div class="badge">E — Evidence</div></div>
+      <p class="tiny">Add relevant support for your claim. This may be a quote, data point, observation, fact, or accurate paraphrase.</p>
+
+      <details class="tips">
+        <summary>Teacher Tips (click to expand)</summary>
+        <p class="tiny"><strong>Example (Teacher model):</strong> According to <em>Fish Cheeks</em>, “I was stunned into silence for the rest of the night.”</p>
+        <p class="tiny">In science or social studies, this could also be a data point, observation, or accurately paraphrased fact instead of a direct quotation.</p>
+      </details>
+
+      <div class="starter-bar">
+        <button class="chip" data-insert="evidenceBox" data-template="According to {TITLE}, ">According to [Title], …</button>
+        <button class="chip" data-insert="evidenceBox" data-template="For example, ">For example, …</button>
+        <button class="chip" data-insert="evidenceBox" data-template="The text states, ">The text states, …</button>
+        <button class="chip" data-insert="evidenceBox" data-template="The data shows that ">The data shows that…</button>
+      </div>
+
+      <div class="editable" contenteditable="true" data-label="Evidence" id="evidenceBox" spellcheck="true"></div>
+
+      <div class="section-controls">
+        <button class="secondary" data-read="evidenceBox" type="button">🔊 Read my writing</button>
+        <button class="secondary" data-stop="speech" type="button">⏹ Stop</button>
+        <button class="secondary" data-coach="evidenceBox">Writing Coach</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-head"><div class="badge">Carry Forward</div></div>
+
+      <div class="mirror-panel">
+        <span class="mirror-label">Your current claim</span>
+        <div class="tiny" id="claimMirrorReasoning">Your claim will appear here as you write.</div>
+      </div>
+
+      <div class="mirror-panel">
+        <span class="mirror-label">Your current evidence</span>
+        <div class="tiny" id="evidenceMirrorReasoning">Your evidence will appear here as you write.</div>
+      </div>
+    </section>
+
+    <section class="card" data-cer="reasoning">
+      <div class="section-head"><div class="badge">R — Reasoning</div></div>
+      <p class="tiny">Explain how the evidence supports your claim. Do not just repeat the evidence — explain the connection.</p>
+
+      <details class="tips">
+        <summary>Teacher Tips (click to expand)</summary>
+        <p class="tiny"><strong>Example (Teacher model):</strong> This evidence supports the claim because the narrator’s silence shows how uncomfortable and embarrassed she feels. Her reaction helps prove that she is worried about how Robert will judge her family.</p>
+      </details>
+
+      <div class="starter-bar">
+        <button class="chip" data-insert="reasoningBox" data-template="This evidence supports the claim because ">This evidence supports the claim because…</button>
+        <button class="chip" data-insert="reasoningBox" data-template="This demonstrates that ">This demonstrates that…</button>
+        <button class="chip" data-insert="reasoningBox" data-template="This matters because ">This matters because…</button>
+      </div>
+
+      <div class="editable" contenteditable="true" data-label="Reasoning" id="reasoningBox" spellcheck="true"></div>
+
+      <div class="section-controls">
+        <button class="secondary" data-read="reasoningBox" type="button">🔊 Read my writing</button>
+        <button class="secondary" data-stop="speech" type="button">⏹ Stop</button>
+        <button class="secondary" data-coach="reasoningBox">Writing Coach</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="footer-tools">
+        <div>
+          <div class="badge">📝 Final CER Response</div>
+          <p class="tiny">This combines your Claim + Evidence + Reasoning into one response. You may edit the final response directly if needed.</p>
+        </div>
+        <button class="secondary" data-stop="speech" type="button">⏹ Stop</button>
+        <button class="secondary" data-read="finalPreview" type="button">🔊 Read final response</button>
+        <button class="secondary" id="copyFinal">Copy Final Response</button>
+      </div>
+
+      <div class="editable" contenteditable="true" data-label="Final CER Response" id="finalPreview" style="min-height:110px;"></div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div class="badge">✅ Writer’s Checklist</div>
+        <button class="secondary" id="runChecklist">Run Checklist</button>
+      </div>
+
+      <div class="checklist" id="checklist">
+        <label><input data-check="claimClear" type="checkbox"/> My claim clearly answers the question or prompt.</label>
+        <label><input data-check="claimSpecific" type="checkbox"/> My claim is specific and complete.</label>
+        <label><input data-check="evidencePresent" type="checkbox"/> I included relevant evidence.</label>
+        <label><input data-check="evidenceSource" type="checkbox"/> I showed where the evidence came from when possible.</label>
+        <label><input data-check="reasoningPresent" type="checkbox"/> My reasoning explains how the evidence supports the claim.</label>
+        <label><input data-check="reasoningNotRepeat" type="checkbox"/> My reasoning does more than repeat the evidence.</label>
+        <label><input data-check="academicLanguage" type="checkbox"/> I used complete sentences and academic language.</label>
+        <label><input data-check="conventions" type="checkbox"/> I checked capitals and punctuation.</label>
+      </div>
+
+      <p class="tiny" id="checklistMsg" style="margin-top:10px;"></p>
+    </section>
+
+    <section class="card">
+      <div class="section-head"><div class="badge">📤 Export</div></div>
+      <p class="tiny">Export your finished CER response to Google Docs. The export includes the student response plus Teacher Writing Insights such as time taken, paste activity, section timing, revisions, and tool use.</p>
+      <div class="actions" style="justify-content:flex-start; gap:10px; flex-wrap:wrap;">
+        <button class="secondary primary-export" id="exportDoc">Export to Google Docs</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<footer class="footer">
+  <p><strong>© <span id="current-year"></span> Maggie McDonald | Built for teachers, by a teacher | All rights reserved. Licensed for individual teacher use only</strong></p>
+</footer>
+
+<canvas id="confetti-canvas"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<script src="./js/cer-main.js"></script>
+<script src="./js/cer-google.js"></script>
+<script>
+  document.getElementById("current-year").textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
